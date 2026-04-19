@@ -1,7 +1,55 @@
 /* ============================================================
    PRADO — scroll.js
-   Lenis smooth scroll + cursor-follow + light-mode trigger
+   Theme (light/dark) + Lenis smooth scroll + cursor-follow
    ============================================================ */
+
+// -- Theme system ------------------------------------------
+(function initTheme() {
+  const root = document.documentElement;
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)');
+  const setLabel = () => {
+    const label = document.querySelector('[data-theme-label]');
+    if (label) label.textContent = root.classList.contains('dark') ? 'Light' : 'Dark';
+  };
+  setLabel();
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = root.classList.contains('dark') ? 'light' : 'dark';
+      root.classList.toggle('dark', next === 'dark');
+      try { localStorage.setItem('prado-theme', next); } catch (e) {}
+      setLabel();
+    });
+  });
+
+  sysDark.addEventListener('change', (e) => {
+    try { if (localStorage.getItem('prado-theme')) return; } catch (err) {}
+    root.classList.toggle('dark', e.matches);
+    setLabel();
+  });
+})();
+
+// -- Mobile menu -------------------------------------------
+(function initMenu() {
+  const overlay = document.querySelector('[data-menu-overlay]');
+  if (!overlay) return;
+  const open = () => {
+    document.body.classList.add('menu-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    if (typeof lenis !== 'undefined') lenis.stop();
+  };
+  const close = () => {
+    document.body.classList.remove('menu-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (typeof lenis !== 'undefined') lenis.start();
+  };
+  document.querySelectorAll('[data-menu-open]').forEach((b) => b.addEventListener('click', open));
+  document.querySelectorAll('[data-menu-close]').forEach((b) => b.addEventListener('click', close));
+  document.querySelectorAll('[data-menu-link]').forEach((a) => a.addEventListener('click', close));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+})();
 
 // -- Lenis smooth scroll -----------------------------------
 const lenis = new Lenis({
@@ -26,16 +74,6 @@ if (heroImgs.length) {
       const speed = parseFloat(img.dataset.parallax) || 0.2;
       img.style.transform = `translateY(${e.scroll * speed}px)`;
     });
-  });
-}
-
-// -- Light-mode trigger via scroll --------------------------
-const lightTrigger = document.querySelector('[data-light-trigger]');
-if (lightTrigger) {
-  const trigger = () =>
-    lightTrigger.offsetTop + lightTrigger.offsetHeight - window.innerHeight / 2;
-  lenis.on('scroll', (e) => {
-    document.body.classList.toggle('light', e.scroll > trigger());
   });
 }
 
