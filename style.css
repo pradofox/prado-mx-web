@@ -338,7 +338,8 @@ body.menu-open .menu-overlay {
   border-bottom: 1px solid var(--divider);
 }
 @media (min-width: 720px) { .lines { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1100px) { .lines { grid-template-columns: repeat(3, 1fr); } }
+/* 3-col re-activar cuando haya >= 5 lineas visibles (ver comentario "HIDDEN UNTIL LAUNCH" en index.html) */
+/* @media (min-width: 1100px) { .lines { grid-template-columns: repeat(3, 1fr); } } */
 
 .line-card {
   background: var(--surface);
@@ -406,11 +407,14 @@ body.menu-open .menu-overlay {
   padding: 80px var(--pad-x) 32px;
   border-top: 1px solid var(--divider);
   display: grid;
-  grid-template-columns: 150px auto;
-  gap: 48px;
+  grid-template-columns: 1fr;
+  gap: 40px;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
+}
+@media (min-width: 640px) {
+  .footer { grid-template-columns: 1fr 1fr; gap: 48px; }
 }
 @media (min-width: 900px) {
   .footer { grid-template-columns: 1fr 1fr 1fr 1fr; }
