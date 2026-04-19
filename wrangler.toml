@@ -1,0 +1,9 @@
+name = "prado-mx-web"
+compatibility_date = "2026-04-01"
+
+# Sirve los archivos de la raiz del repo como static assets.
+# `_headers` y `_redirects` son consumidos nativamente por Workers.
+[assets]
+directory = "./"
+html_handling = "auto-trailing-slash"
+not_found_handling = "none"
