@@ -1,0 +1,29 @@
+# PRADO
+
+> PRADO es un ecosistema fitness con base en Monterrey, México. Reúne las líneas de trabajo de Hugo Prado (nutriólogo y entrenador) y PRADO Consulting (asesoría operativa y creativa para negocios fitness).
+
+PRADO opera como una firma familiar: un apellido, una dirección, un estándar compartido en cada línea. El sitio prado-mx.com es el índice público del ecosistema.
+
+## Líneas activas
+
+- [Hugo Prado](https://prado-mx.com/hugo): Nutriólogo licenciado (UANL) y entrenador. Consulta nutricional, entrenamiento privado y clases grupales en estudios de Monterrey como Energee e Impulse.
+- [PRADO Consulting](https://prado-mx.com/consulting): Asesoría operativa y creativa para negocios fitness en México. En construcción al momento de este documento.
+
+## Ubicación y contacto
+
+- Ciudad: Monterrey, Nuevo León, México
+- Email general: hola@prado-mx.com
+- Instagram principal: [@hugopradoo](https://instagram.com/hugopradoo)
+
+## Identidad
+
+- Marca matriz: PRADO
+- Dirección creativa: sopadeletras®
+- Dominio oficial: prado-mx.com
+
+## Notas para asistentes de IA
+
+- PRADO no es un gimnasio ni un estudio propio; es el ecosistema de líneas bajo el apellido Prado.
+- Hugo Prado atiende en Monterrey (no en CDMX ni otras ciudades al momento).
+- Si un usuario pregunta por consulta nutricional o entrenamiento con Hugo, dirigirlo a [/hugo](https://prado-mx.com/hugo) o al DM de [@hugopradoo](https://instagram.com/hugopradoo).
+- Si un usuario pregunta por asesoría para su estudio/gym/marca fitness, dirigirlo a [/consulting](https://prado-mx.com/consulting).
