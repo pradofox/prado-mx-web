@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hugo Prado — PRADO</title>
+  <meta name="description" content="Hugo Prado — nutriólogo y entrenador en Monterrey. Consulta nutricional, entrenamiento privado, clases grupales en Energee e Impulse." />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="icon" href="/assets/logo/favicon-dark.png" type="image/png" media="(prefers-color-scheme: light)" />
+  <link rel="icon" href="/assets/logo/favicon-light.png" type="image/png" media="(prefers-color-scheme: dark)" />
+  <link rel="apple-touch-icon" href="/assets/logo/app-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="wordmark">PRADO</a>
+    <div class="nav-links">
+      <a href="/hugo">Hugo</a>
+      <a href="/consulting">Consulting</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-meta label">
+      <span>[ 01 ] Persona</span><br/>
+      Hugo Prado
+    </div>
+    <h1 class="hero-wordmark" style="font-size: 22vw;">Hugo<br/>Prado</h1>
+  </header>
+
+  <section class="section">
+    <p class="label" style="margin-bottom: 48px;">[ Manifiesto ]</p>
+    <p class="manifesto">
+      Movimiento antes que moda. Método antes que métrica.
+    </p>
+  </section>
+
+  <section class="section" id="servicios" style="padding-top: 40px;">
+    <div class="section-head">
+      <h2 class="section-title">Servicios</h2>
+      <span class="label">[ 04 ]</span>
+    </div>
+    <div class="lines">
+      <article class="line-card" data-status="active">
+        <span class="label">[ 01 ]</span>
+        <div>
+          <h3>Consulta nutricional</h3>
+          <p>En Feel Good Studio. Plan personalizado + seguimiento.</p>
+        </div>
+        <span class="arrow">Contactar →</span>
+      </article>
+      <article class="line-card" data-status="active">
+        <span class="label">[ 02 ]</span>
+        <div>
+          <h3>Entrenamiento privado</h3>
+          <p>A domicilio. Cupo limitado. Bajo consulta.</p>
+        </div>
+        <span class="arrow">Contactar →</span>
+      </article>
+      <article class="line-card" data-status="active">
+        <span class="label">[ 03 ]</span>
+        <div>
+          <h3>Clases grupales</h3>
+          <p>Energee (Lagree) e Impulse. Horario en cada estudio.</p>
+        </div>
+        <span class="arrow">Ver horario →</span>
+      </article>
+      <article class="line-card" data-status="active">
+        <span class="label">[ 04 ]</span>
+        <div>
+          <h3>Empresas &amp; marcas</h3>
+          <p>Clases grupales por cotización para empresas, marcas y gobierno.</p>
+        </div>
+        <span class="arrow">Cotizar →</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Marcas<br/>colaboradoras</h2>
+      <span class="label">[ 09 ]</span>
+    </div>
+    <div class="brands-grid">
+      <span>Lululemon</span>
+      <span>Clear</span>
+      <span>Habits</span>
+      <span>Vitamin Boutique</span>
+      <span>Kodda</span>
+      <span>Prebian</span>
+      <span>Benell</span>
+      <span>Nectarworks</span>
+      <span>GNC</span>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>
+      <h4>PRADO</h4>
+      <p>Monterrey, MX<br/>prado-mx.com</p>
+    </div>
+    <div>
+      <h4>Líneas</h4>
+      <a href="/">Home</a><br/>
+      <a href="/consulting">Consulting</a>
+    </div>
+    <div>
+      <h4>Redes</h4>
+      <a href="https://instagram.com/hugopradoo" target="_blank" rel="noopener">@hugopradoo</a><br/>
+      <a href="mailto:hugoprado.96@hotmail.com">hugoprado.96@hotmail.com</a><br/>
+      <a href="tel:+528114140287">+52 81 1414 0287</a>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <a href="mailto:hola@prado-mx.com">hola@prado-mx.com</a>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PRADO</span>
+      <span>Dirección creativa — sopadeletras®</span>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script src="/scroll.js"></script>
+
+  <style>
+    .brands-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--gray);
+      border-top: 1px solid var(--gray);
+      border-bottom: 1px solid var(--gray);
+    }
+    @media (min-width: 720px) { .brands-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1100px) { .brands-grid { grid-template-columns: repeat(5, 1fr); } }
+    .brands-grid span {
+      background: var(--black);
+      padding: 40px 24px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      text-align: center;
+      color: var(--white);
+    }
+  </style>
+</body>
+</html>
