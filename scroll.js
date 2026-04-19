@@ -1,5 +1,5 @@
 /* ============================================================
-   PRADO — scroll.js
+   PRADO - scroll.js
    Theme (light/dark) + Lenis smooth scroll + cursor-follow
    ============================================================ */
 
