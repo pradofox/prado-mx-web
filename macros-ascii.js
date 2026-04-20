@@ -39,7 +39,7 @@
 
   function newDrop(spread) {
     return {
-      y: spread ? -Math.random() * ROWS * 2 : -2 - Math.random() * 10,
+      y: spread ? -Math.random() * ROWS * 2 : -2 - Math.random() * 4,
       speed: 5 + Math.random() * 14,   // rows/sec
       lastRow: -1
     };
@@ -76,10 +76,10 @@
         const cell = buffer[r][c];
         if (!cell) { out += ' '; continue; }
         const a = cell.age;
-        if (a < 0.25) out += cell.ch;
-        else if (a < 0.8) out += '#';
-        else if (a < 1.6) out += '+';
-        else if (a < 2.4) out += '.';
+        if (a < 0.3) out += cell.ch;
+        else if (a < 1.4) out += '#';
+        else if (a < 3.0) out += '+';
+        else if (a < 6.0) out += '.';
         else { buffer[r][c] = null; out += ' '; }
       }
       if (r < ROWS - 1) out += '\n';
