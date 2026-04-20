@@ -164,7 +164,8 @@
       last = 0;
       rafId = requestAnimationFrame(tick);
     }
-    attachDrag();
+    const canInteract = matchMedia('(hover: hover) and (min-width: 900px)').matches;
+    if (canInteract) attachDrag();
   }
 
   function attachDrag() {
