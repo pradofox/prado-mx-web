@@ -111,13 +111,14 @@
   let last = 0;
   let rafId = 0;
   const AUTO_SPEED = 0.28; // rad/sec
+  const VEL_DECAY = 1.6;   // 1/sec — lower = longer, more luxurious tail
 
   // Drag state (horizontal only — vertical pan goes to page scroll)
   let dragging = false;
   let lastX = 0;
-  let velX = 0;
-  let dragReleaseAt = 0;
-  const INERTIA_MS = 900;
+  let lastMoveT = 0;
+  let velX = 0;      // smoothed angular velocity sampled during drag (rad/s)
+  let yawVel = AUTO_SPEED; // current spin velocity, exponentially eased back to AUTO_SPEED
 
   function render() {
     el.textContent = frame(yaw, pitch);
@@ -130,13 +131,9 @@
     last = t;
 
     if (!dragging) {
-      const sinceRelease = t - dragReleaseAt;
-      if (dragReleaseAt && sinceRelease < INERTIA_MS) {
-        const decay = 1 - sinceRelease / INERTIA_MS;
-        yaw += velX * dt * decay;
-      } else {
-        yaw += AUTO_SPEED * dt;
-      }
+      const k = 1 - Math.exp(-VEL_DECAY * dt);
+      yawVel += (AUTO_SPEED - yawVel) * k;
+      yaw += yawVel * dt;
       render();
     }
     rafId = requestAnimationFrame(tick);
@@ -164,24 +161,29 @@
   function onDown(e) {
     dragging = true;
     lastX = e.clientX;
+    lastMoveT = performance.now();
     velX = 0;
     el.setPointerCapture && el.setPointerCapture(e.pointerId);
   }
 
   function onMove(e) {
     if (!dragging) return;
+    const now = performance.now();
+    const dt = Math.max(0.005, (now - lastMoveT) / 1000);
+    lastMoveT = now;
     const dx = e.clientX - lastX;
     lastX = e.clientX;
     const k = Math.PI / (R * 2);
     yaw += dx * k;
-    velX = dx * k * 60;
+    const inst = (dx * k) / dt;
+    velX = velX * 0.7 + inst * 0.3;
     render();
   }
 
   function onUp(e) {
     if (!dragging) return;
     dragging = false;
-    dragReleaseAt = performance.now();
+    yawVel = velX;
     try { el.releasePointerCapture && el.releasePointerCapture(e.pointerId); } catch (_) {}
   }
 
