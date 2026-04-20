@@ -203,14 +203,17 @@ body.menu-open .menu-overlay {
 .menu-links {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 14px;
   margin-top: auto;
   margin-bottom: auto;
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: clamp(40px, 10vw, 72px);
-  letter-spacing: -0.04em;
-  line-height: 1;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: clamp(20px, 6vw, 32px);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: right;
 }
 .menu-links a {
   display: inline-block;
@@ -219,12 +222,10 @@ body.menu-open .menu-overlay {
 .menu-links a::before {
   content: '[ ';
   color: var(--gray);
-  font-weight: 400;
 }
 .menu-links a::after {
   content: ' ]';
   color: var(--gray);
-  font-weight: 400;
 }
 .menu-overlay-bottom {
   display: flex;

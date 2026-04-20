@@ -8,8 +8,8 @@
   const root = document.documentElement;
   const sysDark = window.matchMedia('(prefers-color-scheme: dark)');
   const setLabel = () => {
-    const label = document.querySelector('[data-theme-label]');
-    if (label) label.textContent = root.classList.contains('dark') ? 'Light' : 'Dark';
+    const text = root.classList.contains('dark') ? 'Light' : 'Dark';
+    document.querySelectorAll('[data-theme-label]').forEach((el) => { el.textContent = text; });
   };
   setLabel();
 
