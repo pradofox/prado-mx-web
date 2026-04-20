@@ -91,22 +91,14 @@
         // yaw: rotate (x,z) around Y axis
         const x2 = x * cy + z1 * sy;
         const z2 = -x * sy + z1 * cy;
-        // clamp for asin safety
         const yc = y1 > 1 ? 1 : y1 < -1 ? -1 : y1;
         const lat = -Math.asin(yc) * 57.2957795;
         const lon = Math.atan2(x2, z2) * 57.2957795;
-        const f = z2;
         const d = sampleDensity(lat, lon);
-        // Combine density with facing factor for subtle depth shading.
-        if (d > 0.75) {
-          out += f > 0.5 ? '@' : '#';
-        } else if (d > 0.45) {
-          out += f > 0.5 ? '#' : '+';
-        } else if (d > 0.15) {
-          out += f > 0.5 ? '+' : ':';
-        } else {
-          out += f > 0.55 ? ':' : f > 0.22 ? '.' : '\u00b7';
-        }
+        if (d > 0.75) out += '@';
+        else if (d > 0.45) out += '#';
+        else if (d > 0.15) out += '+';
+        else out += '.';
       }
       if (j < ROWS - 1) out += '\n';
     }
@@ -114,17 +106,16 @@
   }
 
   let yaw = -Math.PI / 2; // start centered on Americas
-  let pitch = 0;
-  const PITCH_LIMIT = 1.2;  // ~69°
+  const pitch = 0;
+
   let last = 0;
   let rafId = 0;
   const AUTO_SPEED = 0.28; // rad/sec
 
-  // Drag state
+  // Drag state (horizontal only — vertical pan goes to page scroll)
   let dragging = false;
-  let lastX = 0, lastY = 0;
-  // Inertia (carry drag velocity for a moment after release).
-  let velX = 0, velY = 0;
+  let lastX = 0;
+  let velX = 0;
   let dragReleaseAt = 0;
   const INERTIA_MS = 900;
 
@@ -139,14 +130,10 @@
     last = t;
 
     if (!dragging) {
-      // Blend: inertia decays, then auto-rotation takes over.
       const sinceRelease = t - dragReleaseAt;
       if (dragReleaseAt && sinceRelease < INERTIA_MS) {
         const decay = 1 - sinceRelease / INERTIA_MS;
         yaw += velX * dt * decay;
-        pitch += velY * dt * decay;
-        if (pitch > PITCH_LIMIT) pitch = PITCH_LIMIT;
-        else if (pitch < -PITCH_LIMIT) pitch = -PITCH_LIMIT;
       } else {
         yaw += AUTO_SPEED * dt;
       }
@@ -164,8 +151,7 @@
       last = 0;
       rafId = requestAnimationFrame(tick);
     }
-    const canInteract = matchMedia('(hover: hover) and (min-width: 900px)').matches;
-    if (canInteract) attachDrag();
+    attachDrag();
   }
 
   function attachDrag() {
@@ -178,27 +164,17 @@
   function onDown(e) {
     dragging = true;
     lastX = e.clientX;
-    lastY = e.clientY;
-    velX = 0; velY = 0;
+    velX = 0;
     el.setPointerCapture && el.setPointerCapture(e.pointerId);
-    e.preventDefault();
   }
 
   function onMove(e) {
     if (!dragging) return;
     const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
     lastX = e.clientX;
-    lastY = e.clientY;
-    // Scale so one globe-width drag ≈ full rotation.
     const k = Math.PI / (R * 2);
     yaw += dx * k;
-    pitch -= dy * k;
-    if (pitch > PITCH_LIMIT) pitch = PITCH_LIMIT;
-    else if (pitch < -PITCH_LIMIT) pitch = -PITCH_LIMIT;
-    // Track velocity in rad/sec (approximate).
     velX = dx * k * 60;
-    velY = -dy * k * 60;
     render();
   }
 

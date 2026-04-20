@@ -288,22 +288,21 @@ body.menu-open .menu-overlay {
   color: var(--fg);
   white-space: pre;
   overflow: hidden;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: pan-y;
+  cursor: grab;
   z-index: 1;
   text-align: left;
 }
-@media (hover: hover) and (min-width: 900px) {
+.hero-globe:active { cursor: grabbing; }
+@media (min-width: 900px) {
   .hero-globe {
     width: min(62vw, 80vh);
     height: min(62vw, 80vh);
     font-size: clamp(8px, 0.95vw, 14px);
-    pointer-events: auto;
-    touch-action: none;
-    cursor: grab;
   }
-  .hero-globe:active { cursor: grabbing; }
   .hero--with-globe .hero-wordmark {
     left: auto;
     right: var(--pad-x);
