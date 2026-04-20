@@ -272,6 +272,44 @@ body.menu-open .menu-overlay {
   max-width: 560px;
 }
 
+/* ASCII globe (home hero) --------------------------------- */
+.hero-globe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(78vw, 52vh);
+  height: min(78vw, 52vh);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(6px, 1.4vmin, 12px);
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--fg);
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: grab;
+  z-index: 1;
+  text-align: left;
+}
+.hero-globe:active { cursor: grabbing; }
+@media (min-width: 900px) {
+  .hero-globe {
+    width: min(62vw, 80vh);
+    height: min(62vw, 80vh);
+    font-size: clamp(8px, 0.95vw, 14px);
+  }
+  .hero--with-globe .hero-wordmark {
+    left: auto;
+    right: var(--pad-x);
+    width: 38%;
+  }
+}
+
 /* hero with photo (parallax) -------------------------------- */
 .hero-photo { background: var(--black); }
 .hero-photo-img {
@@ -352,6 +390,8 @@ body.menu-open .menu-overlay {
   transition: background 160ms ease;
 }
 .line-card a { display: contents; }
+a.line-card { text-decoration: none; color: inherit; }
+a.line-card:hover { text-decoration: none; }
 .line-card[data-status="active"]:hover { background: var(--surface-hover); }
 .line-card[data-status="soon"] { color: var(--gray); }
 
@@ -448,16 +488,17 @@ body.menu-open .menu-overlay {
 .brands-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1px;
-  background: var(--divider);
+  gap: 0;
+  background: transparent;
   border-top: 1px solid var(--divider);
-  border-bottom: 1px solid var(--divider);
+  border-left: 1px solid var(--divider);
 }
-@media (min-width: 720px) { .brands-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1100px) { .brands-grid { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 900px) { .brands-grid { grid-template-columns: repeat(5, 1fr); } }
 .brands-grid span {
-  background: var(--surface);
+  background: transparent;
   padding: 40px 24px;
+  border-right: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: 18px;

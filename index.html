@@ -108,11 +108,12 @@
     </div>
   </div>
 
-  <header class="hero">
+  <header class="hero hero--with-globe">
     <div class="hero-meta label">
       <span>PRADO -</span> Monterrey, MX<br/>
       Ecosistema fitness
     </div>
+    <pre class="hero-globe" data-globe aria-hidden="true"></pre>
     <h1 class="hero-wordmark" aria-label="PRADO">
       <svg viewBox="80 360 920 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <g fill="currentColor">
@@ -144,27 +145,23 @@
     </div>
 
     <div class="lines">
-      <article class="line-card" data-status="active" data-cursor>
-        <a href="/hugo">
-          <span class="label">[ 01 ] Persona</span>
-          <div>
-            <h3>Hugo Prado</h3>
-            <p>Nutriólogo y entrenador. Consulta, entrenamiento privado y clases grupales en estudios.</p>
-          </div>
-          <span class="arrow">Ver →</span>
-        </a>
-      </article>
+      <a class="line-card" data-status="active" data-cursor href="/hugo">
+        <span class="label">[ 01 ] Persona</span>
+        <div>
+          <h3>Hugo Prado</h3>
+          <p>Nutriólogo y entrenador. Consulta, entrenamiento privado y clases grupales en estudios.</p>
+        </div>
+        <span class="arrow">Ver →</span>
+      </a>
 
-      <article class="line-card" data-status="active" data-cursor>
-        <a href="/consulting">
-          <span class="label">[ 02 ] Servicio</span>
-          <div>
-            <h3>PRADO Consulting</h3>
-            <p>Asesoría operativa y creativa para negocios fitness.</p>
-          </div>
-          <span class="arrow">Ver →</span>
-        </a>
-      </article>
+      <a class="line-card" data-status="active" data-cursor href="/consulting">
+        <span class="label">[ 02 ] Servicio</span>
+        <div>
+          <h3>PRADO Consulting</h3>
+          <p>Asesoría operativa y creativa para negocios fitness.</p>
+        </div>
+        <span class="arrow">Ver →</span>
+      </a>
 
       <!-- ================================================================
            HIDDEN UNTIL LAUNCH: Fit Week, FitWork, Guía Fitness MTY, Studio Manager
@@ -235,11 +232,12 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 PRADO</span>
-      <span>Dirección creativa / sopadeletras®</span>
+      <span>Diseñado por sopadeletras®</span>
     </div>
   </footer>
 
   <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="/scroll.js"></script>
+  <script src="/globe.js" defer></script>
 </body>
 </html>
