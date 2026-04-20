@@ -44,14 +44,19 @@
   let charW = 0, lineH = 0;
 
   function measure() {
+    // Multi-line probe: iOS Safari can return unitless "1" for line-height via
+    // getComputedStyle, which breaks pixel-based grid calc. Measure directly.
     const probe = document.createElement('span');
-    probe.style.cssText = 'visibility:hidden;position:absolute;left:-9999px;top:0;font:inherit;line-height:inherit;white-space:pre;';
-    probe.textContent = 'MMMMMMMMMM';
+    probe.style.cssText = 'visibility:hidden;position:absolute;left:-9999px;top:0;font:inherit;line-height:inherit;white-space:pre;display:inline-block;';
+    probe.textContent = Array(10).fill('MMMMMMMMMM').join('\n');
     el.appendChild(probe);
-    charW = probe.getBoundingClientRect().width / 10;
+    const rect = probe.getBoundingClientRect();
+    charW = rect.width / 10;
+    lineH = rect.height / 10;
     el.removeChild(probe);
-    const cs = getComputedStyle(el);
-    lineH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize);
+    // Safety floors: never let grid calc explode.
+    if (!(charW > 1)) charW = 8;
+    if (!(lineH > 1)) lineH = 12;
   }
 
   function sizeGrid() {
