@@ -316,10 +316,10 @@ body.menu-open .menu-overlay {
   position: absolute;
   inset: 0;
   margin: 0;
-  padding: var(--pad-y) var(--pad-x);
+  padding: 0;
   font-family: var(--font-mono);
-  font-size: clamp(9px, 1.6vmin, 14px);
-  line-height: 1.05;
+  font-size: clamp(10px, 1.6vmin, 14px);
+  line-height: 1;
   letter-spacing: 0;
   color: var(--fg);
   white-space: pre;

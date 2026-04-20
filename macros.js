@@ -33,13 +33,17 @@
 
   function pickState() {
     const fd = new FormData(form);
+    const num = (v, fallback) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
     return {
-      sex: fd.get('sex'),
-      age: parseFloat(fd.get('age')),
-      weight: parseFloat(fd.get('weight')),
-      height: parseFloat(fd.get('height')),
-      activity: parseFloat(fd.get('activity')),
-      goal: parseFloat(fd.get('goal')),
+      sex: fd.get('sex') || 'f',
+      age: num(fd.get('age'), 28),
+      weight: num(fd.get('weight'), 65),
+      height: num(fd.get('height'), 165),
+      activity: num(fd.get('activity'), 1.375),
+      goal: num(fd.get('goal'), 1.0),
     };
   }
 
