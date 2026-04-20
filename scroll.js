@@ -106,6 +106,26 @@ if (isDesktop) {
   });
 }
 
+// -- Scroll-reveal ------------------------------------------
+(function initReveal() {
+  const els = document.querySelectorAll('[data-reveal]');
+  if (!els.length) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) {
+    els.forEach((el) => el.classList.add('is-revealed'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-revealed');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -5% 0px' });
+  els.forEach((el) => io.observe(el));
+})();
+
 // -- Anchor links through Lenis -----------------------------
 document.querySelectorAll('a[href^="#"]').forEach((a) => {
   a.addEventListener('click', (e) => {

@@ -311,6 +311,40 @@ body.menu-open .menu-overlay {
   }
 }
 
+/* ASCII digital rain (macros hero) ------------------------- */
+.hero-ascii {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: var(--pad-y) var(--pad-x);
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.6vmin, 14px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  color: var(--fg);
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0.42;
+  z-index: 0;
+}
+.hero--ascii .hero-meta { z-index: 2; }
+.hero--ascii .hero-wordmark { z-index: 2; }
+.hero--ascii::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 55%, var(--bg) 100%);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.85;
+}
+@media (min-width: 900px) {
+  .hero-ascii { font-size: clamp(11px, 1.15vw, 16px); }
+}
+
 /* hero with photo (parallax) -------------------------------- */
 .hero-photo { background: var(--black); }
 .hero-photo-img {
@@ -792,6 +826,37 @@ a.line-card:hover { text-decoration: none; }
   line-height: 1.5;
   color: var(--gray);
   max-width: 62ch;
+}
+
+/* scroll-reveal -------------------------------------------- */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* stagger for carousel + grid children */
+.ctas [data-reveal]:nth-child(2) { --reveal-delay: 80ms; }
+.ctas [data-reveal]:nth-child(3) { --reveal-delay: 160ms; }
+.ctas [data-reveal]:nth-child(4) { --reveal-delay: 240ms; }
+.ctas [data-reveal]:nth-child(5) { --reveal-delay: 320ms; }
+.ctas [data-reveal]:nth-child(6) { --reveal-delay: 400ms; }
+.lines [data-reveal]:nth-child(2) { --reveal-delay: 120ms; }
+.lines [data-reveal]:nth-child(3) { --reveal-delay: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* cursor preview (desktop only) ---------------------------- */
