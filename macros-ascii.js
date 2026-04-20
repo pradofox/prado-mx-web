@@ -39,17 +39,15 @@
 
   function newDrop(spread) {
     return {
-      y: spread ? -Math.random() * ROWS * 1.5 : -Math.random() * 4,
-      speed: 6 + Math.random() * 14,   // rows/sec
-      lastRow: -1,
-      active: Math.random() > 0.25      // some columns idle
+      y: spread ? -Math.random() * ROWS * 2 : -2 - Math.random() * 10,
+      speed: 5 + Math.random() * 14,   // rows/sec
+      lastRow: -1
     };
   }
 
   function update(dt) {
     for (let c = 0; c < COLS; c++) {
       const d = drops[c];
-      if (!d.active) continue;
       d.y += d.speed * dt;
       const row = Math.floor(d.y);
       if (row !== d.lastRow && row >= 0 && row < ROWS) {
@@ -102,6 +100,7 @@
 
   function start() {
     sizeGrid();
+    lastW = el.clientWidth;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) {
       for (let i = 0; i < 6; i++) update(0.05);
@@ -116,8 +115,18 @@
   else start();
 
   let rto = 0;
+  let lastW = 0;
   window.addEventListener('resize', () => {
     clearTimeout(rto);
-    rto = setTimeout(() => { sizeGrid(); render(); }, 120);
+    rto = setTimeout(() => {
+      // iOS URL-bar show/hide fires resize with a height jitter. Only rebuild
+      // when width actually changes (orientation change or real resize).
+      const w = el.clientWidth;
+      if (w !== lastW) {
+        lastW = w;
+        sizeGrid();
+        render();
+      }
+    }, 180);
   });
 })();
