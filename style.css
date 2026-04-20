@@ -642,6 +642,158 @@ a.line-card:hover { text-decoration: none; }
   margin: 0;
 }
 
+/* macros calculator ---------------------------------------- */
+.macros-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  border-top: 1px solid var(--divider);
+  padding-top: 32px;
+}
+@media (min-width: 720px) {
+  .macros-form { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+.macros-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.macros-form .label { color: var(--gray); }
+.macros-form input[type="number"],
+.macros-form select {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  padding: 14px 16px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
+.macros-form input[type="number"]:focus,
+.macros-form select:focus {
+  outline: none;
+  border-color: var(--fg);
+}
+.macros-form select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--fg) 50%),
+                    linear-gradient(-45deg, transparent 50%, var(--fg) 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+.macros-form .segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--divider);
+}
+.macros-form .segmented label {
+  position: relative;
+  cursor: pointer;
+}
+.macros-form .segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.macros-form .segmented span {
+  display: block;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray);
+  border-right: 1px solid var(--divider);
+  transition: background 120ms ease, color 120ms ease;
+}
+.macros-form .segmented label:last-child span { border-right: 0; }
+.macros-form .segmented input:checked + span {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.macros-result { margin-top: 40px; }
+.macros-card {
+  border: 1px solid var(--divider);
+  padding: 32px 24px;
+}
+.macros-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--divider);
+  flex-wrap: wrap;
+}
+.macros-card-head .label { color: var(--gray); }
+.macros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.macros-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.macros-grid .label { color: var(--gray); }
+.macros-grid strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 48px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.macros-footnote {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 24px;
+  color: var(--gray);
+  flex-wrap: wrap;
+}
+
+.macros-share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.macros-share-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 140ms ease, color 140ms ease;
+}
+.macros-share-btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+  text-decoration: none;
+}
+.macros-disclaimer {
+  margin-top: 32px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gray);
+  max-width: 62ch;
+}
+
 /* cursor preview (desktop only) ---------------------------- */
 .cursor-preview {
   position: fixed;

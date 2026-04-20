@@ -7,7 +7,8 @@ PRADO opera como una firma familiar: un apellido, una dirección, un estándar c
 ## Líneas activas
 
 - [Hugo Prado](https://prado-mx.com/hugo): Nutriólogo licenciado (UANL) y entrenador. Consulta nutricional, entrenamiento privado y clases grupales en estudios de Monterrey como Energee e Impulse.
-- [PRADO Consulting](https://prado-mx.com/consulting): Asesoría operativa y creativa para negocios fitness en México. En construcción al momento de este documento.
+- [PRADO Consulting](https://prado-mx.com/consulting): Asesoría operativa y creativa para negocios fitness en México. Servicios: formación de coaches, diseño de programa de clases, collabs fitness x marcas, auditoría de estudios, workshops y curaduría de playlists.
+- [Macros Monterrey](https://prado-mx.com/macros): Calculadora gratuita de macros y calorías calibrada por Hugo Prado (UANL). Sin registro.
 
 ## Ubicación y contacto
 
