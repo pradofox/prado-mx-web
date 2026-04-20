@@ -68,6 +68,7 @@
       <div class="nav-links">
         <a href="/hugo">Hugo</a>
         <a href="/consulting">Consulting</a>
+        <a href="/macros" aria-current="page">Macros</a>
       </div>
       <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
         <span data-theme-label>Dark</span>
@@ -85,6 +86,7 @@
       <a href="/" data-menu-link>Home</a>
       <a href="/hugo" data-menu-link>Hugo</a>
       <a href="/consulting" data-menu-link>Consulting</a>
+      <a href="/macros" data-menu-link aria-current="page">Macros</a>
     </nav>
     <div class="menu-overlay-bottom">
       <span>Monterrey, MX</span>
@@ -94,7 +96,8 @@
     </div>
   </div>
 
-  <header class="hero">
+  <header class="hero hero--ascii">
+    <pre class="hero-ascii" data-macros-ascii aria-hidden="true"></pre>
     <div class="hero-meta label">
       <span>[ 03 ] Herramienta</span><br/>
       Macros Monterrey
@@ -195,6 +198,7 @@
 
   <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="/scroll.js"></script>
+  <script src="/macros-ascii.js" defer></script>
   <script src="/macros.js" defer></script>
 </body>
 </html>
