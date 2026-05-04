@@ -82,11 +82,12 @@ async function handleAuth(request, env, url) {
     return jsonResponse({ error: 'wrong password' }, 401);
   }
   const token = await signToken(env.SMAE_PASSWORD);
-  return new Response(JSON.stringify({ ok: true }), {
+  // Devolver token en body Y en cookie (cinturón y tirantes — cualquiera funciona)
+  return new Response(JSON.stringify({ ok: true, token }), {
     status: 200,
     headers: {
       'content-type': 'application/json',
-      'set-cookie': `${COOKIE_NAME}=${token}; Path=/; Max-Age=${COOKIE_MAX_AGE}; HttpOnly; Secure; SameSite=Strict`,
+      'set-cookie': `${COOKIE_NAME}=${token}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax; Secure`,
     },
   });
 }
@@ -102,12 +103,18 @@ function clearAuthCookie() {
 }
 
 async function isAuthed(request, env) {
-  const cookie = request.headers.get('cookie') || '';
-  const match = cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
-  if (!match) return false;
-  const token = match[1];
+  // Acepta token vía Authorization header (preferido) o cookie (fallback)
+  let token = '';
+  const authHeader = request.headers.get('authorization') || '';
+  if (authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
+  } else {
+    const cookie = request.headers.get('cookie') || '';
+    const match = cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+    if (match) token = match[1];
+  }
+  if (!token) return false;
   const expected = await signToken(env.SMAE_PASSWORD);
-  // Constant-time compare
   if (token.length !== expected.length) return false;
   let diff = 0;
   for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);

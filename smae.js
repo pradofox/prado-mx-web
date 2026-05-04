@@ -74,15 +74,28 @@
 
   // ---------- API client --------------------------------------------------
 
+  const TOKEN_KEY = 'prado-smae-token';
+
+  function getToken() {
+    try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  }
+  function setToken(t) {
+    try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+  }
+
   async function api(path, options = {}) {
+    const headers = { 'content-type': 'application/json', ...(options.headers || {}) };
+    const token = getToken();
+    if (token) headers['authorization'] = 'Bearer ' + token;
     const opts = {
       ...options,
-      credentials: 'include',
-      headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+      credentials: 'same-origin',
+      headers,
     };
     if (options.body && typeof options.body !== 'string') opts.body = JSON.stringify(options.body);
     const r = await fetch('/api/smae' + path, opts);
     if (r.status === 401) {
+      setToken(null);
       showGate();
       throw new Error('unauthorized');
     }
@@ -111,9 +124,16 @@
   }
 
   async function checkAuth() {
+    if (!getToken()) return false;
     try {
-      const r = await api('/auth', { method: 'GET' });
-      return !!r.authed;
+      // Validar token con un GET ligero a /auth
+      const r = await fetch('/api/smae/auth', {
+        method: 'GET',
+        headers: { 'authorization': 'Bearer ' + getToken() },
+      });
+      if (!r.ok) return false;
+      const j = await r.json();
+      return !!j.authed;
     } catch (e) {
       return false;
     }
@@ -128,7 +148,10 @@
         body: JSON.stringify({ password: String(password).trim() }),
       });
       console.log('[smae] login status:', r.status);
-      return r.ok;
+      if (!r.ok) return false;
+      const data = await r.json();
+      if (data.token) setToken(data.token);
+      return true;
     } catch (e) {
       console.error('[smae] login error:', e);
       return false;
@@ -776,8 +799,9 @@
     // Logout
     const logoutBtn = document.querySelector('[data-smae-logout]');
     if (logoutBtn) logoutBtn.addEventListener('click', async () => {
-      await fetch('/api/smae/auth/logout', { method: 'POST', credentials: 'include' });
-      showGate();
+      setToken(null);
+      try { await fetch('/api/smae/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+      window.location.reload();
     });
 
     // Auto-fill from URL params
