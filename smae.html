@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>SMAE / PRADO</title>
-  <meta name="description" content="Cálculo de equivalencias alimentarias para uso interno de Hugo Prado, basado en el Sistema Mexicano de Alimentos Equivalentes." />
+  <meta name="description" content="Herramienta interna de Hugo Prado." />
   <meta name="theme-color" content="#F0F0F0" />
   <meta name="robots" content="noindex,nofollow" />
 
@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=6" />
+  <link rel="stylesheet" href="/style.css?v=7" />
 
   <script>
     (function () {
@@ -31,6 +31,25 @@
   </script>
 </head>
 <body>
+
+  <!-- Gate de password -->
+  <div class="smae-gate" data-smae-gate hidden>
+    <div class="smae-gate-card">
+      <div class="smae-gate-brand">
+        <span class="label">[ PRADO · Interno ]</span>
+      </div>
+      <h1 class="smae-gate-title">SMAE</h1>
+      <p class="smae-gate-sub">Herramienta privada de Hugo Prado.</p>
+      <form class="smae-gate-form" data-smae-gate-form autocomplete="off">
+        <label class="label" for="gate-password">Password</label>
+        <input type="password" id="gate-password" name="password" inputmode="numeric" autocomplete="off" required autofocus>
+        <p class="smae-gate-error label" data-smae-gate-error hidden>[ Incorrecto ]</p>
+        <button type="submit" class="closing-cta-btn">Entrar →</button>
+      </form>
+    </div>
+  </div>
+
+  <div data-smae-main hidden>
 
   <nav class="nav">
     <a href="/" class="nav-logo" aria-label="PRADO">
@@ -49,36 +68,14 @@
       </svg>
     </a>
     <div class="nav-right">
-      <div class="nav-links">
-        <a href="/hugo">Hugo</a>
-        <a href="/consulting">Consulting</a>
-        <a href="/macros">Macros</a>
-      </div>
+      <button type="button" class="theme-toggle" data-smae-logout aria-label="Cerrar sesión">
+        <span>[ Cerrar ]</span>
+      </button>
       <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
         <span data-theme-label>Dark</span>
       </button>
     </div>
-    <button class="menu-toggle" data-menu-open aria-label="Abrir menú">[ Menu ]</button>
   </nav>
-
-  <div class="menu-overlay" data-menu-overlay aria-hidden="true">
-    <div class="menu-overlay-top">
-      <span class="label">[ Menu ]</span>
-      <button class="menu-toggle" data-menu-close aria-label="Cerrar menú">[ Close ]</button>
-    </div>
-    <nav class="menu-links">
-      <a href="/" data-menu-link>Home</a>
-      <a href="/hugo" data-menu-link>Hugo</a>
-      <a href="/consulting" data-menu-link>Consulting</a>
-      <a href="/macros" data-menu-link>Macros</a>
-    </nav>
-    <div class="menu-overlay-bottom">
-      <span>Monterrey, MX</span>
-      <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
-        <span data-theme-label>Dark</span>
-      </button>
-    </div>
-  </div>
 
   <header class="hero hero--ascii">
     <pre class="hero-ascii" data-smae-ascii aria-hidden="true"></pre>
@@ -90,50 +87,95 @@
   </header>
 
   <section class="section">
-    <p class="label" style="margin-bottom: 48px;">[ Herramienta interna ]</p>
+    <p class="label" style="margin-bottom: 48px;">[ Herramienta interna privada ]</p>
     <p class="manifesto">
-      Macros del paciente entran. Plan de equivalencias sale. Editas, guardas, repites.
+      Datos del paciente entran. Plan de equivalencias sale. Editas, guardas, imprimes.
     </p>
   </section>
 
-  <section class="section section--tight" id="nuevo">
+  <!-- Datos del paciente -->
+  <section class="section section--tight" id="datos">
     <div class="section-head">
-      <h2 class="section-title">Nuevo plan</h2>
+      <h2 class="section-title">Paciente</h2>
       <span class="label">[ Paso 1 ]</span>
     </div>
 
-    <form class="smae-form" data-smae-form>
+    <form class="smae-form" data-smae-patient-form>
       <div class="field field--wide">
-        <label class="label" for="patient-name">Paciente</label>
-        <input type="text" id="patient-name" name="name" placeholder="Nombre o referencia" autocomplete="off" required>
+        <label class="label" for="patient-name">Nombre o referencia</label>
+        <input type="text" id="patient-name" name="name" autocomplete="off" required>
       </div>
 
       <div class="field-row">
         <div class="field">
-          <label class="label" for="kcal">Kcal</label>
-          <input type="number" id="kcal" name="kcal" min="600" max="5000" value="1800" inputmode="numeric" required>
+          <label class="label">Sexo biológico</label>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="patient-sex" value="f" checked><span>Mujer</span></label>
+            <label><input type="radio" name="patient-sex" value="m"><span>Hombre</span></label>
+          </div>
         </div>
         <div class="field">
-          <label class="label" for="protein">Proteína (g)</label>
-          <input type="number" id="protein" name="protein" min="20" max="400" value="110" inputmode="numeric" required>
+          <label class="label" for="patient-age">Edad</label>
+          <input type="number" id="patient-age" name="age" min="14" max="90" inputmode="numeric">
         </div>
         <div class="field">
-          <label class="label" for="carb">Carbohidratos (g)</label>
-          <input type="number" id="carb" name="carb" min="20" max="700" value="210" inputmode="numeric" required>
+          <label class="label" for="patient-weight">Peso actual (kg)</label>
+          <input type="number" id="patient-weight" name="weight" min="30" max="250" step="0.1" inputmode="decimal">
         </div>
         <div class="field">
-          <label class="label" for="fat">Grasa (g)</label>
-          <input type="number" id="fat" name="fat" min="10" max="250" value="60" inputmode="numeric" required>
+          <label class="label" for="patient-weight-target">Peso objetivo (kg)</label>
+          <input type="number" id="patient-weight-target" name="weight_target" min="30" max="250" step="0.1" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label class="label" for="patient-height">Altura (cm)</label>
+          <input type="number" id="patient-height" name="height" min="120" max="220" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label class="label" for="patient-activity">Actividad</label>
+          <select id="patient-activity" name="activity">
+            <option value="1.2">Sedentario</option>
+            <option value="1.375" selected>Ligero (1-3 d/sem)</option>
+            <option value="1.55">Moderado (3-5 d/sem)</option>
+            <option value="1.725">Alto (6-7 d/sem)</option>
+            <option value="1.9">Muy alto (2x día)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="patient-goal">Objetivo</label>
+          <select id="patient-goal" name="goal">
+            <option value="0.8">Déficit (bajar grasa)</option>
+            <option value="1.0" selected>Mantener</option>
+            <option value="1.1">Superávit (ganar)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="plan-mode">Modo</label>
+          <select id="plan-mode" name="mode">
+            <option value="normal" selected>Normal</option>
+            <option value="vegetariano">Vegetariano</option>
+            <option value="vegano">Vegano</option>
+            <option value="renal">Renal</option>
+          </select>
         </div>
       </div>
 
+      <div class="field field--wide">
+        <label class="label" for="patient-conditions">Condiciones / alergias</label>
+        <input type="text" id="patient-conditions" name="conditions" autocomplete="off" placeholder="Diabetes, intolerancia a lactosa, etc.">
+      </div>
+
+      <div class="field field--wide">
+        <label class="label" for="patient-notes">Notas</label>
+        <textarea id="patient-notes" name="notes" rows="3" placeholder="Hábitos, sesiones anteriores, comentarios..."></textarea>
+      </div>
+
       <div class="smae-form-actions">
-        <button type="submit" class="closing-cta-btn">Calcular plan →</button>
-        <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-smae-from-macros>Pegar link de /macros</button>
+        <button type="button" class="closing-cta-btn" data-smae-new-patient>Calcular plan →</button>
       </div>
     </form>
   </section>
 
+  <!-- Plan -->
   <section class="section section--tight" id="plan" data-smae-plan-section hidden>
     <div class="section-head">
       <h2 class="section-title">Plan</h2>
@@ -141,13 +183,11 @@
     </div>
 
     <div class="smae-plan">
-      <div class="smae-groups" data-smae-groups>
-        <!-- 16 grupos generados dinámicamente -->
-      </div>
+      <div class="smae-groups" data-smae-groups></div>
 
       <aside class="smae-totals" data-smae-totals>
         <div class="smae-totals-head">
-          <span class="label">[ Totales calculados ]</span>
+          <span class="label">[ Totales ]</span>
         </div>
         <ul class="smae-totals-list">
           <li><span class="label">Kcal</span><strong data-total="kcal">0</strong><span class="smae-target" data-target="kcal">/ 0</span></li>
@@ -156,6 +196,16 @@
           <li><span class="label">Grasa</span><strong data-total="fat">0</strong><span class="smae-target" data-target="fat">/ 0 g</span></li>
         </ul>
         <p class="smae-totals-hint label" data-smae-deviation>± 0%</p>
+
+        <div class="smae-kcal-deltas">
+          <span class="label">[ Ajuste rápido kcal ]</span>
+          <div class="smae-kcal-deltas-row">
+            <button type="button" data-kcal-delta="-0.10">−10%</button>
+            <button type="button" data-kcal-delta="-0.05">−5%</button>
+            <button type="button" data-kcal-delta="0.05">+5%</button>
+            <button type="button" data-kcal-delta="0.10">+10%</button>
+          </div>
+        </div>
       </aside>
     </div>
 
@@ -164,31 +214,41 @@
       <span class="label">[ Editable ]</span>
     </div>
 
-    <div class="smae-meals" data-smae-meals>
-      <!-- 5 tiempos -->
+    <div class="field field--wide" style="max-width: 320px; margin-bottom: 24px;">
+      <label class="label" for="meals-preset">Preset</label>
+      <select id="meals-preset" name="meals-preset">
+        <option value="estandar-5" selected>5 tiempos (25/10/30/10/25)</option>
+        <option value="tres-comidas">3 comidas (30/40/30)</option>
+        <option value="pre-post-entreno">Pre/Post entreno</option>
+      </select>
     </div>
+
+    <div class="smae-meals" data-smae-meals></div>
 
     <div class="smae-form-actions" style="margin-top: 32px;">
       <button type="button" class="closing-cta-btn" data-smae-save>Guardar plan</button>
       <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-smae-recalc>Recalcular base</button>
-      <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-smae-export>Exportar JSON</button>
+      <button type="button" class="closing-cta-btn" data-smae-print hidden>Imprimir / PDF →</button>
     </div>
   </section>
 
+  <!-- Histórico -->
+  <section class="section section--tight" id="historial" hidden>
+    <div class="section-head">
+      <h2 class="section-title">Histórico</h2>
+      <span class="label">[ Peso a través de planes ]</span>
+    </div>
+    <div data-smae-historial></div>
+  </section>
+
+  <!-- Pacientes guardados -->
   <section class="section section--tight" id="pacientes">
     <div class="section-head">
-      <h2 class="section-title">Pacientes guardados</h2>
+      <h2 class="section-title">Pacientes</h2>
       <span class="label" data-smae-count>[ 0 ]</span>
     </div>
     <div class="smae-patients" data-smae-patients>
-      <p class="smae-empty label">[ Aún no hay pacientes guardados ]</p>
-    </div>
-    <div class="smae-form-actions" style="margin-top: 24px;">
-      <label class="closing-cta-btn closing-cta-btn--ghost" style="cursor: pointer;">
-        Importar JSON
-        <input type="file" accept="application/json" data-smae-import hidden>
-      </label>
-      <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-smae-export-all>Exportar todo</button>
+      <p class="smae-empty label">[ Cargando... ]</p>
     </div>
   </section>
 
@@ -199,17 +259,21 @@
     </div>
     <div class="legal">
       <p>
-        El cálculo base reparte los macros objetivo en los 16 grupos del Sistema Mexicano de Alimentos Equivalentes (SMAE) usando los aportes nutrimentales estándar. El reparto inicial es heurístico y siempre editable: ajusta cantidades por grupo y los totales se recalculan en vivo.
+        Los datos del paciente alimentan el cálculo: Mifflin-St Jeor para TMB, multiplicador de actividad y objetivo, 1.8 g/kg de proteína por defecto, 25% de las kcal en grasa.
       </p>
       <p>
-        Los planes se guardan en este navegador (localStorage). No se sincronizan entre dispositivos. Usa <strong>Exportar todo</strong> como respaldo. Para acceso multi-dispositivo, migrar a backend en versión siguiente.
+        El reparto en los 16 grupos del SMAE se ajusta según el modo (normal, vegetariano, vegano, renal). Editas en vivo con steppers, los totales se recalculan al instante. Los ejemplos de alimentos por grupo aparecen en el PDF del paciente.
       </p>
       <p>
-        Aportes por equivalencia (referencia SMAE):<br/>
-        Verduras 25 kcal · Frutas 60 · Cereales s/grasa 70 · Cereales c/grasa 115 · Leguminosas 120 · AOA muy bajo 40 · AOA bajo 55 · AOA moderado 75 · AOA alto 100 · Leche descremada 95 · Leche semi 110 · Leche entera 150 · Aceites s/proteína 45 · Aceites c/proteína 70 · Azúcar s/grasa 40 · Azúcar c/grasa 85.
+        Persistencia en Cloudflare D1 (multi-device). Todos los datos están protegidos por password.
       </p>
     </div>
   </section>
+
+  </div>
+
+  <!-- Print area (hidden hasta print) -->
+  <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <footer class="footer">
     <div>
@@ -235,6 +299,6 @@
   <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="/scroll.js?v=4"></script>
   <script src="/smae-ascii.js?v=1" defer></script>
-  <script src="/smae.js?v=2" defer></script>
+  <script src="/smae.js?v=3" defer></script>
 </body>
 </html>

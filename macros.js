@@ -112,6 +112,16 @@
   form.addEventListener('input', recalc);
   form.addEventListener('change', recalc);
 
+  const toSmaeBtn = document.querySelector('[data-macros-to-smae]');
+  if (toSmaeBtn) {
+    toSmaeBtn.addEventListener('click', (e) => {
+      // Pasa los inputs al SMAE; el SMAE los usa para auto-llenar el form de paciente
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = '/smae?' + params.toString();
+    });
+  }
+
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
       try {

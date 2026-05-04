@@ -1,9 +1,19 @@
 name = "prado-mx-web"
+main = "src/worker.js"
 compatibility_date = "2026-04-01"
 
-# Sirve los archivos de la raiz del repo como static assets.
+# Sirve los archivos estáticos cuando no hay match en /api/*.
 # `_headers` y `_redirects` son consumidos nativamente por Workers.
 [assets]
 directory = "./"
+binding = "ASSETS"
 html_handling = "auto-trailing-slash"
 not_found_handling = "none"
+
+# D1 database para SMAE (herramienta interna de Hugo).
+# Password de acceso se define con: wrangler secret put SMAE_PASSWORD
+[[d1_databases]]
+binding = "DB"
+database_name = "prado-smae"
+database_id = "52c4160e-5f31-446b-97a3-d6537078ca9d"
+migrations_dir = "migrations"
