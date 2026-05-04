@@ -32,21 +32,16 @@ export default {
 async function handleApi(request, env, url) {
   const path = url.pathname.replace('/api/smae', '');
 
-  // Auth check (excepto el endpoint de login y status)
+  // Auth deshabilitado: todos los endpoints son abiertos.
+  // Stubs que mantienen compatibilidad con el frontend viejo si quedó cache.
   if (path === '/auth' && request.method === 'POST') {
-    return await handleAuth(request, env);
+    return jsonResponse({ ok: true, token: 'open' });
   }
   if (path === '/auth' && request.method === 'GET') {
-    const ok = await isAuthed(request, env);
-    return jsonResponse({ authed: ok });
+    return jsonResponse({ authed: true });
   }
   if (path === '/auth/logout' && request.method === 'POST') {
-    return clearAuthCookie();
-  }
-
-  // Las demás rutas requieren auth
-  if (!(await isAuthed(request, env))) {
-    return jsonResponse({ error: 'unauthorized' }, 401);
+    return jsonResponse({ ok: true });
   }
 
   if (path === '/patients' && request.method === 'GET') return listPatients(env);

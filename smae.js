@@ -107,55 +107,14 @@
     return r.json();
   }
 
-  // ---------- Gate (password) ---------------------------------------------
-
-  function showGate() {
-    const gate = document.querySelector('[data-smae-gate]');
-    if (gate) gate.hidden = false;
-    const main = document.querySelector('[data-smae-main]');
-    if (main) main.hidden = true;
-  }
-
+  // ---------- Gate deshabilitado -----------------------------------------
+  // Auth removido. Las funciones quedan como no-op por compatibilidad.
+  function showGate() {}
   function hideGate() {
     const gate = document.querySelector('[data-smae-gate]');
     if (gate) gate.hidden = true;
     const main = document.querySelector('[data-smae-main]');
     if (main) main.hidden = false;
-  }
-
-  async function checkAuth() {
-    if (!getToken()) return false;
-    try {
-      // Validar token con un GET ligero a /auth
-      const r = await fetch('/api/smae/auth', {
-        method: 'GET',
-        headers: { 'authorization': 'Bearer ' + getToken() },
-      });
-      if (!r.ok) return false;
-      const j = await r.json();
-      return !!j.authed;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async function tryLogin(password) {
-    try {
-      const r = await fetch('/api/smae/auth', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password: String(password).trim() }),
-      });
-      console.log('[smae] login status:', r.status);
-      if (!r.ok) return false;
-      const data = await r.json();
-      if (data.token) setToken(data.token);
-      return true;
-    } catch (e) {
-      console.error('[smae] login error:', e);
-      return false;
-    }
   }
 
   // ---------- Algoritmo macros -> equivalencias --------------------------
@@ -703,37 +662,9 @@
   // ---------- Init ---------------------------------------------------------
 
   async function bootstrap() {
-    // Setup gate
-    const gateForm = document.querySelector('[data-smae-gate-form]');
-    if (gateForm) {
-      gateForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const input = document.querySelector('#gate-password');
-        const password = (input && input.value || '').trim();
-        if (!password) return;
-        const submitBtn = gateForm.querySelector('button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verificando...'; }
-        const err = document.querySelector('[data-smae-gate-error]');
-        if (err) err.hidden = true;
-        const ok = await tryLogin(password);
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Entrar →'; }
-        if (ok) {
-          hideGate();
-          await initApp();
-        } else {
-          if (err) err.hidden = false;
-          if (input) { input.value = ''; input.focus(); }
-        }
-      });
-    }
-
-    const authed = await checkAuth();
-    if (!authed) {
-      showGate();
-    } else {
-      hideGate();
-      await initApp();
-    }
+    // Sin gate: muestra el main directo.
+    hideGate();
+    await initApp();
   }
 
   async function initApp() {
@@ -796,13 +727,9 @@
       });
     });
 
-    // Logout
+    // Logout button removido (auth deshabilitado)
     const logoutBtn = document.querySelector('[data-smae-logout]');
-    if (logoutBtn) logoutBtn.addEventListener('click', async () => {
-      setToken(null);
-      try { await fetch('/api/smae/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
-      window.location.reload();
-    });
+    if (logoutBtn) logoutBtn.hidden = true;
 
     // Auto-fill from URL params
     autofillFromQuery();

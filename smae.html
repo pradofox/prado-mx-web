@@ -32,24 +32,7 @@
 </head>
 <body>
 
-  <!-- Gate de password -->
-  <div class="smae-gate" data-smae-gate hidden>
-    <div class="smae-gate-card">
-      <div class="smae-gate-brand">
-        <span class="label">[ PRADO · Interno ]</span>
-      </div>
-      <h1 class="smae-gate-title">SMAE</h1>
-      <p class="smae-gate-sub">Herramienta privada de Hugo Prado.</p>
-      <form class="smae-gate-form" data-smae-gate-form autocomplete="off">
-        <label class="label" for="gate-password">Password</label>
-        <input type="password" id="gate-password" name="password" inputmode="numeric" autocomplete="off" required autofocus>
-        <p class="smae-gate-error label" data-smae-gate-error hidden>[ Incorrecto ]</p>
-        <button type="submit" class="closing-cta-btn">Entrar →</button>
-      </form>
-    </div>
-  </div>
-
-  <div data-smae-main hidden>
+  <div data-smae-main>
 
   <nav class="nav">
     <a href="/" class="nav-logo" aria-label="PRADO">
@@ -68,9 +51,6 @@
       </svg>
     </a>
     <div class="nav-right">
-      <button type="button" class="theme-toggle" data-smae-logout aria-label="Cerrar sesión">
-        <span>[ Cerrar ]</span>
-      </button>
       <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
         <span data-theme-label>Dark</span>
       </button>
@@ -265,7 +245,7 @@
         El reparto en los 16 grupos del SMAE se ajusta según el modo (normal, vegetariano, vegano, renal). Editas en vivo con steppers, los totales se recalculan al instante. Los ejemplos de alimentos por grupo aparecen en el PDF del paciente.
       </p>
       <p>
-        Persistencia en Cloudflare D1 (multi-device). Todos los datos están protegidos por password.
+        Persistencia en Cloudflare D1 (multi-device). Acceso abierto vía link discreto en el footer del sitio.
       </p>
     </div>
   </section>
@@ -299,6 +279,6 @@
   <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="/scroll.js?v=4"></script>
   <script src="/smae-ascii.js?v=1" defer></script>
-  <script src="/smae.js?v=5" defer></script>
+  <script src="/smae.js?v=6" defer></script>
 </body>
 </html>
