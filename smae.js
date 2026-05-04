@@ -120,13 +120,19 @@
   }
 
   async function tryLogin(password) {
-    const r = await fetch('/api/smae/auth', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
-    return r.ok;
+    try {
+      const r = await fetch('/api/smae/auth', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: String(password).trim() }),
+      });
+      console.log('[smae] login status:', r.status);
+      return r.ok;
+    } catch (e) {
+      console.error('[smae] login error:', e);
+      return false;
+    }
   }
 
   // ---------- Algoritmo macros -> equivalencias --------------------------
@@ -679,14 +685,21 @@
     if (gateForm) {
       gateForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const password = e.target.password.value;
+        const input = document.querySelector('#gate-password');
+        const password = (input && input.value || '').trim();
+        if (!password) return;
+        const submitBtn = gateForm.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Verificando...'; }
+        const err = document.querySelector('[data-smae-gate-error]');
+        if (err) err.hidden = true;
         const ok = await tryLogin(password);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Entrar →'; }
         if (ok) {
           hideGate();
           await initApp();
         } else {
-          const err = document.querySelector('[data-smae-gate-error]');
           if (err) err.hidden = false;
+          if (input) { input.value = ''; input.focus(); }
         }
       });
     }
