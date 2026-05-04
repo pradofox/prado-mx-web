@@ -455,15 +455,57 @@
   }
 
   function fromMacros() {
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('kcal')) {
-      alert('Para importar, abre /macros y comparte el link con tus datos. Luego pégalo aquí.');
+    const input = prompt(
+      'Pega el link de /macros con los datos del paciente.\n\n' +
+      'Ejemplo: https://prado-mx.com/macros?sex=f&age=28&weight=65&height=165&activity=1.375&goal=1\n\n' +
+      'O solo los macros: kcal=1800&protein=110&carb=210&fat=60'
+    );
+    if (!input) return;
+    let params;
+    try {
+      // Acepta URL completa o solo el querystring
+      if (input.includes('?')) {
+        params = new URL(input, window.location.origin).searchParams;
+      } else {
+        params = new URLSearchParams(input.replace(/^\?/, ''));
+      }
+    } catch (e) {
+      alert('No pude leer ese link. Pega el URL completo de /macros.');
       return;
     }
-    document.querySelector('#kcal').value    = params.get('kcal') || '';
-    document.querySelector('#protein').value = params.get('protein') || '';
-    document.querySelector('#carb').value    = params.get('carb') || '';
-    document.querySelector('#fat').value     = params.get('fat') || '';
+
+    // Si vienen macros directos, usarlos
+    let kcal = params.get('kcal');
+    let protein = params.get('protein');
+    let carb = params.get('carb');
+    let fat = params.get('fat');
+
+    // Si vienen los inputs de /macros (sex/age/weight/height/activity/goal),
+    // calcular los macros aquí mismo (Mifflin-St Jeor + 1.8 g prot/kg + 25% grasa)
+    if (!kcal && params.has('weight') && params.has('height') && params.has('age')) {
+      const sex = params.get('sex') || 'f';
+      const age = parseFloat(params.get('age'));
+      const weight = parseFloat(params.get('weight'));
+      const height = parseFloat(params.get('height'));
+      const activity = parseFloat(params.get('activity')) || 1.375;
+      const goal = parseFloat(params.get('goal')) || 1.0;
+      const base = 10 * weight + 6.25 * height - 5 * age + (sex === 'm' ? 5 : -161);
+      const target = base * activity * goal;
+      kcal = Math.round(target);
+      protein = Math.round(weight * 1.8);
+      fat = Math.round((target * 0.25) / 9);
+      carb = Math.round((target - protein * 4 - fat * 9) / 4);
+    }
+
+    if (!kcal) {
+      alert('No encontré macros en ese link. Asegúrate de copiar el URL desde /macros después de calcular.');
+      return;
+    }
+
+    document.querySelector('#kcal').value    = kcal;
+    document.querySelector('#protein').value = protein || '';
+    document.querySelector('#carb').value    = carb || '';
+    document.querySelector('#fat').value     = fat || '';
   }
 
   function autofillFromQuery() {
