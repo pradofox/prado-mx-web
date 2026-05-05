@@ -134,7 +134,9 @@ async function signToken(secret) {
 async function listPatients(env) {
   const { results } = await env.DB.prepare(
     `SELECT id, name, sex, age, weight, height, weight_target, activity, goal,
-            conditions, notes, created_at, updated_at,
+            conditions, notes, email, phone, seca_link,
+            last_appointment, next_appointment, start_date,
+            created_at, updated_at,
             (SELECT COUNT(*) FROM plans WHERE plans.patient_id = patients.id) AS plan_count,
             (SELECT MAX(date) FROM plans WHERE plans.patient_id = patients.id) AS last_plan_date
      FROM patients ORDER BY updated_at DESC`
@@ -164,24 +166,32 @@ async function upsertPatient(request, env) {
   if (existing) {
     await env.DB.prepare(
       `UPDATE patients SET name=?, sex=?, age=?, weight=?, height=?, weight_target=?,
-       activity=?, goal=?, conditions=?, notes=?, updated_at=? WHERE id=?`
+       activity=?, goal=?, conditions=?, notes=?,
+       email=?, phone=?, seca_link=?, last_appointment=?, next_appointment=?, start_date=?,
+       updated_at=? WHERE id=?`
     ).bind(
       data.name, data.sex || null, data.age || null, data.weight || null,
       data.height || null, data.weight_target || null,
       data.activity || null, data.goal || null,
       data.conditions || null, data.notes || null,
+      data.email || null, data.phone || null, data.seca_link || null,
+      data.last_appointment || null, data.next_appointment || null, data.start_date || null,
       now, id
     ).run();
   } else {
     await env.DB.prepare(
       `INSERT INTO patients (id, name, sex, age, weight, height, weight_target,
-       activity, goal, conditions, notes, created_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+       activity, goal, conditions, notes,
+       email, phone, seca_link, last_appointment, next_appointment, start_date,
+       created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       id, data.name, data.sex || null, data.age || null, data.weight || null,
       data.height || null, data.weight_target || null,
       data.activity || null, data.goal || null,
       data.conditions || null, data.notes || null,
+      data.email || null, data.phone || null, data.seca_link || null,
+      data.last_appointment || null, data.next_appointment || null, data.start_date || null,
       now, now
     ).run();
   }
@@ -215,8 +225,10 @@ async function savePlan(request, env, patientId) {
   const now = new Date().toISOString();
   await env.DB.prepare(
     `INSERT INTO plans (id, patient_id, date, macros, equivalencias, meals,
-     meals_distribution, mode, examples, weight_at_plan, notes, created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+     meals_distribution, mode, examples, menu_options, weight_at_plan, notes,
+     cita_num, muslo, pierna, bicep, bicep_flex, cintura, cadera, ombligo,
+     created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(
     id, patientId, data.date || now,
     JSON.stringify(data.macros || {}),
@@ -225,12 +237,23 @@ async function savePlan(request, env, patientId) {
     JSON.stringify(data.meals_distribution || null),
     data.mode || 'normal',
     JSON.stringify(data.examples || {}),
+    JSON.stringify(data.menu_options || {}),
     data.weight_at_plan || null,
     data.notes || null,
+    data.cita_num || null,
+    data.muslo || null,
+    data.pierna || null,
+    data.bicep || null,
+    data.bicep_flex || null,
+    data.cintura || null,
+    data.cadera || null,
+    data.ombligo || null,
     now
   ).run();
-  // Touch updated_at del paciente
-  await env.DB.prepare(`UPDATE patients SET updated_at = ? WHERE id = ?`).bind(now, patientId).run();
+  // Touch updated_at del paciente y last_appointment
+  await env.DB.prepare(
+    `UPDATE patients SET updated_at = ?, last_appointment = ? WHERE id = ?`
+  ).bind(now, data.date || now, patientId).run();
   return jsonResponse({ id });
 }
 
@@ -242,6 +265,7 @@ function parsePlanRow(row) {
     meals: safeParse(row.meals),
     meals_distribution: safeParse(row.meals_distribution),
     examples: safeParse(row.examples),
+    menu_options: safeParse(row.menu_options),
   };
 }
 

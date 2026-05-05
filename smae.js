@@ -127,48 +127,44 @@
     const isVegan = (mode === 'vegano');
     const isRenal = (mode === 'renal');
 
-    // Pisos nutricionales por kcal
-    eq['verduras'] = Math.max(3, Math.round(macros.kcal / 600));
-    eq['frutas']   = Math.max(2, Math.round(macros.kcal / 500));
+    // Pisos nutricionales por kcal (siempre redondeado hacia arriba)
+    eq['verduras'] = Math.max(3, Math.ceil(macros.kcal / 600));
+    eq['frutas']   = Math.max(2, Math.ceil(macros.kcal / 500));
 
-    // Leche solo si no vegano
+    // Leche: 1 eq si normal/veg, sin leche si vegano
     if (!isVegan) {
-      eq[isRenal ? 'leche-d' : 'leche-s'] = isRenal ? 0.5 : 1;
+      eq[isRenal ? 'leche-d' : 'leche-s'] = 1;
     }
 
-    // Leguminosas: más en vegano/vegetariano para cubrir proteína
     eq['leguminosas'] = isVegan ? 3 : (isVeg ? 2 : 1);
 
     let covered = sum(eq);
 
-    // Proteína restante
+    // Proteína restante (siempre redondeo hacia arriba)
     let restP = macros.protein - covered.p;
     if (restP > 0) {
       if (isVegan) {
-        // Sumar más leguminosas
-        const extra = Math.max(0, Math.round(restP / 8));
+        const extra = Math.max(0, Math.ceil(restP / 8));
         eq['leguminosas'] = (eq['leguminosas'] || 0) + extra;
       } else if (isVeg) {
-        // AOA reemplazado por más leche + huevo (asumimos huevo en AOA moderado)
-        eq['aoa-m'] = Math.max(0, Math.round(restP / 7));
+        eq['aoa-m'] = Math.max(0, Math.ceil(restP / 7));
       } else if (isRenal) {
-        // AOA muy bajo en grasa, conservadora
-        eq['aoa-mb'] = Math.max(0, Math.round(restP / 7));
+        eq['aoa-mb'] = Math.max(0, Math.ceil(restP / 7));
       } else {
-        eq['aoa-b'] = Math.max(0, Math.round(restP / 7));
+        eq['aoa-b'] = Math.max(0, Math.ceil(restP / 7));
       }
     }
 
     covered = sum(eq);
     let restC = macros.carb - covered.c;
     if (restC > 0) {
-      eq['cereales-sg'] = Math.max(0, Math.round(restC / 15));
+      eq['cereales-sg'] = Math.max(0, Math.ceil(restC / 15));
     }
 
     covered = sum(eq);
     let restG = macros.fat - covered.g;
     if (restG > 0) {
-      eq['aceites-sp'] = Math.max(0, Math.round(restG / 5));
+      eq['aceites-sp'] = Math.max(0, Math.ceil(restG / 5));
     }
 
     return eq;
@@ -197,11 +193,14 @@
       if (total === 0) return;
       let assigned = 0;
       meals.forEach((m, idx) => {
+        // Redondea hacia arriba siempre (no medias equivalencias)
         const portion = idx === meals.length - 1
-          ? total - assigned
-          : Math.round(total * m.pct * 2) / 2;
-        out[m.key][g.key] = Math.max(0, portion);
-        assigned += out[m.key][g.key];
+          ? Math.max(0, total - assigned)
+          : Math.ceil(total * m.pct);
+        // Si ya superamos el total, este tiempo va con 0
+        const safe = Math.min(portion, Math.max(0, total - assigned));
+        out[m.key][g.key] = safe;
+        assigned += safe;
       });
     });
     return out;
@@ -330,10 +329,11 @@
     if (!container || !state.currentPlan) return;
     container.innerHTML = '';
     const meals = getMeals();
+    if (!state.currentPlan.menu_options) state.currentPlan.menu_options = {};
     meals.forEach(m => {
       const card = document.createElement('div');
       card.className = 'smae-meal';
-      const items = GROUPS
+      const eqList = GROUPS
         .filter(g => (state.currentPlan.meals[m.key] && state.currentPlan.meals[m.key][g.key] || 0) > 0)
         .map(g => `
           <li>
@@ -342,15 +342,73 @@
             <strong>${formatN(state.currentPlan.meals[m.key][g.key])}</strong>
           </li>
         `).join('');
+      const opts = state.currentPlan.menu_options[m.key] || ['', '', ''];
       card.innerHTML = `
         <div class="smae-meal-head">
           <span class="label">[ ${m.label} ]</span>
           <span class="label smae-meal-pct">${Math.round(m.pct * 100)}%</span>
         </div>
-        ${items ? `<ul class="smae-meal-list">${items}</ul>` : '<p class="smae-empty label">[ vacío ]</p>'}
+        ${eqList ? `<ul class="smae-meal-list">${eqList}</ul>` : '<p class="smae-empty label">[ vacío ]</p>'}
+        <div class="smae-meal-options">
+          <div class="smae-meal-options-head">
+            <span class="label">[ 3 opciones de platillo ]</span>
+            <button type="button" class="smae-meal-autofill label" data-meal="${m.key}">Auto-llenar →</button>
+          </div>
+          <div class="smae-meal-options-grid">
+            <textarea data-meal-opt="${m.key}" data-opt-idx="0" placeholder="Opción 1: descripción del platillo con porciones" rows="3">${escapeHTML(opts[0] || '')}</textarea>
+            <textarea data-meal-opt="${m.key}" data-opt-idx="1" placeholder="Opción 2" rows="3">${escapeHTML(opts[1] || '')}</textarea>
+            <textarea data-meal-opt="${m.key}" data-opt-idx="2" placeholder="Opción 3" rows="3">${escapeHTML(opts[2] || '')}</textarea>
+          </div>
+        </div>
       `;
       container.appendChild(card);
     });
+
+    // Listeners para textareas
+    container.querySelectorAll('textarea[data-meal-opt]').forEach(ta => {
+      ta.addEventListener('input', () => {
+        const mealKey = ta.dataset.mealOpt;
+        const idx = parseInt(ta.dataset.optIdx, 10);
+        if (!state.currentPlan.menu_options[mealKey]) state.currentPlan.menu_options[mealKey] = ['', '', ''];
+        state.currentPlan.menu_options[mealKey][idx] = ta.value;
+      });
+    });
+    // Listeners para autofill
+    container.querySelectorAll('.smae-meal-autofill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mealKey = btn.dataset.meal;
+        const sugerencias = generarSugerenciasMenu(mealKey);
+        state.currentPlan.menu_options[mealKey] = sugerencias;
+        renderMeals();
+      });
+    });
+  }
+
+  // Genera 3 opciones de platillo a partir de las equivalencias del tiempo +
+  // los foods seleccionados por grupo. Cada opción rota entre los foods
+  // disponibles para dar variación.
+  function generarSugerenciasMenu(mealKey) {
+    if (!state.currentPlan) return ['', '', ''];
+    const groupsWithEq = GROUPS.filter(g =>
+      (state.currentPlan.meals[mealKey] && state.currentPlan.meals[mealKey][g.key] || 0) > 0
+    );
+    if (groupsWithEq.length === 0) return ['', '', ''];
+
+    const opciones = [0, 1, 2].map(optIdx => {
+      const items = groupsWithEq.map(g => {
+        const eqAmount = state.currentPlan.meals[mealKey][g.key];
+        // Buscar foods seleccionados de este grupo
+        const selectedIds = (state.currentPlan.examples && state.currentPlan.examples[g.key]) || [];
+        let pool = state.foods.filter(f => selectedIds.includes(f.id));
+        // Si no hay seleccionados, usar todos los del grupo
+        if (pool.length === 0) pool = state.foods.filter(f => f.group_key === g.key);
+        if (pool.length === 0) return `${formatN(eqAmount)} ${g.label}`;
+        const food = pool[optIdx % pool.length];
+        return `${formatN(eqAmount)} ${g.label.toLowerCase()}: ${food.name} (${food.portion}${eqAmount > 1 ? ' x ' + formatN(eqAmount) : ''})`;
+      });
+      return items.join('\n');
+    });
+    return opciones;
   }
 
   function formatN(n) {
@@ -422,14 +480,13 @@
           meals: last.meals,
           mode: last.mode || 'normal',
           examples: last.examples || {},
+          menu_options: last.menu_options || {},
         };
-        if (last.meals_distribution) {
-          // No editing custom; keep preset for now
-        }
       } else {
         state.currentPlan = null;
       }
       populatePatientForm(patient);
+      populateMeasurements(last);
       if (state.currentPlan) {
         showPlanSection();
         renderGroups();
@@ -466,12 +523,32 @@
     set('#patient-height', p.height);
     set('#patient-conditions', p.conditions);
     set('#patient-notes', p.notes);
+    set('#patient-email', p.email);
+    set('#patient-phone', p.phone);
+    set('#patient-seca', p.seca_link);
+    set('#patient-next-appt', p.next_appointment);
     if (p.sex) {
       const r = document.querySelector(`input[name="patient-sex"][value="${p.sex}"]`);
       if (r) r.checked = true;
     }
     if (p.activity) set('#patient-activity', p.activity);
     if (p.goal) set('#patient-goal', p.goal);
+  }
+
+  function populateMeasurements(plan) {
+    if (!plan) return;
+    const set = (sel, val) => {
+      const el = document.querySelector(sel);
+      if (el) el.value = val == null ? '' : val;
+    };
+    set('#meas-cita', plan.cita_num);
+    set('#meas-muslo', plan.muslo);
+    set('#meas-pierna', plan.pierna);
+    set('#meas-bicep', plan.bicep);
+    set('#meas-bicep-flex', plan.bicep_flex);
+    set('#meas-cintura', plan.cintura);
+    set('#meas-cadera', plan.cadera);
+    set('#meas-ombligo', plan.ombligo);
   }
 
   function readPatientForm() {
@@ -481,6 +558,7 @@
       const n = parseFloat(v);
       return Number.isFinite(n) ? n : null;
     };
+    const str = (k) => (fd.get(k) || '').toString().trim() || null;
     return {
       name: (fd.get('name') || '').toString().trim(),
       sex: fd.get('patient-sex') || null,
@@ -490,8 +568,31 @@
       height: num('height'),
       activity: num('activity'),
       goal: num('goal'),
-      conditions: (fd.get('conditions') || '').toString().trim() || null,
-      notes: (fd.get('notes') || '').toString().trim() || null,
+      conditions: str('conditions'),
+      notes: str('notes'),
+      email: str('email'),
+      phone: str('phone'),
+      seca_link: str('seca_link'),
+      next_appointment: str('next_appointment'),
+    };
+  }
+
+  function readMeasurements() {
+    const fd = new FormData(document.querySelector('[data-smae-patient-form]'));
+    const num = (k) => {
+      const v = fd.get(k);
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    return {
+      cita_num: num('cita_num'),
+      muslo: num('muslo'),
+      pierna: num('pierna'),
+      bicep: num('bicep'),
+      bicep_flex: num('bicep_flex'),
+      cintura: num('cintura'),
+      cadera: num('cadera'),
+      ombligo: num('ombligo'),
     };
   }
 
@@ -562,11 +663,12 @@
     }
     const meals = getMeals();
     try {
-      // Save patient
+      // Save patient (incluyendo nuevos campos contacto/seca/next appt)
       const patientData = readPatientForm();
       patientData.id = state.currentPatient.id;
       const { id: patientId } = await api('/patients', { method: 'POST', body: patientData });
-      // Save plan
+      // Save plan con antropométricos + menu_options
+      const meas = readMeasurements();
       await api(`/patients/${patientId}/plans`, {
         method: 'POST',
         body: {
@@ -577,8 +679,10 @@
           meals_distribution: meals.map(m => ({ key: m.key, pct: m.pct, label: m.label })),
           mode: state.currentPlan.mode || 'normal',
           examples: state.currentPlan.examples || {},
+          menu_options: state.currentPlan.menu_options || {},
           weight_at_plan: patientData.weight || null,
           notes: patientData.notes || null,
+          ...meas,
         },
       });
       flashSaved();
@@ -740,78 +844,196 @@
     const root = document.querySelector('[data-smae-print-area]');
     if (!root) return;
     const meals = getMeals();
-    const t = sum(state.currentPlan.equivalencias);
     const target = state.currentPlan.macros;
-    const exampleNames = (groupKey) => {
-      const ids = (state.currentPlan.examples && state.currentPlan.examples[groupKey]) || [];
-      return ids.map(id => {
-        const f = state.foods.find(x => x.id === id);
-        return f ? `${f.name} (${f.portion})` : null;
-      }).filter(Boolean);
+    const meas = readMeasurements();
+
+    // Macronutrientes en formato Hugo: %, GR, KCAL
+    const totalKcal = target.kcal;
+    const ptKcal = target.protein * 4;
+    const lpKcal = target.fat * 9;
+    const hcKcal = target.carb * 4;
+    const ptPct = totalKcal > 0 ? (ptKcal / totalKcal * 100).toFixed(2) : 0;
+    const lpPct = totalKcal > 0 ? (lpKcal / totalKcal * 100).toFixed(2) : 0;
+    const hcPct = totalKcal > 0 ? (hcKcal / totalKcal * 100).toFixed(2) : 0;
+
+    const RECOMENDACIONES = [
+      'Cocina a la plancha, al vapor, al carbón, hervido, al horno o en caldo. Te permite tener diferentes texturas y sabores sin necesidad de agregar aceite.',
+      'Prepara tus comidas por adelantado. Cocinar dos o tres platillos en una ocasión te ayuda a evitar romper tu plan.',
+      'En ocasiones especiales donde no puedas evitar romper la dieta, mide y controla lo que consumas, o ve preparado con algún snack o colación de los que tengas en tu plan.',
+      'Evita malos hábitos como desvelarte, fumar e ingerir bebidas alcohólicas o cualquier tipo de drogas. Interrumpen las señales de preservación de masa muscular o impiden que crezca.',
+      'Duerme 7-8 horas por lo menos. Apaga las luces u oscurece tu cuarto antes de dormir. Temperatura promedio de 18-21° C dentro del cuarto.',
+      'Busca hábitos que disminuyan tu estrés: respirar profundo, meditar, momentos de relajación, introspección constante.',
+      'Tomate fotos 1 vez por semana. Observa tu digestión, niveles de energía, rendimiento laboral y escolar.',
+      'La terapia psicológica y el manejo correcto de las emociones te brindarán un pilar fuerte para que tengas éxito.',
+    ];
+
+    const LIBRES = [
+      'Especias en general (laurel, orégano, comino, pimienta, paprika, curry, jengibre, cebolla en polvo, ajo en polvo, clavo, tomillo, etc.)',
+      'Café negro 2 tazas al día',
+      'Refresco light 1 taza al día',
+      'Tés o infusiones de hojas naturales 2 tazas al día',
+      'Stevia, Splenda o Monk Fruit',
+    ];
+
+    const EVITAR = [
+      'Agregar grasas o aceite para cocinar tus alimentos',
+      'Cualquier alimento que no se mencione en el menú',
+      'Aceite de girasol, maíz, soya, canola, uva, cáñamo o cártamo',
+    ];
+
+    const ERRORES = [
+      ['No medir o pesar las porciones que te indique', 'Si no mides la comida, no sabes cuánto estás comiendo. Apégate a las porciones y gramos, medidas de tazas, cucharas o cucharaditas.'],
+      ['No tomar la cantidad recomendada de agua', 'No siempre es fácil consumir agua si no tienes el hábito, pero te mantiene hidratado y satisfecho.'],
+      ['No terminarse la comida', 'Si consumes menos calorías de las indicadas, podrías hacer que tu apetito aumente después.'],
+      ['Pesarte constantemente', 'El peso no lo es todo. Como estás haciendo ejercicio, también aumenta tu masa muscular y disminuye la grasa, así que el peso puede mantenerse igual.'],
+      ['Agregar aceite, sazonadores, salsa o aderezos sin mi recomendación', 'Estos alimentos suman calorías y arruinan el plan. Pregúntame antes de utilizarlos.'],
+      ['Comprar un producto diferente al recomendado', 'Cambiar productos puede cambiar la calidad nutricional y su valor calórico. Pregúntame por sustitutos.'],
+      ['Consumir productos o alimentos extras', 'Todo alimento es calórico. Productos con fama de saludables no siempre lo son.'],
+      ['Confiar en el etiquetado de productos light', 'La publicidad suele ser engañosa. Avísame antes de consumirlos.'],
+    ];
+
+    // Histórico antropométrico (para columnas en tabla): juntar todos los planes con mediciones
+    // se construye después con datos cargados; por ahora solo muestra el actual
+    const measRow = (label, key) => {
+      const v = meas[key];
+      return v != null ? `<td><strong>${v}</strong></td>` : '<td>-</td>';
     };
-    root.innerHTML = `
-      <div class="print-letterhead">
-        <div class="print-brand">PRADO · Hugo Prado</div>
-        <div class="print-cred">Nutriólogo licenciado UANL</div>
-        <div class="print-contact">contacto@prado-mx.com · prado-mx.com</div>
-      </div>
-      <h1 class="print-title">Plan de equivalencias</h1>
-      <table class="print-meta">
-        <tr><th>Paciente</th><td>${escapeHTML(state.currentPatient.name)}</td>
-            <th>Fecha</th><td>${formatDate(new Date().toISOString())}</td></tr>
-        ${state.currentPatient.weight ? `<tr><th>Peso</th><td>${state.currentPatient.weight} kg${state.currentPatient.weight_target ? ' → ' + state.currentPatient.weight_target + ' kg' : ''}</td>
-            <th>Modo</th><td>${MODES[state.currentPlan.mode || 'normal']}</td></tr>` : ''}
-      </table>
-      <h2 class="print-h2">Macros objetivo</h2>
-      <table class="print-macros">
+
+    const citaNum = meas.cita_num ? `${meas.cita_num}ª Cita` : 'Cita actual';
+    const fecha = formatDate(new Date().toISOString());
+
+    // Menú semanal con 3 opciones por tiempo
+    const menuOpts = state.currentPlan.menu_options || {};
+    const mealRows = meals.map(m => {
+      const eqAbbrs = GROUPS
+        .filter(g => (state.currentPlan.meals[m.key] && state.currentPlan.meals[m.key][g.key] || 0) > 0)
+        .map(g => `${g.abbr} ${formatN(state.currentPlan.meals[m.key][g.key])}`)
+        .join(' · ');
+      const opts = menuOpts[m.key] || ['', '', ''];
+      return `
         <tr>
-          <th>Kcal</th><td>${target.kcal}</td>
-          <th>Proteína</th><td>${target.protein} g</td>
-          <th>Carbohidratos</th><td>${target.carb} g</td>
-          <th>Grasa</th><td>${target.fat} g</td>
+          <td class="print-meal-name">
+            <strong>${m.label.toUpperCase()}</strong>
+            <div class="print-meal-eqs">${eqAbbrs}</div>
+          </td>
+          <td>${escapeMultiline(opts[0])}</td>
+          <td>${escapeMultiline(opts[1])}</td>
+          <td>${escapeMultiline(opts[2])}</td>
         </tr>
-        <tr class="print-actual">
-          <th>Calculado</th><td>${Math.round(t.kcal)}</td>
-          <th></th><td>${Math.round(t.p)} g</td>
-          <th></th><td>${Math.round(t.c)} g</td>
-          <th></th><td>${Math.round(t.g)} g</td>
-        </tr>
-      </table>
-      <h2 class="print-h2">Equivalencias por grupo</h2>
-      <table class="print-eq">
-        <thead><tr><th>Grupo</th><th>Eq.</th><th>Ejemplos</th></tr></thead>
-        <tbody>
-          ${GROUPS.filter(g => (state.currentPlan.equivalencias[g.key] || 0) > 0).map(g => `
+      `;
+    }).join('');
+
+    root.innerHTML = `
+      <!-- Página 1: portada -->
+      <section class="print-page print-cover">
+        <div class="print-cover-mark">
+          <span class="print-bracket">[</span>
+          <span class="print-prado">PRADO</span>
+          <span class="print-bracket">]</span>
+        </div>
+        <div class="print-cover-x">x</div>
+        <div class="print-cover-name">${escapeHTML(state.currentPatient.name).toUpperCase()}</div>
+        ${meas.cita_num ? `<div class="print-cover-cita">${citaNum}</div>` : ''}
+      </section>
+
+      <!-- Página 2: macros + antropométricos -->
+      <section class="print-page">
+        <h2 class="print-h2">[ Macronutrientes ]</h2>
+        <table class="print-macros-tbl">
+          <thead><tr><th></th><th>%</th><th>GR</th><th>KCAL</th></tr></thead>
+          <tbody>
+            <tr><th>PT</th><td>${ptPct}</td><td>${target.protein}</td><td>${ptKcal}</td></tr>
+            <tr><th>LP</th><td>${lpPct}</td><td>${target.fat}</td><td>${lpKcal}</td></tr>
+            <tr><th>HC</th><td>${hcPct}</td><td>${target.carb}</td><td>${hcKcal}</td></tr>
+            <tr class="print-total"><th>TOTAL</th><td>100</td><td></td><td>${totalKcal}</td></tr>
+          </tbody>
+        </table>
+
+        <h2 class="print-h2">[ Tabla de resultados antropométricos ]</h2>
+        <table class="print-antro">
+          <thead>
             <tr>
-              <td><strong>${g.label}</strong> <span class="label">${g.kcal} kcal</span></td>
-              <td>${formatN(state.currentPlan.equivalencias[g.key])}</td>
-              <td>${exampleNames(g.key).join(' · ') || '<span class="label">-</span>'}</td>
+              <th>Datos</th>
+              <th>${citaNum}<br/><span class="print-fecha">${fecha}</span></th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <h2 class="print-h2">Distribución por tiempos</h2>
-      <table class="print-meals">
-        <thead><tr><th>Tiempo</th><th>%</th><th>Equivalencias</th></tr></thead>
-        <tbody>
-          ${meals.map(m => `
+          </thead>
+          <tbody>
+            <tr><th>Muslo</th>${measRow('Muslo', 'muslo')}</tr>
+            <tr><th>Pierna</th>${measRow('Pierna', 'pierna')}</tr>
+            <tr><th>Bícep</th>${measRow('Bícep', 'bicep')}</tr>
+            <tr><th>Bícep flex</th>${measRow('Bícep flex', 'bicep_flex')}</tr>
+            <tr><th>Cintura</th>${measRow('Cintura', 'cintura')}</tr>
+            <tr><th>Cadera</th>${measRow('Cadera', 'cadera')}</tr>
+            <tr><th>Ombligo</th>${measRow('Ombligo', 'ombligo')}</tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Página 3: recomendaciones -->
+      <section class="print-page">
+        <h2 class="print-h2">[ Recomendaciones ]</h2>
+        <ul class="print-list">
+          ${RECOMENDACIONES.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </section>
+
+      <!-- Página 4: alimentos libres y a evitar -->
+      <section class="print-page">
+        <h2 class="print-h2">[ Alimentos libres ]</h2>
+        <ul class="print-list">${LIBRES.map(r => `<li>${r}</li>`).join('')}</ul>
+        <h2 class="print-h2">[ Alimentos que debes evitar ]</h2>
+        <ul class="print-list">${EVITAR.map(r => `<li>${r}</li>`).join('')}</ul>
+      </section>
+
+      <!-- Página 5: errores frecuentes -->
+      <section class="print-page">
+        <h2 class="print-h2">[ Errores frecuentes que pueden provocar que abandones el plan ]</h2>
+        <ul class="print-list">
+          ${ERRORES.map(([t, d]) => `<li><strong>${t}.</strong> ${d}</li>`).join('')}
+        </ul>
+      </section>
+
+      <!-- Página 6: menú semanal -->
+      <section class="print-page print-menu-page">
+        <h2 class="print-h2">[ Menú semanal ]</h2>
+        <p class="print-leyenda">Pza: pieza · c: cucharadita · C: cucharada · T: taza · gr: gramos · reb: rebanada</p>
+        <table class="print-menu">
+          <thead>
             <tr>
-              <td><strong>${m.label}</strong></td>
-              <td>${Math.round(m.pct * 100)}%</td>
-              <td>
-                ${GROUPS
-                  .filter(g => (state.currentPlan.meals[m.key] && state.currentPlan.meals[m.key][g.key] || 0) > 0)
-                  .map(g => `${formatN(state.currentPlan.meals[m.key][g.key])} ${g.label.toLowerCase()}`)
-                  .join(' · ') || '<span class="label">-</span>'
-                }
-              </td>
+              <th>Tiempo</th>
+              <th>Opción 1</th>
+              <th>Opción 2</th>
+              <th>Opción 3</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      ${state.currentPatient.notes ? `<h2 class="print-h2">Notas</h2><p class="print-notes">${escapeHTML(state.currentPatient.notes)}</p>` : ''}
-      <p class="print-footer">Plan generado con Sistema Mexicano de Equivalentes (SMAE). Sujeto a calibración profesional. Hugo Prado, nutriólogo licenciado UANL.</p>
+          </thead>
+          <tbody>${mealRows}</tbody>
+        </table>
+        <p class="print-leyenda print-leyenda-foot">
+          Verduras: ejotes, nopales, espinacas, acelgas, coliflor, brócoli, zanahoria, chayote, espárragos, champiñones, lechuga, cebolla, jitomate, pimiento morrón.
+        </p>
+      </section>
+
+      <!-- Página 7: cierre -->
+      <section class="print-page print-close">
+        <p class="print-close-msg">¡Recuerda que es un proceso, y el proceso no es lineal! Habrá días buenos y días malos, todo gran esfuerzo traerá un gran resultado.</p>
+        <div class="print-close-pillars">
+          <div>PACIENCIA</div>
+          <div>PERSEVERANCIA</div>
+          <div>DISCIPLINA</div>
+        </div>
+        <p class="print-close-wish">¡Te deseo muchísimo éxito!</p>
+        <div class="print-cover-mark print-close-mark">
+          <span class="print-bracket">[</span>
+          <span class="print-prado">PRADO</span>
+          <span class="print-bracket">]</span>
+        </div>
+      </section>
     `;
+  }
+
+  function escapeMultiline(s) {
+    if (!s) return '<span class="print-empty">-</span>';
+    return escapeHTML(s).replace(/\n/g, '<br/>');
   }
 
   function autofillFromQuery() {

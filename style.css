@@ -1435,111 +1435,330 @@ a.line-card:hover { text-decoration: none; }
 }
 .smae-gate-error { color: var(--gray); }
 
+/* Antropométricos collapsible inside form */
+.smae-extra-section {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  border-top: 1px solid var(--divider);
+  padding-top: 16px;
+}
+.smae-extra-section summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 0;
+  color: var(--gray);
+}
+.smae-extra-section summary::-webkit-details-marker { display: none; }
+.smae-extra-section[open] summary { color: var(--fg); }
+.smae-extra-section .field-row { margin-top: 16px; }
+
+/* Meal options textarea (3 platillos por tiempo) */
+.smae-meal-options { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--divider); }
+.smae-meal-options-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.smae-meal-options-head .label { color: var(--gray); }
+.smae-meal-autofill {
+  background: transparent;
+  border: 0;
+  color: var(--gray);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 0;
+  text-transform: none;
+}
+.smae-meal-autofill:hover { color: var(--fg); }
+.smae-meal-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.smae-meal-options-grid textarea {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--fg);
+  resize: vertical;
+  min-height: 60px;
+}
+.smae-meal-options-grid textarea:focus { outline: none; border-color: var(--fg); }
+
 /* Print only */
 .print-only { display: none; }
 
-/* Print stylesheet (PDF entregable al paciente) */
+/* Print stylesheet (PDF entregable al paciente, estilo template Hugo) */
 @media print {
   @page {
-    size: letter;
-    margin: 18mm;
+    size: letter landscape;
+    margin: 14mm;
   }
   html, body {
     background: #fff !important;
     color: #000 !important;
   }
-  body { font-family: 'Geist', system-ui, sans-serif; font-size: 11pt; line-height: 1.4; }
+  body { font-family: 'Geist', system-ui, sans-serif; font-size: 10pt; line-height: 1.4; }
   .nav, .hero, .section, .footer, .smae-gate, [data-smae-main] > section, .menu-overlay { display: none !important; }
   .print-only { display: block !important; }
   [data-smae-print-area] { color: #000; }
 
-  .print-letterhead {
-    border-bottom: 2px solid #000;
-    padding-bottom: 12pt;
-    margin-bottom: 18pt;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8pt;
+  .print-page {
+    page-break-after: always;
+    page-break-inside: avoid;
+    min-height: 100vh;
+    padding-top: 8mm;
   }
-  .print-brand {
+  .print-page:last-child { page-break-after: auto; }
+
+  /* Portada */
+  .print-cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 80vh;
+    gap: 18pt;
+  }
+  .print-cover-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 6pt;
+    font-family: 'Geist', sans-serif;
+    font-weight: 700;
+  }
+  .print-bracket {
+    font-family: 'Geist Mono', monospace;
+    font-weight: 700;
+    font-size: 36pt;
+  }
+  .print-prado {
+    font-size: 36pt;
+    letter-spacing: -0.04em;
+  }
+  .print-cover-x {
+    font-size: 16pt;
+    color: #333;
+  }
+  .print-cover-name {
+    font-size: 28pt;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    max-width: 24ch;
+  }
+  .print-cover-cita {
+    font-family: 'Geist Mono', monospace;
+    font-size: 12pt;
+    color: #555;
+    letter-spacing: 0.04em;
+  }
+
+  /* H2 con corchetes */
+  .print-h2 {
+    font-family: 'Geist Mono', monospace;
+    font-weight: 700;
+    font-size: 14pt;
+    letter-spacing: 0.02em;
+    margin: 0 0 14pt;
+    padding-bottom: 6pt;
+    border-bottom: 2px solid #000;
+    text-transform: none;
+  }
+
+  /* Tabla macros */
+  .print-macros-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24pt;
+    font-size: 11pt;
+  }
+  .print-macros-tbl thead th {
+    background: #f0f0f0;
+    border: 1px solid #000;
+    padding: 8pt;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 9pt;
+  }
+  .print-macros-tbl tbody th {
+    background: #f0f0f0;
+    border: 1px solid #000;
+    padding: 8pt;
+    font-family: 'Geist', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    width: 12%;
+  }
+  .print-macros-tbl tbody td {
+    border: 1px solid #000;
+    padding: 8pt;
+    text-align: center;
+  }
+  .print-macros-tbl tr.print-total th,
+  .print-macros-tbl tr.print-total td {
+    background: #e8e8e8;
+    font-weight: 700;
+  }
+
+  /* Tabla antropométricos */
+  .print-antro {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin-bottom: 16pt;
+  }
+  .print-antro thead th {
+    background: #f0f0f0;
+    border: 1px solid #000;
+    padding: 8pt;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 9pt;
+  }
+  .print-antro thead th:first-child { text-align: left; }
+  .print-antro .print-fecha {
+    display: block;
+    font-size: 8pt;
+    font-weight: 400;
+    color: #555;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 2pt;
+  }
+  .print-antro tbody th {
+    border: 1px solid #000;
+    padding: 6pt 10pt;
+    text-align: left;
+    font-family: 'Geist', sans-serif;
+    font-weight: 700;
+    background: #fafafa;
+    width: 22%;
+    text-transform: uppercase;
+    font-size: 9pt;
+  }
+  .print-antro tbody td {
+    border: 1px solid #000;
+    padding: 6pt 10pt;
+    text-align: center;
+  }
+
+  /* Listas (recomendaciones, libres, evitar, errores) */
+  .print-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .print-list li {
+    padding: 6pt 0 6pt 16pt;
+    border-bottom: 1px solid #eee;
+    font-size: 10pt;
+    line-height: 1.45;
+    position: relative;
+  }
+  .print-list li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: #555;
+  }
+  .print-list strong { font-weight: 700; }
+
+  /* Menú semanal: 4 columnas (tiempo + 3 opciones) */
+  .print-menu-page { padding-top: 4mm; }
+  .print-menu {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    margin-bottom: 12pt;
+  }
+  .print-menu thead th {
+    background: #f0f0f0;
+    border: 1px solid #000;
+    padding: 8pt;
+    font-family: 'Geist Mono', monospace;
+    font-weight: 700;
+    text-align: left;
+    font-size: 9pt;
+    text-transform: uppercase;
+  }
+  .print-menu thead th:first-child { width: 16%; }
+  .print-menu thead th:not(:first-child) { width: 28%; }
+  .print-menu tbody td {
+    border: 1px solid #000;
+    padding: 8pt;
+    vertical-align: top;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+  .print-meal-name strong {
+    display: block;
+    font-family: 'Geist', sans-serif;
+    font-weight: 700;
+    font-size: 10pt;
+    margin-bottom: 4pt;
+    letter-spacing: -0.01em;
+  }
+  .print-meal-eqs {
+    font-family: 'Geist Mono', monospace;
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.3;
+  }
+  .print-empty { color: #ccc; }
+  .print-leyenda {
+    font-family: 'Geist Mono', monospace;
+    font-size: 8pt;
+    color: #555;
+    margin: 0 0 8pt;
+  }
+  .print-leyenda-foot { margin-top: 8pt; }
+
+  /* Cierre */
+  .print-close {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 80vh;
+    gap: 24pt;
+  }
+  .print-close-msg {
+    font-size: 13pt;
+    line-height: 1.5;
+    max-width: 56ch;
+    margin: 0;
+  }
+  .print-close-pillars {
+    display: flex;
+    flex-direction: column;
+    gap: 4pt;
     font-family: 'Geist', sans-serif;
     font-weight: 700;
     font-size: 18pt;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
   }
-  .print-cred, .print-contact {
-    font-family: 'Geist Mono', monospace;
-    font-size: 9pt;
-    color: #333;
+  .print-close-wish {
+    font-size: 12pt;
+    margin: 0;
   }
-  .print-title {
-    font-family: 'Geist', sans-serif;
-    font-weight: 700;
-    font-size: 28pt;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    margin: 0 0 24pt;
-  }
-  .print-h2 {
-    font-family: 'Geist', sans-serif;
-    font-weight: 700;
-    font-size: 13pt;
-    letter-spacing: -0.01em;
-    margin: 24pt 0 8pt;
-    padding-bottom: 4pt;
-    border-bottom: 1px solid #000;
-  }
-  .print-meta, .print-macros, .print-eq, .print-meals {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 8pt;
-    font-size: 10pt;
-  }
-  .print-meta th, .print-macros th, .print-eq th, .print-meals th {
-    text-align: left;
-    font-family: 'Geist Mono', monospace;
-    font-weight: 400;
-    font-size: 8.5pt;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #555;
-    padding: 6pt 8pt 6pt 0;
-    border-bottom: 1px solid #ccc;
-    vertical-align: top;
-  }
-  .print-meta td, .print-macros td, .print-eq td, .print-meals td {
-    padding: 6pt 8pt 6pt 0;
-    border-bottom: 1px solid #eee;
-    vertical-align: top;
-    font-size: 10pt;
-  }
-  .print-macros tr.print-actual td, .print-macros tr.print-actual th { color: #555; }
-  .print-eq td:first-child { width: 30%; }
-  .print-eq td:nth-child(2) { width: 8%; font-family: 'Geist Mono', monospace; text-align: center; }
-  .print-meals td:first-child { width: 24%; }
-  .print-meals td:nth-child(2) { width: 8%; font-family: 'Geist Mono', monospace; }
-  .print-notes {
-    font-size: 10pt;
-    line-height: 1.5;
-    padding: 10pt 12pt;
-    background: #f5f5f5;
-    border-left: 3px solid #000;
-  }
-  .print-footer {
-    margin-top: 24pt;
-    padding-top: 8pt;
-    border-top: 1px solid #ccc;
-    font-family: 'Geist Mono', monospace;
-    font-size: 8pt;
-    color: #666;
-    text-align: center;
-  }
+  .print-close-mark { margin-top: 12pt; }
+
   .label {
     font-family: 'Geist Mono', monospace;
-    color: #888 !important;
-    font-size: 8.5pt;
+    color: #555 !important;
+    font-size: 8pt;
   }
 }
 

@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=7" />
+  <link rel="stylesheet" href="/style.css?v=8" />
 
   <script>
     (function () {
@@ -139,6 +139,25 @@
         </div>
       </div>
 
+      <div class="field-row">
+        <div class="field">
+          <label class="label" for="patient-email">Correo</label>
+          <input type="email" id="patient-email" name="email" autocomplete="off" placeholder="paciente@correo.com">
+        </div>
+        <div class="field">
+          <label class="label" for="patient-phone">Teléfono</label>
+          <input type="tel" id="patient-phone" name="phone" autocomplete="off" placeholder="+52...">
+        </div>
+        <div class="field">
+          <label class="label" for="patient-seca">Link del seca</label>
+          <input type="url" id="patient-seca" name="seca_link" autocomplete="off" placeholder="https://...">
+        </div>
+        <div class="field">
+          <label class="label" for="patient-next-appt">Próxima consulta</label>
+          <input type="date" id="patient-next-appt" name="next_appointment">
+        </div>
+      </div>
+
       <div class="field field--wide">
         <label class="label" for="patient-conditions">Condiciones / alergias</label>
         <input type="text" id="patient-conditions" name="conditions" autocomplete="off" placeholder="Diabetes, intolerancia a lactosa, etc.">
@@ -148,6 +167,44 @@
         <label class="label" for="patient-notes">Notas</label>
         <textarea id="patient-notes" name="notes" rows="3" placeholder="Hábitos, sesiones anteriores, comentarios..."></textarea>
       </div>
+
+      <details class="smae-extra-section">
+        <summary><span class="label">[ Antropométricos de esta cita ] (opcional, aparecen en el PDF)</span></summary>
+        <div class="field-row">
+          <div class="field">
+            <label class="label" for="meas-cita">N° cita</label>
+            <input type="number" id="meas-cita" name="cita_num" min="1" max="999" placeholder="22">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-muslo">Muslo (cm)</label>
+            <input type="number" id="meas-muslo" name="muslo" step="0.1" placeholder="60">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-pierna">Pierna (cm)</label>
+            <input type="number" id="meas-pierna" name="pierna" step="0.1" placeholder="37">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-bicep">Bícep (cm)</label>
+            <input type="number" id="meas-bicep" name="bicep" step="0.1" placeholder="33">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-bicep-flex">Bícep flex (cm)</label>
+            <input type="number" id="meas-bicep-flex" name="bicep_flex" step="0.1" placeholder="36.5">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-cintura">Cintura (cm)</label>
+            <input type="number" id="meas-cintura" name="cintura" step="0.1" placeholder="83">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-cadera">Cadera (cm)</label>
+            <input type="number" id="meas-cadera" name="cadera" step="0.1" placeholder="104">
+          </div>
+          <div class="field">
+            <label class="label" for="meas-ombligo">Ombligo (cm)</label>
+            <input type="number" id="meas-ombligo" name="ombligo" step="0.1" placeholder="88">
+          </div>
+        </div>
+      </details>
 
       <div class="smae-form-actions">
         <button type="button" class="closing-cta-btn" data-smae-new-patient>Calcular plan →</button>
@@ -279,6 +336,6 @@
   <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="/scroll.js?v=4"></script>
   <script src="/smae-ascii.js?v=1" defer></script>
-  <script src="/smae.js?v=6" defer></script>
+  <script src="/smae.js?v=7" defer></script>
 </body>
 </html>
