@@ -23,16 +23,21 @@ export default {
       }
     }
 
-    // Subdominio admin: el root sirve admin.html. Assets estáticos
-    // (style.css, fuentes, etc.) caen al else normal.
+    // Subdominio admin: el root redirige a /admin (la URL canónica del CRM).
+    // El root estuvo cacheado con prado-mx.com home cuando hicimos primer
+    // deploy; el redirect 302 no se cachea agresivamente como sí lo hace
+    // el HTML, así que esto es la salida limpia.
     if (url.hostname === 'admin.prado-mx.com') {
       if (url.pathname === '/' || url.pathname === '') {
-        const newUrl = new URL('/admin.html', request.url);
-        const newReq = new Request(newUrl, request);
-        return env.ASSETS.fetch(newReq);
+        return new Response('', {
+          status: 302,
+          headers: {
+            'location': 'https://admin.prado-mx.com/admin',
+            'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        });
       }
       // Bloquear paths "públicos" que solo deben vivir en prado-mx.com
-      // (home, hugo, consulting, macros), pero permitir SMAE y assets.
       const publicPaths = ['/index.html', '/hugo.html', '/consulting.html', '/macros.html', '/smae.html'];
       if (publicPaths.includes(url.pathname) || url.pathname === '/hugo' || url.pathname === '/consulting' || url.pathname === '/macros') {
         return Response.redirect('https://prado-mx.com' + url.pathname, 302);
