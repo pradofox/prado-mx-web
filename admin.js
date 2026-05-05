@@ -250,6 +250,13 @@
     setCount('pacientes', k.total);
     setCount('atencion', k.perdidos);
     setCount('agenda', k.proximos);
+    // Shortcuts en home
+    const setShortcut = (key, n) => {
+      const el = document.querySelector(`[data-shortcut-count="${key}"]`);
+      if (el) el.textContent = n;
+    };
+    setShortcut('atencion', k.perdidos);
+    setShortcut('agenda', k.proximos);
   }
 
   // ---------- Tabs --------------------------------------------------------
@@ -1031,40 +1038,99 @@
     `;
   }
 
-  // ---------- Init --------------------------------------------------------
+  // ---------- Routing -----------------------------------------------------
+
+  // Mapa de paths a tabs/acciones del panel
+  const PATH_MAP = {
+    '/': { view: 'home' },
+    '/inicio': { view: 'home' },
+    '/admin': { view: 'panel', tab: 'pacientes' },
+    '/panel': { view: 'panel', tab: 'pacientes' },
+    '/dashboard': { view: 'panel', tab: 'pacientes' },
+    '/pacientes': { view: 'panel', tab: 'pacientes' },
+    '/atencion': { view: 'panel', tab: 'atencion' },
+    '/agenda': { view: 'panel', tab: 'agenda' },
+    '/mensajes': { view: 'panel', tab: 'mensajes' },
+    '/recompensas': { view: 'panel', tab: 'recompensas' },
+    '/nuevo': { view: 'panel', tab: 'pacientes', action: 'new' },
+  };
+
+  function resolveRoute() {
+    const pathname = window.location.pathname;
+    const hash = window.location.hash.replace('#', '');
+    let route = PATH_MAP[pathname] || { view: 'panel', tab: 'pacientes' };
+    if (pathname === '/' || pathname === '/inicio') {
+      route = { view: 'home' };
+      if (hash === 'nuevo') route = { view: 'panel', tab: 'pacientes', action: 'new' };
+      else if (hash) route = { view: 'panel', tab: hash };
+    } else if (hash === 'nuevo') {
+      route.action = 'new';
+    } else if (hash) {
+      route.tab = hash;
+    }
+    return route;
+  }
+
+  function applyRoute(route) {
+    if (route.view === 'home') {
+      showHome();
+    } else {
+      showPanel();
+      if (route.tab) setTab(route.tab);
+      if (route.action === 'new') openNewDrawer();
+    }
+  }
+
+  function navigate(href) {
+    const url = new URL(href, window.location.origin);
+    if (url.pathname !== window.location.pathname || url.hash !== window.location.hash) {
+      window.history.pushState({}, '', url.pathname + url.hash);
+    }
+    applyRoute(resolveRoute());
+  }
 
   function showHome() {
     document.querySelector('[data-admin-home]').hidden = false;
     document.querySelector('[data-admin-panel]').hidden = true;
     document.body.classList.remove('admin-panel-active');
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
   function showPanel() {
     document.querySelector('[data-admin-home]').hidden = true;
     document.querySelector('[data-admin-panel]').hidden = false;
     document.body.classList.add('admin-panel-active');
-    try { localStorage.setItem('admin-skip-home', '1'); } catch (e) {}
   }
 
   function init() {
-    // Skip home si ya entró antes (siguientes visitas)
-    let skip = false;
-    try { skip = localStorage.getItem('admin-skip-home') === '1'; } catch (e) {}
-    if (skip) showPanel(); else showHome();
+    applyRoute(resolveRoute());
 
-    document.querySelector('[data-admin-enter]').addEventListener('click', showPanel);
+    window.addEventListener('popstate', () => applyRoute(resolveRoute()));
+
+    // Interceptar clicks en links internos para SPA navigation
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[href]');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      if (!href) return;
+      // Solo internos del mismo origin que sean paths admin
+      if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:') || a.target === '_blank') return;
+      const url = new URL(href, window.location.origin);
+      if (url.origin !== window.location.origin) return;
+      // Solo si el path es uno de los del PATH_MAP
+      if (!PATH_MAP[url.pathname]) return;
+      e.preventDefault();
+      navigate(href);
+    });
+
     document.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !document.querySelector('[data-admin-home]').hidden && !e.target.closest('input,textarea,select,button')) {
-        showPanel();
-      }
       if (e.key === 'Escape') hideDrawer();
     });
-    document.querySelector('[data-admin-home-btn]').addEventListener('click', () => {
-      try { localStorage.removeItem('admin-skip-home'); } catch (e) {}
-      showHome();
-    });
+    document.querySelector('[data-admin-home-btn]').addEventListener('click', () => navigate('/'));
 
     // Tabs
-    document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+    document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+      navigate('/panel#' + b.dataset.tab);
+    }));
 
     // Search & filter
     const search = document.querySelector('[data-admin-search]');

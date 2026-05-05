@@ -23,9 +23,10 @@ export default {
       }
     }
 
-    // Subdominio admin: hostname admin sirve el CRM directo en cualquier path.
-    // Intentamos borrar entrada cacheada del root y devolver admin.html con
-    // Cache-Control: no-store para que CF no cachee respuestas viejas.
+    // Subdominio admin: cualquier path "lindo" sirve admin.html.
+    // El JS del cliente lee window.location.pathname para decidir qué vista
+    // mostrar (landing o panel). Los assets concretos (style.css, admin.js,
+    // fuentes, etc.) caen al else normal.
     if (url.hostname === 'admin.prado-mx.com') {
       // Bloquear paths "públicos" que solo deben vivir en prado-mx.com
       const publicPaths = ['/index.html', '/hugo.html', '/consulting.html', '/macros.html', '/smae.html'];
@@ -33,12 +34,11 @@ export default {
         return Response.redirect('https://prado-mx.com' + url.pathname, 302);
       }
 
-      // Root o cualquier path "lindo" del admin: servir admin.html
-      // con headers anti-cache. El worker SIEMPRE genera respuesta nueva.
-      if (url.pathname === '/' || url.pathname === '' || url.pathname === '/admin' || url.pathname === '/dashboard' || url.pathname === '/index.html' || url.pathname === '/inicio') {
-        // Intentar borrar cualquier entrada cacheada (best-effort)
+      // Cualquier path "lindo" del admin (sin extensión y que no sea asset)
+      // sirve admin.html. El cliente decide qué renderizar.
+      const adminPaths = ['/', '', '/admin', '/panel', '/dashboard', '/inicio', '/pacientes', '/atencion', '/agenda', '/mensajes', '/recompensas', '/nuevo'];
+      if (adminPaths.includes(url.pathname)) {
         try { await caches.default.delete(request); } catch (e) {}
-
         const adminUrl = new URL('/admin.html', request.url);
         const adminReq = new Request(adminUrl, { method: 'GET', headers: request.headers });
         const r = await env.ASSETS.fetch(adminReq);

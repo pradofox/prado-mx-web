@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=10" />
+  <link rel="stylesheet" href="/style.css?v=11" />
 
   <script>
     (function () {
@@ -72,9 +72,43 @@
         <div class="kpi"><span class="label">[ Esta semana ]</span><strong data-kpi="proximos">—</strong><span class="kpi-meta">próximas citas</span></div>
       </div>
 
-      <div class="admin-home-cta">
-        <button type="button" class="closing-cta-btn admin-enter-btn" data-admin-enter>Entrar al panel →</button>
-        <p class="label" style="color: var(--gray); margin-top: 16px;">[ Atajo: tecla Enter ]</p>
+      <div class="admin-shortcuts">
+        <a href="/panel#pacientes" class="admin-shortcut" data-shortcut="pacientes">
+          <span class="label">[ 01 ] Pacientes</span>
+          <h2>Ver todos</h2>
+          <p>Grid de pacientes con búsqueda y filtros.</p>
+          <span class="arrow">Abrir →</span>
+        </a>
+        <a href="/panel#atencion" class="admin-shortcut admin-shortcut--warn" data-shortcut="atencion">
+          <span class="label">[ 02 ] Atención</span>
+          <h2><span data-shortcut-count="atencion">0</span> en riesgo</h2>
+          <p>Pacientes que llevan +30 días sin venir.</p>
+          <span class="arrow">Atender →</span>
+        </a>
+        <a href="/panel#agenda" class="admin-shortcut" data-shortcut="agenda">
+          <span class="label">[ 03 ] Agenda</span>
+          <h2><span data-shortcut-count="agenda">0</span> esta semana</h2>
+          <p>Citas en los próximos 7 días.</p>
+          <span class="arrow">Ver →</span>
+        </a>
+        <a href="/panel#nuevo" class="admin-shortcut" data-shortcut="nuevo">
+          <span class="label">[ 04 ] Nuevo</span>
+          <h2>Capturar paciente</h2>
+          <p>Datos, plan, antropométricos, PDF.</p>
+          <span class="arrow">+ Crear →</span>
+        </a>
+        <a href="/panel#mensajes" class="admin-shortcut" data-shortcut="mensajes">
+          <span class="label">[ 05 ] Mensajes</span>
+          <h2>Templates</h2>
+          <p>Mensajes pre-armados para WhatsApp.</p>
+          <span class="arrow">Abrir →</span>
+        </a>
+        <a href="/panel#recompensas" class="admin-shortcut" data-shortcut="recompensas">
+          <span class="label">[ 06 ] Recompensas</span>
+          <h2>Tiers</h2>
+          <p>Sistema de puntos por consultas.</p>
+          <span class="arrow">Ver →</span>
+        </a>
       </div>
     </section>
   </div>
@@ -436,6 +470,6 @@
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=2" defer></script>
+  <script src="/admin.js?v=3" defer></script>
 </body>
 </html>
