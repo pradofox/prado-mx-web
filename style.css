@@ -1491,6 +1491,302 @@ a.line-card:hover { text-decoration: none; }
 }
 .smae-meal-options-grid textarea:focus { outline: none; border-color: var(--fg); }
 
+/* PRADO Admin / CRM ---------------------------------------- */
+.admin-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--divider);
+  border: 1px solid var(--divider);
+}
+@media (min-width: 720px) { .admin-kpis { grid-template-columns: repeat(4, 1fr); } }
+.kpi {
+  background: var(--bg);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kpi .label { color: var(--gray); }
+.kpi strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(36px, 6vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.kpi-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Atención cards */
+.admin-atencion {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 720px) { .admin-atencion { grid-template-columns: 1fr 1fr; } }
+.admin-atencion-card {
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--fg);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.admin-atencion-info h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.admin-atencion-info .label { color: var(--gray); margin: 0; line-height: 1.5; }
+.admin-atencion-info strong { color: var(--fg); font-weight: 400; }
+.admin-atencion-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.admin-atencion-actions .closing-cta-btn { padding: 10px 14px; font-size: 11px; }
+
+/* Agenda cards */
+.admin-agenda {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.admin-agenda-card {
+  border: 1px solid var(--divider);
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+}
+@media (max-width: 720px) {
+  .admin-agenda-card { grid-template-columns: 1fr; gap: 12px; }
+}
+.admin-agenda-when {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+.admin-agenda-when .label { color: var(--gray); }
+.admin-agenda-days {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.admin-agenda-info h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+.admin-agenda-info .label { color: var(--gray); margin: 0; line-height: 1.5; }
+.admin-agenda-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-agenda-actions .closing-cta-btn { padding: 10px 14px; font-size: 11px; }
+
+/* Filters & search */
+.admin-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (min-width: 720px) {
+  .admin-filters { flex-direction: row; align-items: center; }
+}
+.admin-search {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  min-width: 200px;
+}
+.admin-search:focus { outline: none; border-color: var(--fg); }
+.admin-filter-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.admin-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--gray);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.admin-pill:hover { color: var(--fg); }
+.admin-pill.is-active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* Patients table */
+.admin-patients-table-wrap {
+  border: 1px solid var(--divider);
+  overflow-x: auto;
+}
+.admin-patients-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-patients-table thead th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--divider);
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.admin-patients-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--divider);
+  vertical-align: top;
+}
+.admin-patients-table tbody tr:hover { background: var(--surface-hover); }
+.admin-patients-table tbody tr:last-child td { border-bottom: 0; }
+.admin-cell-sub {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+.admin-cell-warn { color: var(--fg); }
+.admin-cell-warn .admin-cell-sub { color: var(--fg); font-weight: 700; }
+.admin-cell-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.admin-cell-actions a {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border: 1px solid var(--divider);
+  color: var(--fg);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+}
+.admin-cell-actions a:hover { background: var(--fg); color: var(--bg); }
+
+/* Tier badges */
+.admin-tier-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid var(--divider);
+  white-space: nowrap;
+}
+.tier-bronce { color: var(--gray); }
+.tier-plata { color: var(--gray); border-color: var(--gray); }
+.tier-oro { color: var(--fg); border-color: var(--fg); }
+.tier-platino { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* Templates */
+.admin-templates {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 720px) { .admin-templates { grid-template-columns: 1fr 1fr; } }
+.admin-template {
+  border: 1px solid var(--divider);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-template-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.admin-template textarea {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--divider);
+  resize: vertical;
+  min-height: 80px;
+}
+.admin-template textarea:focus { outline: none; border-color: var(--fg); }
+.admin-template-head .closing-cta-btn { padding: 8px 12px; font-size: 10px; }
+
+/* Tier system display */
+.admin-tiers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--divider);
+  border: 1px solid var(--divider);
+}
+@media (min-width: 720px) { .admin-tiers { grid-template-columns: repeat(4, 1fr); } }
+.admin-tier {
+  background: var(--bg);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-tier .label { color: var(--gray); }
+.admin-tier strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.admin-tier--top {
+  background: var(--fg);
+  color: var(--bg);
+}
+.admin-tier--top .label,
+.admin-tier--top .kpi-meta {
+  color: var(--bg);
+  opacity: 0.7;
+}
+
 /* Print only */
 .print-only { display: none; }
 

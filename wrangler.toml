@@ -17,3 +17,8 @@ binding = "DB"
 database_name = "prado-smae"
 database_id = "52c4160e-5f31-446b-97a3-d6537078ca9d"
 migrations_dir = "migrations"
+
+# Subdominio admin.prado-mx.com → mismo worker, sirve admin.html (CRM Hugo)
+[[routes]]
+pattern = "admin.prado-mx.com"
+custom_domain = true

@@ -19,7 +19,23 @@ export default {
       try {
         return await handleApi(request, env, url);
       } catch (e) {
-        return jsonResponse({ error: e.message || 'internal' }, 500);
+        return jsonResponse({ error: e.message || 'internal' }, 500, request);
+      }
+    }
+
+    // Subdominio admin: el root sirve admin.html. Assets estáticos
+    // (style.css, fuentes, etc.) caen al else normal.
+    if (url.hostname === 'admin.prado-mx.com') {
+      if (url.pathname === '/' || url.pathname === '') {
+        const newUrl = new URL('/admin.html', request.url);
+        const newReq = new Request(newUrl, request);
+        return env.ASSETS.fetch(newReq);
+      }
+      // Bloquear paths "públicos" que solo deben vivir en prado-mx.com
+      // (home, hugo, consulting, macros), pero permitir SMAE y assets.
+      const publicPaths = ['/index.html', '/hugo.html', '/consulting.html', '/macros.html', '/smae.html'];
+      if (publicPaths.includes(url.pathname) || url.pathname === '/hugo' || url.pathname === '/consulting' || url.pathname === '/macros') {
+        return Response.redirect('https://prado-mx.com' + url.pathname, 302);
       }
     }
 
@@ -32,39 +48,44 @@ export default {
 async function handleApi(request, env, url) {
   const path = url.pathname.replace('/api/smae', '');
 
+  // Preflight CORS
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
+  }
+
   // Auth deshabilitado: todos los endpoints son abiertos.
   // Stubs que mantienen compatibilidad con el frontend viejo si quedó cache.
   if (path === '/auth' && request.method === 'POST') {
-    return jsonResponse({ ok: true, token: 'open' });
+    return jsonResponse({ ok: true, token: 'open' }, 200, request);
   }
   if (path === '/auth' && request.method === 'GET') {
-    return jsonResponse({ authed: true });
+    return jsonResponse({ authed: true }, 200, request);
   }
   if (path === '/auth/logout' && request.method === 'POST') {
-    return jsonResponse({ ok: true });
+    return jsonResponse({ ok: true }, 200, request);
   }
 
-  if (path === '/patients' && request.method === 'GET') return listPatients(env);
+  if (path === '/patients' && request.method === 'GET') return listPatients(env, request);
   if (path === '/patients' && request.method === 'POST') return upsertPatient(request, env);
 
   const patientMatch = path.match(/^\/patients\/([^/]+)$/);
   if (patientMatch) {
     const id = patientMatch[1];
-    if (request.method === 'GET') return getPatient(env, id);
-    if (request.method === 'DELETE') return deletePatient(env, id);
+    if (request.method === 'GET') return getPatient(env, id, request);
+    if (request.method === 'DELETE') return deletePatient(env, id, request);
     if (request.method === 'PATCH') return updatePatient(request, env, id);
   }
 
   const plansMatch = path.match(/^\/patients\/([^/]+)\/plans$/);
   if (plansMatch) {
     const patientId = plansMatch[1];
-    if (request.method === 'GET') return listPlans(env, patientId);
+    if (request.method === 'GET') return listPlans(env, patientId, request);
     if (request.method === 'POST') return savePlan(request, env, patientId);
   }
 
-  if (path === '/foods' && request.method === 'GET') return listFoods(env, url);
+  if (path === '/foods' && request.method === 'GET') return listFoods(env, url, request);
 
-  return jsonResponse({ error: 'not found', path }, 404);
+  return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
 // ----- Auth --------------------------------------------------------------
@@ -74,7 +95,7 @@ async function handleAuth(request, env, url) {
   try { body = await request.json(); } catch (e) { body = {}; }
   const { password } = body || {};
   if (!password || password !== env.SMAE_PASSWORD) {
-    return jsonResponse({ error: 'wrong password' }, 401);
+    return jsonResponse({ error: 'wrong password' }, 401, request);
   }
   const token = await signToken(env.SMAE_PASSWORD);
   // Devolver token en body Y en cookie (cinturón y tirantes — cualquiera funciona)
@@ -131,7 +152,7 @@ async function signToken(secret) {
 
 // ----- Patients ----------------------------------------------------------
 
-async function listPatients(env) {
+async function listPatients(env, request) {
   const { results } = await env.DB.prepare(
     `SELECT id, name, sex, age, weight, height, weight_target, activity, goal,
             conditions, notes, email, phone, seca_link,
@@ -141,21 +162,21 @@ async function listPatients(env) {
             (SELECT MAX(date) FROM plans WHERE plans.patient_id = patients.id) AS last_plan_date
      FROM patients ORDER BY updated_at DESC`
   ).all();
-  return jsonResponse({ patients: results || [] });
+  return jsonResponse({ patients: results || [] }, 200, request);
 }
 
-async function getPatient(env, id) {
+async function getPatient(env, id, request) {
   const patient = await env.DB.prepare(
     `SELECT * FROM patients WHERE id = ?`
   ).bind(id).first();
-  if (!patient) return jsonResponse({ error: 'not found' }, 404);
+  if (!patient) return jsonResponse({ error: 'not found' }, 404, request);
   const plans = await env.DB.prepare(
     `SELECT * FROM plans WHERE patient_id = ? ORDER BY date DESC`
   ).bind(id).all();
   return jsonResponse({
     patient,
     plans: (plans.results || []).map(parsePlanRow),
-  });
+  }, 200, request);
 }
 
 async function upsertPatient(request, env) {
@@ -195,28 +216,30 @@ async function upsertPatient(request, env) {
       now, now
     ).run();
   }
-  return jsonResponse({ id });
+  return jsonResponse({ id }, 200, request);
 }
 
 async function updatePatient(request, env, id) {
   const data = await request.json();
   data.id = id;
-  return upsertPatient({ json: () => Promise.resolve(data) }, env);
+  // Reusar upsertPatient pasándole el request original para CORS
+  const proxy = { json: () => Promise.resolve(data), headers: request.headers };
+  return upsertPatient(proxy, env);
 }
 
-async function deletePatient(env, id) {
+async function deletePatient(env, id, request) {
   await env.DB.prepare(`DELETE FROM plans WHERE patient_id = ?`).bind(id).run();
   await env.DB.prepare(`DELETE FROM patients WHERE id = ?`).bind(id).run();
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true }, 200, request);
 }
 
 // ----- Plans -------------------------------------------------------------
 
-async function listPlans(env, patientId) {
+async function listPlans(env, patientId, request) {
   const { results } = await env.DB.prepare(
     `SELECT * FROM plans WHERE patient_id = ? ORDER BY date DESC`
   ).bind(patientId).all();
-  return jsonResponse({ plans: (results || []).map(parsePlanRow) });
+  return jsonResponse({ plans: (results || []).map(parsePlanRow) }, 200, request);
 }
 
 async function savePlan(request, env, patientId) {
@@ -254,7 +277,7 @@ async function savePlan(request, env, patientId) {
   await env.DB.prepare(
     `UPDATE patients SET updated_at = ?, last_appointment = ? WHERE id = ?`
   ).bind(now, data.date || now, patientId).run();
-  return jsonResponse({ id });
+  return jsonResponse({ id }, 200, request);
 }
 
 function parsePlanRow(row) {
@@ -271,7 +294,7 @@ function parsePlanRow(row) {
 
 // ----- Foods -------------------------------------------------------------
 
-async function listFoods(env, url) {
+async function listFoods(env, url, request) {
   const group = url.searchParams.get('group');
   let q = `SELECT id, group_key, name, portion FROM foods`;
   const args = [];
@@ -281,16 +304,26 @@ async function listFoods(env, url) {
   }
   q += ` ORDER BY group_key, name`;
   const { results } = await env.DB.prepare(q).bind(...args).all();
-  return jsonResponse({ foods: results || [] });
+  return jsonResponse({ foods: results || [] }, 200, request);
 }
 
 // ----- Helpers -----------------------------------------------------------
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
+function jsonResponse(body, status = 200, request = null) {
+  const headers = { 'content-type': 'application/json' };
+  if (request) Object.assign(headers, corsHeaders(request));
+  return new Response(JSON.stringify(body), { status, headers });
+}
+
+function corsHeaders(request) {
+  const origin = request.headers.get('origin') || '';
+  const allowed = (origin === 'https://admin.prado-mx.com' || origin === 'https://prado-mx.com') ? origin : '';
+  return {
+    'access-control-allow-origin': allowed,
+    'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, authorization',
+    'vary': 'origin',
+  };
 }
 
 function newId(prefix) {
