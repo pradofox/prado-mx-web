@@ -1,29 +1,159 @@
-/* PRADO Admin / CRM
-   Vista de seguimiento y marketing para Hugo Prado.
-   Reusa la API de SMAE en prado-mx.com (cross-origin con CORS-friendly).
-   - KPIs (total, activos, atención, próxima semana)
-   - Pacientes que necesitan atención (30+ días sin venir)
-   - Agenda próxima
-   - Tabla completa con filtros y búsqueda
-   - WhatsApp recordatorio con templates pre-armados
-   - Tier de recompensas por número de consultas */
+/* PRADO Admin - CRM completo con SMAE integrado.
+   - Vista home con hero ASCII y KPIs
+   - Vista panel con sidebar + tabs (Pacientes / Atención / Agenda / Mensajes / Recompensas)
+   - Cards de pacientes con drawer detalle
+   - Drawer: datos paciente + antropométricos + plan SMAE editable + PDF
+   Reusa API en https://prado-mx.com/api/smae con CORS. */
 (function () {
   'use strict';
 
-  // El admin vive en admin.prado-mx.com pero la API vive en prado-mx.com.
-  // Usamos URL absoluta para que CORS sea explícito.
   const API_BASE = 'https://prado-mx.com/api/smae';
 
-  let allPatients = [];
-  let activeFilter = 'todos';
-  let searchTerm = '';
+  // ---------- SMAE constants (reused from smae.js) -----------------------
+
+  const GROUPS = [
+    { key: 'verduras',    label: 'Verduras',         abbr: 'V',  kcal: 25,  c: 4,  p: 2, g: 0 },
+    { key: 'frutas',      label: 'Frutas',           abbr: 'F',  kcal: 60,  c: 15, p: 0, g: 0 },
+    { key: 'cereales-sg', label: 'Cereales s/grasa', abbr: 'Cs', kcal: 70,  c: 15, p: 2, g: 0 },
+    { key: 'cereales-cg', label: 'Cereales c/grasa', abbr: 'Cg', kcal: 115, c: 15, p: 2, g: 5 },
+    { key: 'leguminosas', label: 'Leguminosas',      abbr: 'Lg', kcal: 120, c: 20, p: 8, g: 1 },
+    { key: 'aoa-mb',      label: 'AOA muy bajo gr.', abbr: 'mB', kcal: 40,  c: 0,  p: 7, g: 1 },
+    { key: 'aoa-b',       label: 'AOA bajo grasa',   abbr: 'B',  kcal: 55,  c: 0,  p: 7, g: 3 },
+    { key: 'aoa-m',       label: 'AOA moderado gr.', abbr: 'M',  kcal: 75,  c: 0,  p: 7, g: 5 },
+    { key: 'aoa-a',       label: 'AOA alto grasa',   abbr: 'A',  kcal: 100, c: 0,  p: 7, g: 8 },
+    { key: 'leche-d',     label: 'Leche descremada', abbr: 'Ld', kcal: 95,  c: 12, p: 9, g: 2 },
+    { key: 'leche-s',     label: 'Leche semi',       abbr: 'Ls', kcal: 110, c: 12, p: 9, g: 4 },
+    { key: 'leche-e',     label: 'Leche entera',     abbr: 'Le', kcal: 150, c: 12, p: 9, g: 8 },
+    { key: 'aceites-sp',  label: 'Aceites s/proteína', abbr: 'as', kcal: 45, c: 0, p: 0, g: 5 },
+    { key: 'aceites-cp',  label: 'Aceites c/proteína', abbr: 'ap', kcal: 70, c: 0, p: 3, g: 5 },
+    { key: 'azucar-sg',   label: 'Azúcar s/grasa',   abbr: 'zs', kcal: 40,  c: 10, p: 0, g: 0 },
+    { key: 'azucar-cg',   label: 'Azúcar c/grasa',   abbr: 'zc', kcal: 85,  c: 10, p: 0, g: 5 },
+  ];
+
+  const MEAL_PRESETS = {
+    'estandar-5': [
+      { key: 'desayuno', label: 'Desayuno', pct: 0.25 },
+      { key: 'col1',     label: 'Colación AM', pct: 0.10 },
+      { key: 'comida',   label: 'Comida', pct: 0.30 },
+      { key: 'col2',     label: 'Colación PM', pct: 0.10 },
+      { key: 'cena',     label: 'Cena', pct: 0.25 },
+    ],
+    'tres-comidas': [
+      { key: 'desayuno', label: 'Desayuno', pct: 0.30 },
+      { key: 'comida',   label: 'Comida', pct: 0.40 },
+      { key: 'cena',     label: 'Cena', pct: 0.30 },
+    ],
+    'pre-post-entreno': [
+      { key: 'desayuno', label: 'Desayuno', pct: 0.20 },
+      { key: 'pre',      label: 'Pre-entreno', pct: 0.15 },
+      { key: 'post',     label: 'Post-entreno', pct: 0.20 },
+      { key: 'comida',   label: 'Comida', pct: 0.25 },
+      { key: 'cena',     label: 'Cena', pct: 0.20 },
+    ],
+  };
+
+  const MODES = { normal: 'Normal', vegetariano: 'Vegetariano', vegano: 'Vegano', renal: 'Renal' };
+
+  // ---------- Estado -------------------------------------------------------
+
+  let state = {
+    patients: [],
+    foods: [],
+    activeTab: 'pacientes',
+    activeFilter: 'todos',
+    searchTerm: '',
+    drawer: {
+      patient: null,    // datos del paciente abierto
+      plan: null,       // plan en edición
+      historial: [],    // planes anteriores
+      mealsPreset: 'estandar-5',
+    },
+  };
 
   // ---------- API ---------------------------------------------------------
 
-  async function api(path) {
-    const r = await fetch(API_BASE + path, { credentials: 'omit' });
-    if (!r.ok) throw new Error('API error ' + r.status);
+  async function api(path, options = {}) {
+    const opts = {
+      ...options,
+      credentials: 'omit',
+      headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+    };
+    if (options.body && typeof options.body !== 'string') opts.body = JSON.stringify(options.body);
+    const r = await fetch(API_BASE + path, opts);
+    if (!r.ok) {
+      let msg = 'API ' + r.status;
+      try { const j = await r.json(); msg = j.error || msg; } catch (e) {}
+      throw new Error(msg);
+    }
     return r.json();
+  }
+
+  // ---------- SMAE algorithm ---------------------------------------------
+
+  function calculateBase(macros, mode) {
+    const eq = {};
+    GROUPS.forEach(g => eq[g.key] = 0);
+    const isVeg = (mode === 'vegetariano' || mode === 'vegano');
+    const isVegan = (mode === 'vegano');
+    const isRenal = (mode === 'renal');
+    eq['verduras'] = Math.max(3, Math.ceil(macros.kcal / 600));
+    eq['frutas']   = Math.max(2, Math.ceil(macros.kcal / 500));
+    if (!isVegan) eq[isRenal ? 'leche-d' : 'leche-s'] = 1;
+    eq['leguminosas'] = isVegan ? 3 : (isVeg ? 2 : 1);
+    let covered = sumEq(eq);
+    let restP = macros.protein - covered.p;
+    if (restP > 0) {
+      if (isVegan) eq['leguminosas'] = (eq['leguminosas'] || 0) + Math.max(0, Math.ceil(restP / 8));
+      else if (isVeg) eq['aoa-m'] = Math.max(0, Math.ceil(restP / 7));
+      else if (isRenal) eq['aoa-mb'] = Math.max(0, Math.ceil(restP / 7));
+      else eq['aoa-b'] = Math.max(0, Math.ceil(restP / 7));
+    }
+    covered = sumEq(eq);
+    let restC = macros.carb - covered.c;
+    if (restC > 0) eq['cereales-sg'] = Math.max(0, Math.ceil(restC / 15));
+    covered = sumEq(eq);
+    let restG = macros.fat - covered.g;
+    if (restG > 0) eq['aceites-sp'] = Math.max(0, Math.ceil(restG / 5));
+    return eq;
+  }
+
+  function sumEq(eq) {
+    let kcal = 0, c = 0, p = 0, g = 0;
+    GROUPS.forEach(grp => {
+      const n = eq[grp.key] || 0;
+      kcal += n * grp.kcal; c += n * grp.c; p += n * grp.p; g += n * grp.g;
+    });
+    return { kcal, c, p, g };
+  }
+
+  function distributeMeals(eq, meals) {
+    const out = {};
+    meals.forEach(m => { out[m.key] = {}; GROUPS.forEach(g => out[m.key][g.key] = 0); });
+    GROUPS.forEach(g => {
+      const total = eq[g.key] || 0;
+      if (total === 0) return;
+      let assigned = 0;
+      meals.forEach((m, idx) => {
+        const portion = idx === meals.length - 1
+          ? Math.max(0, total - assigned)
+          : Math.ceil(total * m.pct);
+        const safe = Math.min(portion, Math.max(0, total - assigned));
+        out[m.key][g.key] = safe;
+        assigned += safe;
+      });
+    });
+    return out;
+  }
+
+  function autoMacros(p) {
+    if (!p.weight || !p.height || !p.age || !p.activity || !p.goal) return null;
+    const sex = p.sex || 'f';
+    const base = 10 * p.weight + 6.25 * p.height - 5 * p.age + (sex === 'm' ? 5 : -161);
+    const target = base * p.activity * p.goal;
+    const protein = Math.round(p.weight * 1.8);
+    const fat = Math.round((target * 0.25) / 9);
+    const carb = Math.round((target - protein * 4 - fat * 9) / 4);
+    return { kcal: Math.round(target), protein, carb, fat };
   }
 
   // ---------- Utils -------------------------------------------------------
@@ -32,187 +162,139 @@
     if (!iso) return null;
     const d = new Date(iso);
     if (isNaN(d.getTime())) return null;
-    return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
   }
-
   function daysUntil(iso) {
     if (!iso) return null;
     const d = new Date(iso);
     if (isNaN(d.getTime())) return null;
-    return Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return Math.ceil((d.getTime() - Date.now()) / 86400000);
   }
-
   function formatDate(iso) {
     if (!iso) return '—';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch (e) { return '—'; }
+    try { return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (e) { return '—'; }
   }
-
-  function tierFor(planCount) {
-    const n = planCount || 0;
-    if (n >= 31) return { label: 'Platino', icon: '◆', cls: 'tier-platino' };
-    if (n >= 16) return { label: 'Oro', icon: '◇', cls: 'tier-oro' };
-    if (n >= 6)  return { label: 'Plata', icon: '○', cls: 'tier-plata' };
-    if (n >= 1)  return { label: 'Bronce', icon: '·', cls: 'tier-bronce' };
-    return { label: '—', icon: '', cls: '' };
+  function tierFor(n) {
+    n = n || 0;
+    if (n >= 31) return { label: 'Platino', cls: 'tier-platino' };
+    if (n >= 16) return { label: 'Oro', cls: 'tier-oro' };
+    if (n >= 6)  return { label: 'Plata', cls: 'tier-plata' };
+    if (n >= 1)  return { label: 'Bronce', cls: 'tier-bronce' };
+    return { label: 'Nuevo', cls: '' };
   }
-
   function escapeHTML(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   }
-
+  function formatN(n) {
+    if (Math.abs(n - Math.round(n)) < 0.01) return Math.round(n);
+    return n.toFixed(1);
+  }
   function whatsappLink(phone, msg) {
     const num = (phone || '').replace(/[^0-9]/g, '');
     if (!num) return null;
     return `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`;
   }
-
-  function emailLink(email, subject, body) {
-    if (!email) return null;
-    return `mailto:${email}?subject=${encodeURIComponent(subject || '')}&body=${encodeURIComponent(body || '')}`;
+  function getInitials(name) {
+    return (name || '?').split(/\s+/).slice(0, 2).map(s => s[0] || '').join('').toUpperCase();
   }
 
   // ---------- Carga inicial -----------------------------------------------
 
-  async function load() {
+  async function loadAll() {
     try {
-      const { patients } = await api('/patients');
-      allPatients = patients || [];
-      renderAll();
+      const [{ patients }, { foods }] = await Promise.all([
+        api('/patients'),
+        api('/foods'),
+      ]);
+      state.patients = patients || [];
+      state.foods = foods || [];
+      renderHomeKPIs();
+      renderTabContent();
+      updateSidebarCounts();
     } catch (e) {
-      console.error('No se pudo cargar:', e);
-      const tbody = document.querySelector('[data-admin-tbody]');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="smae-empty label" style="text-align: center; padding: 40px; color: var(--gray);">[ Error: ${escapeHTML(e.message)} ]</td></tr>`;
+      console.error('Load error:', e);
+      const cards = document.querySelector('[data-admin-cards]');
+      if (cards) cards.innerHTML = `<p class="smae-empty label">[ Error: ${escapeHTML(e.message)} ]</p>`;
     }
   }
 
-  // ---------- Render ------------------------------------------------------
+  // ---------- KPIs --------------------------------------------------------
 
-  function renderAll() {
-    renderKPIs();
-    renderAtencion();
-    renderAgenda();
-    renderTable();
-  }
-
-  function renderKPIs() {
-    const total = allPatients.length;
+  function computeKPIs() {
     let activos = 0, perdidos = 0, proximos = 0;
-    allPatients.forEach(p => {
+    state.patients.forEach(p => {
       const since = daysSince(p.last_plan_date || p.last_appointment);
       if (since != null && since <= 30) activos++;
       if (since != null && since > 30) perdidos++;
       const until = daysUntil(p.next_appointment);
       if (until != null && until >= 0 && until <= 7) proximos++;
     });
-    const set = (k, v) => {
-      const el = document.querySelector(`[data-kpi="${k}"]`);
-      if (el) el.textContent = v;
+    return { total: state.patients.length, activos, perdidos, proximos };
+  }
+
+  function renderHomeKPIs() {
+    const k = computeKPIs();
+    document.querySelectorAll('[data-kpi]').forEach(el => {
+      const which = el.dataset.kpi;
+      el.textContent = k[which] != null ? k[which] : '—';
+    });
+  }
+
+  function updateSidebarCounts() {
+    const k = computeKPIs();
+    const setCount = (tab, n) => {
+      const el = document.querySelector(`[data-tab-count="${tab}"]`);
+      if (el) el.textContent = n;
     };
-    set('total', total);
-    set('activos', activos);
-    set('perdidos', perdidos);
-    set('proximos', proximos);
+    setCount('pacientes', k.total);
+    setCount('atencion', k.perdidos);
+    setCount('agenda', k.proximos);
   }
 
-  function renderAtencion() {
-    const container = document.querySelector('[data-admin-atencion]');
-    const countEl = document.querySelector('[data-admin-atencion-count]');
-    if (!container) return;
+  // ---------- Tabs --------------------------------------------------------
 
-    const enRiesgo = allPatients
-      .map(p => {
-        const since = daysSince(p.last_plan_date || p.last_appointment);
-        return { ...p, days_since: since };
-      })
-      .filter(p => p.days_since != null && p.days_since > 30)
-      .sort((a, b) => b.days_since - a.days_since);
-
-    if (countEl) countEl.textContent = `[ ${enRiesgo.length} ]`;
-
-    if (enRiesgo.length === 0) {
-      container.innerHTML = '<p class="smae-empty label">[ Todos al día ]</p>';
-      return;
-    }
-    container.innerHTML = enRiesgo.map(p => `
-      <div class="admin-atencion-card">
-        <div class="admin-atencion-info">
-          <h3>${escapeHTML(p.name)}</h3>
-          <p class="label">Última: ${formatDate(p.last_plan_date || p.last_appointment)} · <strong>${p.days_since} días</strong></p>
-          ${p.phone ? `<p class="label">${escapeHTML(p.phone)}</p>` : ''}
-        </div>
-        <div class="admin-atencion-actions">
-          ${p.phone ? `<a href="${whatsappLink(p.phone, buildReminderMessage(p))}" target="_blank" rel="noopener" class="closing-cta-btn">WhatsApp →</a>` : '<span class="label">[ sin teléfono ]</span>'}
-          ${p.email ? `<a href="${emailLink(p.email, 'Hola desde PRADO', buildReminderMessage(p))}" class="closing-cta-btn closing-cta-btn--ghost">Correo</a>` : ''}
-        </div>
-      </div>
-    `).join('');
+  function setTab(tab) {
+    state.activeTab = tab;
+    document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.tab === tab));
+    document.querySelectorAll('[data-tab-content]').forEach(s => {
+      s.hidden = s.dataset.tabContent !== tab;
+    });
+    renderTabContent();
   }
 
-  function renderAgenda() {
-    const container = document.querySelector('[data-admin-agenda]');
-    const countEl = document.querySelector('[data-admin-agenda-count]');
-    if (!container) return;
-    const upcoming = allPatients
-      .map(p => ({ ...p, days_until: daysUntil(p.next_appointment) }))
-      .filter(p => p.days_until != null && p.days_until >= 0 && p.days_until <= 14)
-      .sort((a, b) => a.days_until - b.days_until);
-
-    if (countEl) countEl.textContent = `[ ${upcoming.length} ]`;
-
-    if (upcoming.length === 0) {
-      container.innerHTML = '<p class="smae-empty label">[ Sin citas próximas en 2 semanas ]</p>';
-      return;
-    }
-    container.innerHTML = upcoming.map(p => `
-      <div class="admin-agenda-card">
-        <div class="admin-agenda-when">
-          <span class="label">${formatDate(p.next_appointment)}</span>
-          <strong class="admin-agenda-days">${p.days_until === 0 ? 'Hoy' : p.days_until === 1 ? 'Mañana' : `En ${p.days_until} días`}</strong>
-        </div>
-        <div class="admin-agenda-info">
-          <h3>${escapeHTML(p.name)}</h3>
-          ${p.phone ? `<p class="label">${escapeHTML(p.phone)}</p>` : ''}
-          ${p.email ? `<p class="label">${escapeHTML(p.email)}</p>` : ''}
-        </div>
-        <div class="admin-agenda-actions">
-          ${p.seca_link ? `<a href="${escapeHTML(p.seca_link)}" target="_blank" rel="noopener" class="closing-cta-btn closing-cta-btn--ghost">Seca →</a>` : ''}
-          ${p.phone ? `<a href="${whatsappLink(p.phone, buildUpcomingMessage(p))}" target="_blank" rel="noopener" class="closing-cta-btn">Confirmar →</a>` : ''}
-        </div>
-      </div>
-    `).join('');
+  function renderTabContent() {
+    if (state.activeTab === 'pacientes') renderPacientesTab();
+    else if (state.activeTab === 'atencion') renderAtencionTab();
+    else if (state.activeTab === 'agenda') renderAgendaTab();
   }
 
-  function renderTable() {
-    const tbody = document.querySelector('[data-admin-tbody]');
+  // ---------- Pacientes Tab (cards grid) ---------------------------------
+
+  function renderPacientesTab() {
+    const container = document.querySelector('[data-admin-cards]');
     const totalEl = document.querySelector('[data-admin-total]');
-    if (!tbody) return;
+    if (!container) return;
 
-    let filtered = [...allPatients];
-
-    // Filtros
-    if (activeFilter === 'activos') {
+    let filtered = [...state.patients];
+    if (state.activeFilter === 'activos') {
       filtered = filtered.filter(p => {
-        const since = daysSince(p.last_plan_date || p.last_appointment);
-        return since != null && since <= 30;
+        const s = daysSince(p.last_plan_date || p.last_appointment);
+        return s != null && s <= 30;
       });
-    } else if (activeFilter === 'atencion') {
+    } else if (state.activeFilter === 'atencion') {
       filtered = filtered.filter(p => {
-        const since = daysSince(p.last_plan_date || p.last_appointment);
-        return since != null && since > 30;
+        const s = daysSince(p.last_plan_date || p.last_appointment);
+        return s != null && s > 30;
       });
-    } else if (activeFilter === 'con-cita') {
+    } else if (state.activeFilter === 'con-cita') {
       filtered = filtered.filter(p => {
-        const until = daysUntil(p.next_appointment);
-        return until != null && until >= 0;
+        const u = daysUntil(p.next_appointment);
+        return u != null && u >= 0;
       });
     }
-
-    // Búsqueda
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
+    if (state.searchTerm) {
+      const q = state.searchTerm.toLowerCase();
       filtered = filtered.filter(p =>
         (p.name || '').toLowerCase().includes(q) ||
         (p.email || '').toLowerCase().includes(q) ||
@@ -220,118 +302,839 @@
       );
     }
 
-    if (totalEl) totalEl.textContent = `[ ${filtered.length} de ${allPatients.length} ]`;
+    if (totalEl) totalEl.textContent = `${filtered.length} de ${state.patients.length}`;
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="smae-empty label" style="text-align: center; padding: 40px;">[ Sin resultados ]</td></tr>`;
+      container.innerHTML = '<p class="smae-empty label">[ Sin resultados ]</p>';
       return;
     }
 
-    tbody.innerHTML = filtered.map(p => {
-      const since = daysSince(p.last_plan_date || p.last_appointment);
-      const sinceLabel = since == null ? '—' : (since === 0 ? 'Hoy' : `${since} días`);
-      const sinceCls = since != null && since > 30 ? 'admin-cell-warn' : '';
-      const until = daysUntil(p.next_appointment);
-      const untilLabel = until == null ? '—' : (until === 0 ? 'Hoy' : until === 1 ? 'Mañana' : `${until} días`);
-      const tier = tierFor(p.plan_count);
+    container.innerHTML = filtered.map(p => renderPatientCard(p)).join('');
+    container.querySelectorAll('.patient-card').forEach(card => {
+      card.addEventListener('click', () => openDrawer(card.dataset.id));
+    });
+  }
+
+  function renderPatientCard(p) {
+    const since = daysSince(p.last_plan_date || p.last_appointment);
+    const sinceLabel = since == null ? 'Sin consulta' : (since === 0 ? 'Hoy' : `${since} días`);
+    const sinceCls = since != null && since > 30 ? 'is-warn' : '';
+    const until = daysUntil(p.next_appointment);
+    const tier = tierFor(p.plan_count);
+    const initials = getInitials(p.name);
+    return `
+      <article class="patient-card ${sinceCls}" data-id="${escapeHTML(p.id)}" tabindex="0">
+        <div class="patient-card-head">
+          <div class="patient-avatar">${escapeHTML(initials)}</div>
+          <div class="patient-card-id">
+            <h3>${escapeHTML(p.name)}</h3>
+            <p class="label">${p.plan_count || 0} plan${p.plan_count === 1 ? '' : 'es'} · <span class="${tier.cls}">${tier.label}</span></p>
+          </div>
+        </div>
+        <div class="patient-card-meta">
+          <div>
+            <span class="label">Última</span>
+            <strong>${sinceLabel}</strong>
+          </div>
+          <div>
+            <span class="label">Próxima</span>
+            <strong>${until == null ? '—' : (until === 0 ? 'Hoy' : until === 1 ? 'Mañana' : `En ${until}d`)}</strong>
+          </div>
+        </div>
+        ${(p.phone || p.email) ? `
+          <div class="patient-card-contact">
+            ${p.phone ? `<span class="label">${escapeHTML(p.phone)}</span>` : ''}
+            ${p.email ? `<span class="label">${escapeHTML(p.email)}</span>` : ''}
+          </div>` : ''}
+      </article>
+    `;
+  }
+
+  // ---------- Atención Tab ------------------------------------------------
+
+  function renderAtencionTab() {
+    const container = document.querySelector('[data-admin-atencion]');
+    if (!container) return;
+    const enRiesgo = state.patients
+      .map(p => ({ ...p, days_since: daysSince(p.last_plan_date || p.last_appointment) }))
+      .filter(p => p.days_since != null && p.days_since > 30)
+      .sort((a, b) => b.days_since - a.days_since);
+
+    if (enRiesgo.length === 0) {
+      container.innerHTML = '<p class="smae-empty label">[ Todos al día ]</p>';
+      return;
+    }
+    container.innerHTML = enRiesgo.map(p => {
+      const initials = getInitials(p.name);
+      const reminderMsg = `Hola ${p.name}! Soy Hugo. ¿Cómo te ha ido? Veo que tiene rato que no te veo. ¿Quieres agendar una consulta?`;
+      const wa = whatsappLink(p.phone, reminderMsg);
+      return `
+        <article class="patient-card is-warn" data-id="${escapeHTML(p.id)}" tabindex="0">
+          <div class="patient-card-head">
+            <div class="patient-avatar">${escapeHTML(initials)}</div>
+            <div class="patient-card-id">
+              <h3>${escapeHTML(p.name)}</h3>
+              <p class="label"><strong>${p.days_since} días</strong> sin venir</p>
+            </div>
+          </div>
+          <div class="patient-card-meta">
+            <div><span class="label">Última</span><strong>${formatDate(p.last_plan_date || p.last_appointment)}</strong></div>
+          </div>
+          <div class="patient-card-actions">
+            ${wa ? `<a href="${wa}" target="_blank" rel="noopener" class="closing-cta-btn" onclick="event.stopPropagation()">WhatsApp →</a>` : '<span class="label">[ sin teléfono ]</span>'}
+          </div>
+        </article>
+      `;
+    }).join('');
+    container.querySelectorAll('.patient-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        openDrawer(card.dataset.id);
+      });
+    });
+  }
+
+  // ---------- Agenda Tab --------------------------------------------------
+
+  function renderAgendaTab() {
+    const container = document.querySelector('[data-admin-agenda]');
+    if (!container) return;
+    const upcoming = state.patients
+      .map(p => ({ ...p, days_until: daysUntil(p.next_appointment) }))
+      .filter(p => p.days_until != null && p.days_until >= 0 && p.days_until <= 14)
+      .sort((a, b) => a.days_until - b.days_until);
+
+    if (upcoming.length === 0) {
+      container.innerHTML = '<p class="smae-empty label">[ Sin citas próximas ]</p>';
+      return;
+    }
+    container.innerHTML = upcoming.map(p => {
+      const initials = getInitials(p.name);
+      const whenLabel = p.days_until === 0 ? 'HOY' : p.days_until === 1 ? 'MAÑANA' : `EN ${p.days_until} DÍAS`;
+      const confirmMsg = `Hola ${p.name}! Te recuerdo que tenemos consulta el ${formatDate(p.next_appointment)}. ¿Confirmas?`;
+      const wa = whatsappLink(p.phone, confirmMsg);
+      return `
+        <article class="patient-card patient-card--agenda" data-id="${escapeHTML(p.id)}" tabindex="0">
+          <div class="patient-card-when">
+            <span class="label">${whenLabel}</span>
+            <strong>${formatDate(p.next_appointment)}</strong>
+          </div>
+          <div class="patient-card-head">
+            <div class="patient-avatar">${escapeHTML(initials)}</div>
+            <div class="patient-card-id">
+              <h3>${escapeHTML(p.name)}</h3>
+              ${p.phone ? `<p class="label">${escapeHTML(p.phone)}</p>` : ''}
+            </div>
+          </div>
+          <div class="patient-card-actions">
+            ${p.seca_link ? `<a href="${escapeHTML(p.seca_link)}" target="_blank" rel="noopener" class="closing-cta-btn closing-cta-btn--ghost" onclick="event.stopPropagation()">Seca →</a>` : ''}
+            ${wa ? `<a href="${wa}" target="_blank" rel="noopener" class="closing-cta-btn" onclick="event.stopPropagation()">Confirmar →</a>` : ''}
+          </div>
+        </article>
+      `;
+    }).join('');
+    container.querySelectorAll('.patient-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        openDrawer(card.dataset.id);
+      });
+    });
+  }
+
+  // ---------- DRAWER (paciente detalle) ----------------------------------
+
+  function openNewDrawer() {
+    state.drawer = { patient: null, plan: null, historial: [], mealsPreset: 'estandar-5' };
+    populateDrawer({}, []);
+    showDrawer();
+    document.querySelector('[data-drawer-name]').textContent = 'Nuevo paciente';
+    document.querySelector('[data-drawer-tier]').textContent = '[ Capturando datos ]';
+    document.querySelector('[data-drawer-delete]').hidden = true;
+  }
+
+  async function openDrawer(id) {
+    try {
+      const { patient, plans } = await api('/patients/' + id);
+      state.drawer.patient = patient;
+      state.drawer.historial = plans || [];
+      const last = plans && plans[0];
+      state.drawer.plan = last ? cloneFromPlan(last, patient) : null;
+      populateDrawer(patient, plans || []);
+      const tier = tierFor(plans && plans.length || 0);
+      document.querySelector('[data-drawer-name]').textContent = patient.name;
+      document.querySelector('[data-drawer-tier]').textContent = `[ ${tier.label} · ${plans.length} plan${plans.length === 1 ? '' : 'es'} ]`;
+      document.querySelector('[data-drawer-delete]').hidden = false;
+      showDrawer();
+    } catch (e) {
+      alert('No se pudo abrir paciente: ' + e.message);
+    }
+  }
+
+  function cloneFromPlan(plan, patient) {
+    return {
+      patientId: patient.id,
+      name: patient.name,
+      macros: plan.macros || autoMacros(patient) || { kcal: 0, protein: 0, carb: 0, fat: 0 },
+      mode: plan.mode || 'normal',
+      equivalencias: plan.equivalencias || {},
+      meals: plan.meals || {},
+      examples: plan.examples || {},
+      menu_options: plan.menu_options || {},
+    };
+  }
+
+  function showDrawer() {
+    const drawer = document.querySelector('[data-patient-drawer]');
+    drawer.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => drawer.classList.add('is-open'));
+  }
+
+  function hideDrawer() {
+    const drawer = document.querySelector('[data-patient-drawer]');
+    drawer.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(() => { drawer.hidden = true; }, 240);
+  }
+
+  function populateDrawer(p, plans) {
+    const set = (sel, val) => {
+      const el = document.querySelector(sel);
+      if (el) el.value = val == null ? '' : val;
+    };
+    set('#dr-name', p.name);
+    set('#dr-age', p.age);
+    set('#dr-weight', p.weight);
+    set('#dr-weight-target', p.weight_target);
+    set('#dr-height', p.height);
+    set('#dr-conditions', p.conditions);
+    set('#dr-notes', p.notes);
+    set('#dr-email', p.email);
+    set('#dr-phone', p.phone);
+    set('#dr-seca', p.seca_link);
+    set('#dr-next', p.next_appointment ? p.next_appointment.slice(0, 10) : '');
+    if (p.sex) {
+      const r = document.querySelector(`input[name="sex"][value="${p.sex}"]`);
+      if (r) r.checked = true;
+    } else {
+      document.querySelector('input[name="sex"][value="f"]').checked = true;
+    }
+    if (p.activity) set('#dr-activity', p.activity);
+    if (p.goal) set('#dr-goal', p.goal);
+
+    // Antropométricos del último plan
+    const last = plans && plans[0];
+    set('#dr-cita', last ? last.cita_num : '');
+    set('#dr-muslo', last ? last.muslo : '');
+    set('#dr-pierna', last ? last.pierna : '');
+    set('#dr-bicep', last ? last.bicep : '');
+    set('#dr-bicep-flex', last ? last.bicep_flex : '');
+    set('#dr-cintura', last ? last.cintura : '');
+    set('#dr-cadera', last ? last.cadera : '');
+    set('#dr-ombligo', last ? last.ombligo : '');
+    if (last && last.mode) set('#dr-mode', last.mode);
+
+    // Acciones rápidas
+    const wa = document.querySelector('[data-drawer-wa]');
+    const mail = document.querySelector('[data-drawer-mail]');
+    const seca = document.querySelector('[data-drawer-seca]');
+    const reminderMsg = `Hola ${p.name || ''}! Soy Hugo. ¿Cómo te ha ido?`;
+    if (p.phone) { wa.href = whatsappLink(p.phone, reminderMsg); wa.hidden = false; } else { wa.hidden = true; }
+    if (p.email) { mail.href = `mailto:${p.email}?subject=Hola%20de%20Hugo%20Prado&body=${encodeURIComponent(reminderMsg)}`; mail.hidden = false; } else { mail.hidden = true; }
+    if (p.seca_link) { seca.href = p.seca_link; seca.hidden = false; } else { seca.hidden = true; }
+
+    // Plan SMAE
+    if (state.drawer.plan && state.drawer.plan.equivalencias) {
+      document.querySelector('[data-drawer-plan]').hidden = false;
+      document.querySelector('[data-drawer-recalc]').hidden = false;
+      renderDrawerPlan();
+    } else {
+      document.querySelector('[data-drawer-plan]').hidden = true;
+      document.querySelector('[data-drawer-recalc]').hidden = true;
+    }
+
+    // Histórico
+    renderDrawerHistorial(plans);
+  }
+
+  function readDrawerPatientForm() {
+    const fd = new FormData(document.querySelector('[data-patient-form]'));
+    const num = (k) => { const n = parseFloat(fd.get(k)); return Number.isFinite(n) ? n : null; };
+    const str = (k) => (fd.get(k) || '').toString().trim() || null;
+    return {
+      name: (fd.get('name') || '').toString().trim(),
+      sex: fd.get('sex') || 'f',
+      age: num('age'),
+      weight: num('weight'),
+      weight_target: num('weight_target'),
+      height: num('height'),
+      activity: num('activity'),
+      goal: num('goal'),
+      conditions: str('conditions'),
+      notes: str('notes'),
+      email: str('email'),
+      phone: str('phone'),
+      seca_link: str('seca_link'),
+      next_appointment: str('next_appointment'),
+    };
+  }
+
+  function readDrawerMeasurements() {
+    const fd = new FormData(document.querySelector('[data-patient-form]'));
+    const num = (k) => { const n = parseFloat(fd.get(k)); return Number.isFinite(n) ? n : null; };
+    return {
+      cita_num: num('cita_num'),
+      muslo: num('muslo'),
+      pierna: num('pierna'),
+      bicep: num('bicep'),
+      bicep_flex: num('bicep_flex'),
+      cintura: num('cintura'),
+      cadera: num('cadera'),
+      ombligo: num('ombligo'),
+    };
+  }
+
+  // ---------- Drawer SMAE plan -------------------------------------------
+
+  function getDrawerMeals() {
+    return MEAL_PRESETS[state.drawer.mealsPreset] || MEAL_PRESETS['estandar-5'];
+  }
+
+  function calcDrawerPlan() {
+    const data = readDrawerPatientForm();
+    if (!data.name) { alert('Captura el nombre del paciente.'); return; }
+    let macros = autoMacros(data);
+    if (!macros) {
+      // Fallback: pedir macros directos
+      const km = parseFloat(prompt('No hay datos suficientes para auto-calcular. Captura kcal:'));
+      if (!km) return;
+      macros = {
+        kcal: km,
+        protein: parseFloat(prompt('Proteína (g):')) || Math.round((data.weight || 65) * 1.8),
+        carb: parseFloat(prompt('Carbohidratos (g):')) || Math.round((km * 0.5) / 4),
+        fat: parseFloat(prompt('Grasa (g):')) || Math.round((km * 0.25) / 9),
+      };
+    }
+    const fd = new FormData(document.querySelector('[data-patient-form]'));
+    const mode = fd.get('mode') || 'normal';
+    state.drawer.plan = {
+      patientId: state.drawer.patient ? state.drawer.patient.id : null,
+      name: data.name,
+      macros,
+      mode,
+      equivalencias: calculateBase(macros, mode),
+      examples: state.drawer.plan ? state.drawer.plan.examples : {},
+      menu_options: state.drawer.plan ? state.drawer.plan.menu_options : {},
+    };
+    state.drawer.plan.meals = distributeMeals(state.drawer.plan.equivalencias, getDrawerMeals());
+    document.querySelector('[data-drawer-plan]').hidden = false;
+    document.querySelector('[data-drawer-recalc]').hidden = false;
+    renderDrawerPlan();
+  }
+
+  function renderDrawerPlan() {
+    if (!state.drawer.plan) return;
+    renderDrawerGroups();
+    renderDrawerTotals();
+    renderDrawerMeals();
+  }
+
+  function renderDrawerGroups() {
+    const c = document.querySelector('[data-drawer-groups]');
+    c.innerHTML = '';
+    GROUPS.forEach(g => {
+      const value = state.drawer.plan.equivalencias[g.key] || 0;
+      const examples = (state.drawer.plan.examples && state.drawer.plan.examples[g.key]) || [];
+      const row = document.createElement('div');
+      row.className = 'smae-group';
+      row.dataset.group = g.key;
+      row.innerHTML = `
+        <div class="smae-group-head">
+          <span class="smae-group-abbr">[ ${g.abbr} ]</span>
+          <span class="smae-group-label">${g.label}</span>
+        </div>
+        <div class="smae-group-stepper">
+          <button type="button" class="smae-step" data-step="-1">−</button>
+          <input type="number" class="smae-input" min="0" max="30" step="1" value="${value}" data-group-input>
+          <button type="button" class="smae-step" data-step="+1">+</button>
+        </div>
+        <div class="smae-group-meta label">${g.kcal} kcal · ${g.p}P · ${g.c}C · ${g.g}G</div>
+        <div class="smae-group-examples">${renderExamplesPicker(g.key, examples)}</div>
+      `;
+      c.appendChild(row);
+    });
+    c.querySelectorAll('.smae-group').forEach(row => {
+      const key = row.dataset.group;
+      const input = row.querySelector('[data-group-input]');
+      input.addEventListener('input', () => {
+        const v = Math.max(0, Math.ceil(parseFloat(input.value) || 0));
+        input.value = v;
+        state.drawer.plan.equivalencias[key] = v;
+        state.drawer.plan.meals = distributeMeals(state.drawer.plan.equivalencias, getDrawerMeals());
+        renderDrawerTotals();
+        renderDrawerMeals();
+      });
+      row.querySelectorAll('.smae-step').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const delta = parseFloat(btn.dataset.step);
+          const v = Math.max(0, Math.ceil((parseFloat(input.value) || 0) + delta));
+          input.value = v;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      });
+      const exC = row.querySelector('.smae-group-examples');
+      exC.addEventListener('change', e => {
+        if (!e.target.matches('[data-food]')) return;
+        if (!state.drawer.plan.examples) state.drawer.plan.examples = {};
+        if (!state.drawer.plan.examples[key]) state.drawer.plan.examples[key] = [];
+        const arr = state.drawer.plan.examples[key];
+        if (e.target.checked && !arr.includes(e.target.value)) arr.push(e.target.value);
+        if (!e.target.checked) state.drawer.plan.examples[key] = arr.filter(x => x !== e.target.value);
+      });
+    });
+  }
+
+  function renderExamplesPicker(groupKey, selected) {
+    const items = state.foods.filter(f => f.group_key === groupKey);
+    if (items.length === 0) return '';
+    return `
+      <details class="smae-examples-toggle">
+        <summary><span class="label">[ ${selected.length} ejemplos ]${selected.length ? ' ✓' : ''}</span></summary>
+        <ul class="smae-examples-list">
+          ${items.map(f => `
+            <li><label>
+              <input type="checkbox" data-food value="${f.id}" ${selected.includes(f.id) ? 'checked' : ''}>
+              <span>${f.name}</span><span class="label">${f.portion}</span>
+            </label></li>
+          `).join('')}
+        </ul>
+      </details>
+    `;
+  }
+
+  function renderDrawerTotals() {
+    if (!state.drawer.plan) return;
+    const t = sumEq(state.drawer.plan.equivalencias);
+    const target = state.drawer.plan.macros;
+    const set = (sel, val) => {
+      const el = document.querySelector(`[data-patient-drawer] ${sel}`);
+      if (el) el.textContent = val;
+    };
+    set('[data-total="kcal"]', Math.round(t.kcal));
+    set('[data-total="protein"]', Math.round(t.p) + ' g');
+    set('[data-total="carb"]', Math.round(t.c) + ' g');
+    set('[data-total="fat"]', Math.round(t.g) + ' g');
+    set('[data-target="kcal"]', '/ ' + target.kcal);
+    set('[data-target="protein"]', '/ ' + target.protein + ' g');
+    set('[data-target="carb"]', '/ ' + target.carb + ' g');
+    set('[data-target="fat"]', '/ ' + target.fat + ' g');
+    const dev = target.kcal > 0 ? Math.abs(t.kcal - target.kcal) / target.kcal : 0;
+    const aside = document.querySelector('[data-drawer-totals]');
+    if (aside) {
+      aside.classList.toggle('is-on-target', dev < 0.05);
+      aside.classList.toggle('is-off-target', dev > 0.10);
+    }
+    const devEl = document.querySelector('[data-drawer-deviation]');
+    if (devEl) devEl.textContent = `± ${Math.round(dev * 100)}% kcal vs target`;
+  }
+
+  function renderDrawerMeals() {
+    if (!state.drawer.plan) return;
+    const c = document.querySelector('[data-drawer-meals]');
+    c.innerHTML = '';
+    if (!state.drawer.plan.menu_options) state.drawer.plan.menu_options = {};
+    const meals = getDrawerMeals();
+    meals.forEach(m => {
+      const eqList = GROUPS
+        .filter(g => (state.drawer.plan.meals[m.key] && state.drawer.plan.meals[m.key][g.key] || 0) > 0)
+        .map(g => `<li><span class="label">[ ${g.abbr} ]</span><span class="smae-meal-name">${g.label}</span><strong>${formatN(state.drawer.plan.meals[m.key][g.key])}</strong></li>`).join('');
+      const opts = state.drawer.plan.menu_options[m.key] || ['', '', ''];
+      const card = document.createElement('div');
+      card.className = 'smae-meal';
+      card.innerHTML = `
+        <div class="smae-meal-head">
+          <span class="label">[ ${m.label} ]</span>
+          <span class="label smae-meal-pct">${Math.round(m.pct * 100)}%</span>
+        </div>
+        ${eqList ? `<ul class="smae-meal-list">${eqList}</ul>` : '<p class="smae-empty label">[ vacío ]</p>'}
+        <div class="smae-meal-options">
+          <div class="smae-meal-options-head">
+            <span class="label">[ 3 opciones ]</span>
+            <button type="button" class="smae-meal-autofill label" data-meal="${m.key}">Auto-llenar →</button>
+          </div>
+          <div class="smae-meal-options-grid">
+            <textarea data-meal-opt="${m.key}" data-opt-idx="0" placeholder="Opción 1" rows="3">${escapeHTML(opts[0] || '')}</textarea>
+            <textarea data-meal-opt="${m.key}" data-opt-idx="1" placeholder="Opción 2" rows="3">${escapeHTML(opts[1] || '')}</textarea>
+            <textarea data-meal-opt="${m.key}" data-opt-idx="2" placeholder="Opción 3" rows="3">${escapeHTML(opts[2] || '')}</textarea>
+          </div>
+        </div>
+      `;
+      c.appendChild(card);
+    });
+    c.querySelectorAll('textarea[data-meal-opt]').forEach(ta => {
+      ta.addEventListener('input', () => {
+        const k = ta.dataset.mealOpt;
+        const i = parseInt(ta.dataset.optIdx, 10);
+        if (!state.drawer.plan.menu_options[k]) state.drawer.plan.menu_options[k] = ['', '', ''];
+        state.drawer.plan.menu_options[k][i] = ta.value;
+      });
+    });
+    c.querySelectorAll('.smae-meal-autofill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.meal;
+        state.drawer.plan.menu_options[k] = generarSugerenciasMenu(k);
+        renderDrawerMeals();
+      });
+    });
+  }
+
+  function generarSugerenciasMenu(mealKey) {
+    if (!state.drawer.plan) return ['', '', ''];
+    const groupsWithEq = GROUPS.filter(g =>
+      (state.drawer.plan.meals[mealKey] && state.drawer.plan.meals[mealKey][g.key] || 0) > 0
+    );
+    if (groupsWithEq.length === 0) return ['', '', ''];
+    return [0, 1, 2].map(i => groupsWithEq.map(g => {
+      const eqAmount = state.drawer.plan.meals[mealKey][g.key];
+      const selectedIds = (state.drawer.plan.examples && state.drawer.plan.examples[g.key]) || [];
+      let pool = state.foods.filter(f => selectedIds.includes(f.id));
+      if (pool.length === 0) pool = state.foods.filter(f => f.group_key === g.key);
+      if (pool.length === 0) return `${formatN(eqAmount)} ${g.label}`;
+      const food = pool[i % pool.length];
+      return `${formatN(eqAmount)} ${g.label.toLowerCase()}: ${food.name} (${food.portion}${eqAmount > 1 ? ' x ' + formatN(eqAmount) : ''})`;
+    }).join('\n'));
+  }
+
+  function applyKcalDelta(pct) {
+    if (!state.drawer.plan) return;
+    state.drawer.plan.macros.kcal = Math.round(state.drawer.plan.macros.kcal * (1 + pct));
+    state.drawer.plan.macros.protein = Math.round(state.drawer.plan.macros.protein * (1 + pct));
+    state.drawer.plan.macros.carb = Math.round(state.drawer.plan.macros.carb * (1 + pct));
+    state.drawer.plan.macros.fat = Math.round(state.drawer.plan.macros.fat * (1 + pct));
+    state.drawer.plan.equivalencias = calculateBase(state.drawer.plan.macros, state.drawer.plan.mode || 'normal');
+    state.drawer.plan.meals = distributeMeals(state.drawer.plan.equivalencias, getDrawerMeals());
+    renderDrawerPlan();
+  }
+
+  function renderDrawerHistorial(plans) {
+    const c = document.querySelector('[data-drawer-historial]');
+    if (!c) return;
+    if (!plans || plans.length === 0) {
+      c.innerHTML = '<p class="smae-empty label">[ Sin planes guardados aún ]</p>';
+      return;
+    }
+    c.innerHTML = `
+      <ul class="drawer-historial-list">
+        ${plans.map(p => `
+          <li>
+            <span class="label">${formatDate(p.date)}</span>
+            <span>${p.macros && p.macros.kcal ? p.macros.kcal + ' kcal' : ''}</span>
+            <span class="label">${p.weight_at_plan ? p.weight_at_plan + ' kg' : ''}</span>
+            <span class="label">${p.cita_num ? 'Cita ' + p.cita_num : ''}</span>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  }
+
+  // ---------- Save / Delete ----------------------------------------------
+
+  async function savePatientFromDrawer() {
+    const data = readDrawerPatientForm();
+    if (!data.name) { alert('Captura el nombre.'); return; }
+    if (state.drawer.patient && state.drawer.patient.id) data.id = state.drawer.patient.id;
+    try {
+      const { id } = await api('/patients', { method: 'POST', body: data });
+      if (!state.drawer.patient) state.drawer.patient = { ...data, id };
+      else Object.assign(state.drawer.patient, data, { id });
+      flashBtn('[data-drawer-save-patient]', 'Guardado ✓');
+      await loadAll();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  async function savePlanFromDrawer() {
+    if (!state.drawer.plan || !state.drawer.patient) {
+      alert('Primero guarda los datos del paciente y calcula plan.');
+      return;
+    }
+    const meals = getDrawerMeals();
+    try {
+      const meas = readDrawerMeasurements();
+      const patientData = readDrawerPatientForm();
+      patientData.id = state.drawer.patient.id;
+      await api('/patients', { method: 'POST', body: patientData });
+      await api(`/patients/${state.drawer.patient.id}/plans`, {
+        method: 'POST',
+        body: {
+          date: new Date().toISOString(),
+          macros: state.drawer.plan.macros,
+          equivalencias: state.drawer.plan.equivalencias,
+          meals: state.drawer.plan.meals,
+          meals_distribution: meals.map(m => ({ key: m.key, pct: m.pct, label: m.label })),
+          mode: state.drawer.plan.mode || 'normal',
+          examples: state.drawer.plan.examples || {},
+          menu_options: state.drawer.plan.menu_options || {},
+          weight_at_plan: patientData.weight || null,
+          notes: patientData.notes || null,
+          ...meas,
+        },
+      });
+      flashBtn('[data-drawer-save-plan]', 'Guardado ✓');
+      await loadAll();
+      // Recargar histórico del drawer
+      const { plans } = await api('/patients/' + state.drawer.patient.id);
+      state.drawer.historial = plans;
+      renderDrawerHistorial(plans);
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  async function deletePatientFromDrawer() {
+    if (!state.drawer.patient || !state.drawer.patient.id) return;
+    if (!confirm(`¿Eliminar a ${state.drawer.patient.name} y todos sus planes? No se puede deshacer.`)) return;
+    try {
+      await api('/patients/' + state.drawer.patient.id, { method: 'DELETE' });
+      hideDrawer();
+      await loadAll();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  function flashBtn(sel, msg) {
+    const btn = document.querySelector(sel);
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }
+
+  // ---------- Print PDF (drawer) ----------------------------------------
+
+  function printDrawerPlan() {
+    if (!state.drawer.plan || !state.drawer.patient) return;
+    preparePrintData();
+    window.print();
+  }
+
+  function preparePrintData() {
+    const root = document.querySelector('[data-smae-print-area]');
+    if (!root) return;
+    const meals = getDrawerMeals();
+    const target = state.drawer.plan.macros;
+    const meas = readDrawerMeasurements();
+    const totalKcal = target.kcal;
+    const ptKcal = target.protein * 4;
+    const lpKcal = target.fat * 9;
+    const hcKcal = target.carb * 4;
+    const ptPct = totalKcal > 0 ? (ptKcal / totalKcal * 100).toFixed(2) : 0;
+    const lpPct = totalKcal > 0 ? (lpKcal / totalKcal * 100).toFixed(2) : 0;
+    const hcPct = totalKcal > 0 ? (hcKcal / totalKcal * 100).toFixed(2) : 0;
+
+    const RECOMENDACIONES = [
+      'Cocina a la plancha, al vapor, al carbón, hervido, al horno o en caldo.',
+      'Prepara tus comidas por adelantado para evitar romper el plan.',
+      'En ocasiones especiales mide y controla lo que consumas, o lleva un snack del plan.',
+      'Evita malos hábitos: desvelarte, fumar, alcohol o drogas.',
+      'Duerme 7-8 horas con el cuarto oscuro a 18-21°C.',
+      'Hábitos para reducir estrés: respiración, meditación, introspección.',
+      'Tomate fotos 1 vez por semana. Observa digestión y energía.',
+      'La terapia psicológica brinda un pilar fuerte para tu éxito.',
+    ];
+    const LIBRES = ['Especias en general', 'Café negro 2 tazas/día', 'Refresco light 1 taza/día', 'Tés/infusiones 2 tazas/día', 'Stevia, Splenda o Monk Fruit'];
+    const EVITAR = ['Agregar grasas o aceite para cocinar', 'Cualquier alimento que no esté en el menú', 'Aceite de girasol, maíz, soya, canola, uva, cáñamo o cártamo'];
+    const ERRORES = [
+      ['No medir las porciones', 'Apégate a las gramos, tazas, cucharas indicadas.'],
+      ['No tomar suficiente agua', 'Te mantiene hidratado y satisfecho.'],
+      ['No terminarse la comida', 'Comer menos sube tu apetito después.'],
+      ['Pesarte constantemente', 'El peso no lo es todo; aumenta masa muscular.'],
+      ['Agregar aceite/sazonadores/aderezos sin recomendación', 'Suman calorías sin avisar.'],
+      ['Comprar producto distinto', 'Cambian el valor calórico. Pregúntame.'],
+      ['Productos extras "saludables"', 'Todo es calórico. La fama engaña.'],
+      ['Confiar en etiquetado light', 'La publicidad engaña. Avísame.'],
+    ];
+
+    const measRow = (key) => {
+      const v = meas[key];
+      return v != null ? `<td><strong>${v}</strong></td>` : '<td>-</td>';
+    };
+    const citaNum = meas.cita_num ? `${meas.cita_num}ª Cita` : 'Cita actual';
+    const fecha = formatDate(new Date().toISOString());
+    const menuOpts = state.drawer.plan.menu_options || {};
+    const mealRows = meals.map(m => {
+      const eqAbbrs = GROUPS
+        .filter(g => (state.drawer.plan.meals[m.key] && state.drawer.plan.meals[m.key][g.key] || 0) > 0)
+        .map(g => `${g.abbr} ${formatN(state.drawer.plan.meals[m.key][g.key])}`)
+        .join(' · ');
+      const opts = menuOpts[m.key] || ['', '', ''];
+      const escapeMl = s => s ? escapeHTML(s).replace(/\n/g, '<br/>') : '<span class="print-empty">-</span>';
       return `
         <tr>
-          <td>
-            <strong>${escapeHTML(p.name)}</strong>
-            <div class="label admin-cell-sub">${p.plan_count || 0} plan${p.plan_count === 1 ? '' : 'es'}</div>
+          <td class="print-meal-name">
+            <strong>${m.label.toUpperCase()}</strong>
+            <div class="print-meal-eqs">${eqAbbrs}</div>
           </td>
-          <td>
-            ${p.phone ? `<div>${escapeHTML(p.phone)}</div>` : ''}
-            ${p.email ? `<div class="label">${escapeHTML(p.email)}</div>` : ''}
-            ${!p.phone && !p.email ? '<span class="label">—</span>' : ''}
-          </td>
-          <td class="${sinceCls}">
-            ${formatDate(p.last_plan_date || p.last_appointment)}
-            <div class="label admin-cell-sub">${sinceLabel}</div>
-          </td>
-          <td>
-            ${p.next_appointment ? `${formatDate(p.next_appointment)}<div class="label admin-cell-sub">${untilLabel}</div>` : '<span class="label">—</span>'}
-          </td>
-          <td>
-            <span class="admin-tier-badge ${tier.cls}">${tier.icon} ${tier.label}</span>
-          </td>
-          <td class="admin-cell-actions">
-            ${p.seca_link ? `<a href="${escapeHTML(p.seca_link)}" target="_blank" rel="noopener" title="Ver en seca">Seca</a>` : ''}
-            ${p.phone ? `<a href="${whatsappLink(p.phone, buildReminderMessage(p))}" target="_blank" rel="noopener" title="WhatsApp">WA</a>` : ''}
-            ${p.email ? `<a href="${emailLink(p.email, 'Hola desde PRADO', buildReminderMessage(p))}" title="Correo">Mail</a>` : ''}
-            <a href="https://prado-mx.com/smae?patient_id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener" title="SMAE">SMAE</a>
-          </td>
+          <td>${escapeMl(opts[0])}</td>
+          <td>${escapeMl(opts[1])}</td>
+          <td>${escapeMl(opts[2])}</td>
         </tr>
       `;
     }).join('');
-  }
 
-  // ---------- Templates ---------------------------------------------------
-
-  function getTemplate(kind) {
-    const ta = document.querySelector(`[data-tpl="${kind}"]`);
-    return ta ? ta.value : '';
-  }
-
-  function fillTemplate(text, p) {
-    return text
-      .replace(/\{nombre\}/g, p.name || '')
-      .replace(/\{fecha\}/g, formatDate(p.next_appointment));
-  }
-
-  function buildReminderMessage(p) {
-    return fillTemplate(getTemplate('reminder') || `Hola ${p.name}! Soy Hugo. ¿Cómo te ha ido? ¿Quieres agendar una consulta para ver cómo vas?`, p);
-  }
-
-  function buildUpcomingMessage(p) {
-    return fillTemplate(getTemplate('upcoming') || `Hola ${p.name}! Te recuerdo que tenemos consulta el ${formatDate(p.next_appointment)}.`, p);
+    root.innerHTML = `
+      <section class="print-page print-cover">
+        <div class="print-cover-mark"><span class="print-bracket">[</span><span class="print-prado">PRADO</span><span class="print-bracket">]</span></div>
+        <div class="print-cover-x">x</div>
+        <div class="print-cover-name">${escapeHTML(state.drawer.patient.name).toUpperCase()}</div>
+        ${meas.cita_num ? `<div class="print-cover-cita">${citaNum}</div>` : ''}
+      </section>
+      <section class="print-page">
+        <h2 class="print-h2">[ Macronutrientes ]</h2>
+        <table class="print-macros-tbl">
+          <thead><tr><th></th><th>%</th><th>GR</th><th>KCAL</th></tr></thead>
+          <tbody>
+            <tr><th>PT</th><td>${ptPct}</td><td>${target.protein}</td><td>${ptKcal}</td></tr>
+            <tr><th>LP</th><td>${lpPct}</td><td>${target.fat}</td><td>${lpKcal}</td></tr>
+            <tr><th>HC</th><td>${hcPct}</td><td>${target.carb}</td><td>${hcKcal}</td></tr>
+            <tr class="print-total"><th>TOTAL</th><td>100</td><td></td><td>${totalKcal}</td></tr>
+          </tbody>
+        </table>
+        <h2 class="print-h2">[ Tabla de resultados antropométricos ]</h2>
+        <table class="print-antro">
+          <thead><tr><th>Datos</th><th>${citaNum}<br/><span class="print-fecha">${fecha}</span></th></tr></thead>
+          <tbody>
+            <tr><th>Muslo</th>${measRow('muslo')}</tr>
+            <tr><th>Pierna</th>${measRow('pierna')}</tr>
+            <tr><th>Bícep</th>${measRow('bicep')}</tr>
+            <tr><th>Bícep flex</th>${measRow('bicep_flex')}</tr>
+            <tr><th>Cintura</th>${measRow('cintura')}</tr>
+            <tr><th>Cadera</th>${measRow('cadera')}</tr>
+            <tr><th>Ombligo</th>${measRow('ombligo')}</tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="print-page"><h2 class="print-h2">[ Recomendaciones ]</h2><ul class="print-list">${RECOMENDACIONES.map(r => `<li>${r}</li>`).join('')}</ul></section>
+      <section class="print-page"><h2 class="print-h2">[ Alimentos libres ]</h2><ul class="print-list">${LIBRES.map(r => `<li>${r}</li>`).join('')}</ul><h2 class="print-h2">[ Alimentos a evitar ]</h2><ul class="print-list">${EVITAR.map(r => `<li>${r}</li>`).join('')}</ul></section>
+      <section class="print-page"><h2 class="print-h2">[ Errores frecuentes ]</h2><ul class="print-list">${ERRORES.map(([t, d]) => `<li><strong>${t}.</strong> ${d}</li>`).join('')}</ul></section>
+      <section class="print-page print-menu-page">
+        <h2 class="print-h2">[ Menú semanal ]</h2>
+        <p class="print-leyenda">Pza: pieza · c: cdita · C: cda · T: taza · gr: gramos · reb: rebanada</p>
+        <table class="print-menu">
+          <thead><tr><th>Tiempo</th><th>Opción 1</th><th>Opción 2</th><th>Opción 3</th></tr></thead>
+          <tbody>${mealRows}</tbody>
+        </table>
+        <p class="print-leyenda print-leyenda-foot">Verduras: ejotes, nopales, espinacas, acelgas, coliflor, brócoli, zanahoria, chayote, espárragos, champiñones, lechuga, cebolla, jitomate, pimiento morrón.</p>
+      </section>
+      <section class="print-page print-close">
+        <p class="print-close-msg">¡Recuerda que es un proceso, y el proceso no es lineal! Habrá días buenos y malos, todo gran esfuerzo traerá un gran resultado.</p>
+        <div class="print-close-pillars"><div>PACIENCIA</div><div>PERSEVERANCIA</div><div>DISCIPLINA</div></div>
+        <p class="print-close-wish">¡Te deseo muchísimo éxito!</p>
+        <div class="print-cover-mark print-close-mark"><span class="print-bracket">[</span><span class="print-prado">PRADO</span><span class="print-bracket">]</span></div>
+      </section>
+    `;
   }
 
   // ---------- Init --------------------------------------------------------
 
+  function showHome() {
+    document.querySelector('[data-admin-home]').hidden = false;
+    document.querySelector('[data-admin-panel]').hidden = true;
+    document.body.classList.remove('admin-panel-active');
+  }
+  function showPanel() {
+    document.querySelector('[data-admin-home]').hidden = true;
+    document.querySelector('[data-admin-panel]').hidden = false;
+    document.body.classList.add('admin-panel-active');
+    try { localStorage.setItem('admin-skip-home', '1'); } catch (e) {}
+  }
+
   function init() {
-    // Search
+    // Skip home si ya entró antes (siguientes visitas)
+    let skip = false;
+    try { skip = localStorage.getItem('admin-skip-home') === '1'; } catch (e) {}
+    if (skip) showPanel(); else showHome();
+
+    document.querySelector('[data-admin-enter]').addEventListener('click', showPanel);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !document.querySelector('[data-admin-home]').hidden && !e.target.closest('input,textarea,select,button')) {
+        showPanel();
+      }
+      if (e.key === 'Escape') hideDrawer();
+    });
+    document.querySelector('[data-admin-home-btn]').addEventListener('click', () => {
+      try { localStorage.removeItem('admin-skip-home'); } catch (e) {}
+      showHome();
+    });
+
+    // Tabs
+    document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+    // Search & filter
     const search = document.querySelector('[data-admin-search]');
-    if (search) {
-      search.addEventListener('input', () => {
-        searchTerm = search.value.trim();
-        renderTable();
-      });
-    }
-
-    // Filters
-    document.querySelectorAll('[data-admin-filter]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeFilter = btn.dataset.adminFilter;
-        document.querySelectorAll('[data-admin-filter]').forEach(b => b.classList.toggle('is-active', b === btn));
-        renderTable();
+    if (search) search.addEventListener('input', () => { state.searchTerm = search.value.trim(); renderTabContent(); });
+    document.querySelectorAll('[data-admin-filter]').forEach(b => {
+      b.addEventListener('click', () => {
+        state.activeFilter = b.dataset.adminFilter;
+        document.querySelectorAll('[data-admin-filter]').forEach(x => x.classList.toggle('is-active', x === b));
+        renderTabContent();
       });
     });
 
-    // Copy template buttons
-    document.querySelectorAll('[data-copy-tpl]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const kind = btn.dataset.copyTpl;
-        const text = getTemplate(kind);
+    // Nuevo paciente
+    document.querySelector('[data-admin-new]').addEventListener('click', openNewDrawer);
+
+    // Drawer
+    document.querySelectorAll('[data-drawer-close]').forEach(b => b.addEventListener('click', hideDrawer));
+    document.querySelector('[data-drawer-save-patient]').addEventListener('click', savePatientFromDrawer);
+    document.querySelector('[data-drawer-save-plan]').addEventListener('click', savePlanFromDrawer);
+    document.querySelector('[data-drawer-delete]').addEventListener('click', deletePatientFromDrawer);
+    document.querySelector('[data-drawer-calc]').addEventListener('click', calcDrawerPlan);
+    document.querySelector('[data-drawer-recalc]').addEventListener('click', () => {
+      if (!state.drawer.plan) return;
+      const fd = new FormData(document.querySelector('[data-patient-form]'));
+      const mode = fd.get('mode') || 'normal';
+      state.drawer.plan.mode = mode;
+      state.drawer.plan.equivalencias = calculateBase(state.drawer.plan.macros, mode);
+      state.drawer.plan.meals = distributeMeals(state.drawer.plan.equivalencias, getDrawerMeals());
+      renderDrawerPlan();
+    });
+    document.querySelector('[data-drawer-print]').addEventListener('click', printDrawerPlan);
+    document.querySelectorAll('[data-kcal-delta]').forEach(b => {
+      b.addEventListener('click', () => applyKcalDelta(parseFloat(b.dataset.kcalDelta)));
+    });
+    const presetSel = document.querySelector('#dr-meals-preset');
+    if (presetSel) presetSel.addEventListener('change', () => {
+      state.drawer.mealsPreset = presetSel.value;
+      if (state.drawer.plan) {
+        state.drawer.plan.meals = distributeMeals(state.drawer.plan.equivalencias, getDrawerMeals());
+        renderDrawerMeals();
+      }
+    });
+
+    // Templates copy
+    document.querySelectorAll('[data-copy-tpl]').forEach(b => {
+      b.addEventListener('click', async () => {
+        const ta = document.querySelector(`[data-tpl="${b.dataset.copyTpl}"]`);
+        if (!ta) return;
         try {
-          await navigator.clipboard.writeText(text);
-          const orig = btn.textContent;
-          btn.textContent = 'Copiado ✓';
-          setTimeout(() => { btn.textContent = orig; }, 1400);
-        } catch (e) {
-          alert('No se pudo copiar.');
-        }
+          await navigator.clipboard.writeText(ta.value);
+          const orig = b.textContent;
+          b.textContent = 'Copiado ✓';
+          setTimeout(() => { b.textContent = orig; }, 1400);
+        } catch (e) { alert('No se pudo copiar.'); }
       });
     });
 
-    load();
-    // Refrescar cada 2 minutos por si cambia algo desde /smae
-    setInterval(load, 120000);
+    // Theme toggle (reuse del scroll.js no aplica aquí)
+    document.querySelectorAll('[data-theme-toggle]').forEach(b => {
+      b.addEventListener('click', () => {
+        const dark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem('prado-theme', dark ? 'dark' : 'light'); } catch (e) {}
+        document.querySelectorAll('[data-theme-label]').forEach(l => l.textContent = dark ? 'Light' : 'Dark');
+      });
+    });
+
+    loadAll();
+    setInterval(loadAll, 120000);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();

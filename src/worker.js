@@ -23,24 +23,33 @@ export default {
       }
     }
 
-    // Subdominio admin: el root redirige a /admin (la URL canónica del CRM).
-    // El root estuvo cacheado con prado-mx.com home cuando hicimos primer
-    // deploy; el redirect 302 no se cachea agresivamente como sí lo hace
-    // el HTML, así que esto es la salida limpia.
+    // Subdominio admin: hostname admin sirve el CRM directo en cualquier path.
+    // Intentamos borrar entrada cacheada del root y devolver admin.html con
+    // Cache-Control: no-store para que CF no cachee respuestas viejas.
     if (url.hostname === 'admin.prado-mx.com') {
-      if (url.pathname === '/' || url.pathname === '') {
-        return new Response('', {
-          status: 302,
-          headers: {
-            'location': 'https://admin.prado-mx.com/admin',
-            'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
-          },
-        });
-      }
       // Bloquear paths "públicos" que solo deben vivir en prado-mx.com
       const publicPaths = ['/index.html', '/hugo.html', '/consulting.html', '/macros.html', '/smae.html'];
       if (publicPaths.includes(url.pathname) || url.pathname === '/hugo' || url.pathname === '/consulting' || url.pathname === '/macros') {
         return Response.redirect('https://prado-mx.com' + url.pathname, 302);
+      }
+
+      // Root o cualquier path "lindo" del admin: servir admin.html
+      // con headers anti-cache. El worker SIEMPRE genera respuesta nueva.
+      if (url.pathname === '/' || url.pathname === '' || url.pathname === '/admin' || url.pathname === '/dashboard' || url.pathname === '/index.html' || url.pathname === '/inicio') {
+        // Intentar borrar cualquier entrada cacheada (best-effort)
+        try { await caches.default.delete(request); } catch (e) {}
+
+        const adminUrl = new URL('/admin.html', request.url);
+        const adminReq = new Request(adminUrl, { method: 'GET', headers: request.headers });
+        const r = await env.ASSETS.fetch(adminReq);
+        const headers = new Headers(r.headers);
+        headers.set('cache-control', 'no-store, no-cache, must-revalidate, max-age=0, private');
+        headers.set('cdn-cache-control', 'no-store');
+        headers.set('cf-cache-control', 'no-store');
+        headers.delete('etag');
+        headers.delete('last-modified');
+        headers.delete('expires');
+        return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
       }
     }
 

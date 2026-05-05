@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=9" />
+  <link rel="stylesheet" href="/style.css?v=10" />
 
   <script>
     (function () {
@@ -28,231 +28,414 @@
     })();
   </script>
 </head>
-<body>
+<body class="admin-body">
 
-  <nav class="nav">
-    <a href="/" class="nav-logo" aria-label="PRADO Admin">
-      <svg viewBox="80 360 920 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <g fill="currentColor">
-          <path d="M292.56,551.51c-10.04,8.37-24.36,12.56-42.99,12.56h-35.69v61.64h-35.59v-171.42h73.61c16.97,0,30.5,4.42,40.58,13.26,10.09,8.84,15.13,22.52,15.13,41.05,0,20.24-5.02,34.54-15.05,42.91ZM265.23,489.76c-4.54-3.8-10.89-5.7-19.07-5.7h-32.28v50.47h32.28c8.17,0,14.53-2.05,19.07-6.16,4.54-4.11,6.8-10.62,6.8-19.54s-2.27-15.27-6.8-19.07Z"/>
-          <path d="M414.2,458.71c6.31,2.72,11.66,6.71,16.05,11.98,3.63,4.34,6.5,9.15,8.62,14.42,2.12,5.27,3.17,11.28,3.17,18.03,0,8.14-2.05,16.15-6.16,24.02-4.11,7.87-10.89,13.43-20.35,16.69,7.91,3.18,13.51,7.7,16.81,13.55,3.3,5.86,4.94,14.79,4.94,26.81v11.51c0,7.83.31,13.14.95,15.93.95,4.42,3.15,7.68,6.61,9.77v4.3h-39.54c-1.09-3.8-1.86-6.86-2.33-9.19-.93-4.81-1.43-9.73-1.51-14.77l-.23-15.93c-.15-10.93-2.04-18.22-5.67-21.86-3.63-3.64-10.43-5.47-20.41-5.47h-34.98v67.22h-35.01v-171.42h81.99c11.72.23,20.73,1.71,27.05,4.42ZM340.16,484.06v46.05h38.55c7.66,0,13.4-.93,17.23-2.79,6.77-3.26,10.16-9.69,10.16-19.31,0-10.39-3.28-17.37-9.83-20.93-3.68-2.02-9.2-3.02-16.57-3.02h-39.54Z"/>
-          <path d="M504.37,454.29h40.53l60.65,171.42h-38.84l-11.31-35.24h-63.13l-11.62,35.24h-37.47l61.19-171.42ZM502.01,560.93h43.9l-21.65-67.45-22.25,67.45Z"/>
-          <path d="M704.8,458.01c12.03,3.95,21.76,11.21,29.21,21.75,5.97,8.53,10.04,17.75,12.22,27.68,2.17,9.93,3.26,19.38,3.26,28.38,0,22.79-4.58,42.1-13.73,57.92-12.41,21.32-31.58,31.98-57.5,31.98h-73.91v-171.42h73.91c10.63.16,19.48,1.4,26.54,3.72ZM639.13,484.06v111.88h33.08c16.93,0,28.73-8.33,35.41-25,3.65-9.15,5.47-20.04,5.47-32.68,0-17.44-2.74-30.84-8.21-40.18-5.48-9.34-16.37-14.01-32.67-14.01h-33.08Z"/>
-          <path d="M885.36,612.48c-12.95,13.34-31.67,20-56.17,20s-43.22-6.67-56.17-20c-17.37-16.36-26.05-39.93-26.05-70.71s8.68-54.97,26.05-70.71c12.95-13.33,31.67-20,56.17-20s43.22,6.67,56.17,20c17.29,15.74,25.93,39.31,25.93,70.71s-8.64,54.35-25.93,70.71ZM862.97,586.43c8.33-10.47,12.5-25.35,12.5-44.66s-4.17-34.09-12.5-44.6c-8.33-10.51-19.6-15.76-33.78-15.76s-25.51,5.23-33.96,15.7c-8.45,10.47-12.68,25.35-12.68,44.66s4.23,34.19,12.68,44.66c8.45,10.47,19.77,15.7,33.96,15.7s25.45-5.23,33.78-15.7Z"/>
-          <polygon points="142.71 383.11 107.12 383.11 107.12 418.7 107.12 454.29 142.71 454.29 142.71 418.7 178.29 418.7 178.29 383.11 142.71 383.11"/>
-          <polygon points="142.71 661.3 142.71 625.71 107.12 625.71 107.12 661.3 107.12 696.89 142.71 696.89 178.29 696.89 178.29 661.3 142.71 661.3"/>
-          <polygon points="937.29 625.71 937.29 661.3 901.71 661.3 901.71 696.89 937.29 696.89 972.88 696.89 972.88 661.3 972.88 625.71 937.29 625.71"/>
-          <polygon points="937.29 383.11 901.71 383.11 901.71 418.7 937.29 418.7 937.29 454.29 972.88 454.29 972.88 418.7 972.88 383.11 937.29 383.11"/>
-        </g>
-      </svg>
-    </a>
-    <div class="nav-right">
-      <div class="nav-links">
-        <a href="#kpis">KPIs</a>
-        <a href="#atencion">Atención</a>
-        <a href="#agenda">Agenda</a>
-        <a href="#pacientes">Pacientes</a>
-        <a href="https://prado-mx.com/smae" target="_blank" rel="noopener">SMAE →</a>
+  <!-- ============ VISTA HOME (hero) ============ -->
+  <div class="admin-home" data-admin-home>
+    <nav class="nav admin-nav">
+      <a href="/" class="nav-logo" aria-label="PRADO Admin">
+        <svg viewBox="80 360 920 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="currentColor">
+            <path d="M292.56,551.51c-10.04,8.37-24.36,12.56-42.99,12.56h-35.69v61.64h-35.59v-171.42h73.61c16.97,0,30.5,4.42,40.58,13.26,10.09,8.84,15.13,22.52,15.13,41.05,0,20.24-5.02,34.54-15.05,42.91ZM265.23,489.76c-4.54-3.8-10.89-5.7-19.07-5.7h-32.28v50.47h32.28c8.17,0,14.53-2.05,19.07-6.16,4.54-4.11,6.8-10.62,6.8-19.54s-2.27-15.27-6.8-19.07Z"/>
+            <path d="M414.2,458.71c6.31,2.72,11.66,6.71,16.05,11.98,3.63,4.34,6.5,9.15,8.62,14.42,2.12,5.27,3.17,11.28,3.17,18.03,0,8.14-2.05,16.15-6.16,24.02-4.11,7.87-10.89,13.43-20.35,16.69,7.91,3.18,13.51,7.7,16.81,13.55,3.3,5.86,4.94,14.79,4.94,26.81v11.51c0,7.83.31,13.14.95,15.93.95,4.42,3.15,7.68,6.61,9.77v4.3h-39.54c-1.09-3.8-1.86-6.86-2.33-9.19-.93-4.81-1.43-9.73-1.51-14.77l-.23-15.93c-.15-10.93-2.04-18.22-5.67-21.86-3.63-3.64-10.43-5.47-20.41-5.47h-34.98v67.22h-35.01v-171.42h81.99c11.72.23,20.73,1.71,27.05,4.42ZM340.16,484.06v46.05h38.55c7.66,0,13.4-.93,17.23-2.79,6.77-3.26,10.16-9.69,10.16-19.31,0-10.39-3.28-17.37-9.83-20.93-3.68-2.02-9.2-3.02-16.57-3.02h-39.54Z"/>
+            <path d="M504.37,454.29h40.53l60.65,171.42h-38.84l-11.31-35.24h-63.13l-11.62,35.24h-37.47l61.19-171.42ZM502.01,560.93h43.9l-21.65-67.45-22.25,67.45Z"/>
+            <path d="M704.8,458.01c12.03,3.95,21.76,11.21,29.21,21.75,5.97,8.53,10.04,17.75,12.22,27.68,2.17,9.93,3.26,19.38,3.26,28.38,0,22.79-4.58,42.1-13.73,57.92-12.41,21.32-31.58,31.98-57.5,31.98h-73.91v-171.42h73.91c10.63.16,19.48,1.4,26.54,3.72ZM639.13,484.06v111.88h33.08c16.93,0,28.73-8.33,35.41-25,3.65-9.15,5.47-20.04,5.47-32.68,0-17.44-2.74-30.84-8.21-40.18-5.48-9.34-16.37-14.01-32.67-14.01h-33.08Z"/>
+            <path d="M885.36,612.48c-12.95,13.34-31.67,20-56.17,20s-43.22-6.67-56.17-20c-17.37-16.36-26.05-39.93-26.05-70.71s8.68-54.97,26.05-70.71c12.95-13.33,31.67-20,56.17-20s43.22,6.67,56.17,20c17.29,15.74,25.93,39.31,25.93,70.71s-8.64,54.35-25.93,70.71ZM862.97,586.43c8.33-10.47,12.5-25.35,12.5-44.66s-4.17-34.09-12.5-44.6c-8.33-10.51-19.6-15.76-33.78-15.76s-25.51,5.23-33.96,15.7c-8.45,10.47-12.68,25.35-12.68,44.66s4.23,34.19,12.68,44.66c8.45,10.47,19.77,15.7,33.96,15.7s25.45-5.23,33.78-15.7Z"/>
+            <polygon points="142.71 383.11 107.12 383.11 107.12 418.7 107.12 454.29 142.71 454.29 142.71 418.7 178.29 418.7 178.29 383.11 142.71 383.11"/>
+            <polygon points="142.71 661.3 142.71 625.71 107.12 625.71 107.12 661.3 107.12 696.89 142.71 696.89 178.29 696.89 178.29 661.3 142.71 661.3"/>
+            <polygon points="937.29 625.71 937.29 661.3 901.71 661.3 901.71 696.89 937.29 696.89 972.88 696.89 972.88 661.3 972.88 625.71 937.29 625.71"/>
+            <polygon points="937.29 383.11 901.71 383.11 901.71 418.7 937.29 418.7 937.29 454.29 972.88 454.29 972.88 418.7 972.88 383.11 937.29 383.11"/>
+          </g>
+        </svg>
+      </a>
+      <div class="nav-right">
+        <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+          <span data-theme-label>Dark</span>
+        </button>
       </div>
-      <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
-        <span data-theme-label>Dark</span>
-      </button>
-    </div>
-    <button class="menu-toggle" data-menu-open aria-label="Abrir menú">[ Menu ]</button>
-  </nav>
-
-  <div class="menu-overlay" data-menu-overlay aria-hidden="true">
-    <div class="menu-overlay-top">
-      <span class="label">[ Menu ]</span>
-      <button class="menu-toggle" data-menu-close aria-label="Cerrar menú">[ Close ]</button>
-    </div>
-    <nav class="menu-links">
-      <a href="#kpis" data-menu-link>KPIs</a>
-      <a href="#atencion" data-menu-link>Atención</a>
-      <a href="#agenda" data-menu-link>Agenda</a>
-      <a href="#pacientes" data-menu-link>Pacientes</a>
-      <a href="https://prado-mx.com/smae" target="_blank" rel="noopener" data-menu-link>SMAE →</a>
     </nav>
-    <div class="menu-overlay-bottom">
-      <span>Monterrey, MX</span>
-      <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
-        <span data-theme-label>Dark</span>
-      </button>
-    </div>
+
+    <header class="hero hero--ascii admin-hero">
+      <pre class="hero-ascii" data-admin-ascii aria-hidden="true"></pre>
+      <div class="hero-meta label">
+        <span>[ Interno ] CRM Hugo Prado</span><br/>
+        Seguimiento de pacientes
+      </div>
+      <h1 class="hero-wordmark" style="font-size: 22vw;">Admin</h1>
+    </header>
+
+    <section class="section admin-home-quick">
+      <div class="admin-home-kpis" data-admin-home-kpis>
+        <div class="kpi"><span class="label">[ Pacientes ]</span><strong data-kpi="total">—</strong><span class="kpi-meta">total</span></div>
+        <div class="kpi"><span class="label">[ Activos ]</span><strong data-kpi="activos">—</strong><span class="kpi-meta">≤ 30 días</span></div>
+        <div class="kpi"><span class="label">[ Atención ]</span><strong data-kpi="perdidos">—</strong><span class="kpi-meta">+30 días sin venir</span></div>
+        <div class="kpi"><span class="label">[ Esta semana ]</span><strong data-kpi="proximos">—</strong><span class="kpi-meta">próximas citas</span></div>
+      </div>
+
+      <div class="admin-home-cta">
+        <button type="button" class="closing-cta-btn admin-enter-btn" data-admin-enter>Entrar al panel →</button>
+        <p class="label" style="color: var(--gray); margin-top: 16px;">[ Atajo: tecla Enter ]</p>
+      </div>
+    </section>
   </div>
 
-  <header class="hero hero--ascii">
-    <pre class="hero-ascii" data-admin-ascii aria-hidden="true"></pre>
-    <div class="hero-meta label">
-      <span>[ Interno ] CRM Hugo Prado</span><br/>
-      Seguimiento de pacientes
-    </div>
-    <h1 class="hero-wordmark" style="font-size: 22vw;">Admin</h1>
-  </header>
-
-  <section class="section">
-    <p class="label" style="margin-bottom: 48px;">[ Panel de control ]</p>
-    <p class="manifesto">
-      Tus pacientes, tu agenda, tus mensajes. Un solo lugar.
-    </p>
-  </section>
-
-  <!-- KPIs -->
-  <section class="section section--tight" id="kpis">
-    <div class="section-head">
-      <h2 class="section-title">Resumen</h2>
-      <span class="label">[ Hoy ]</span>
-    </div>
-    <div class="admin-kpis" data-admin-kpis>
-      <div class="kpi"><span class="label">[ Pacientes ]</span><strong data-kpi="total">—</strong><span class="kpi-meta">total</span></div>
-      <div class="kpi"><span class="label">[ Activos ]</span><strong data-kpi="activos">—</strong><span class="kpi-meta">≤ 30 días</span></div>
-      <div class="kpi"><span class="label">[ Atención ]</span><strong data-kpi="perdidos">—</strong><span class="kpi-meta">+30 días sin venir</span></div>
-      <div class="kpi"><span class="label">[ Esta semana ]</span><strong data-kpi="proximos">—</strong><span class="kpi-meta">próximas citas</span></div>
-    </div>
-  </section>
-
-  <!-- Pacientes que necesitan atención -->
-  <section class="section section--tight" id="atencion">
-    <div class="section-head">
-      <h2 class="section-title">Necesitan atención</h2>
-      <span class="label" data-admin-atencion-count>[ 0 ]</span>
-    </div>
-    <p class="label" style="color: var(--gray); margin-bottom: 32px;">
-      Pacientes sin consulta hace 30+ días, ordenados por más tiempo sin venir. Click en WhatsApp para mandar recordatorio.
-    </p>
-    <div class="admin-atencion" data-admin-atencion>
-      <p class="smae-empty label">[ Cargando... ]</p>
-    </div>
-  </section>
-
-  <!-- Próximas citas -->
-  <section class="section section--tight" id="agenda">
-    <div class="section-head">
-      <h2 class="section-title">Agenda próxima</h2>
-      <span class="label" data-admin-agenda-count>[ 0 ]</span>
-    </div>
-    <div class="admin-agenda" data-admin-agenda>
-      <p class="smae-empty label">[ Cargando... ]</p>
-    </div>
-  </section>
-
-  <!-- Tabla completa de pacientes -->
-  <section class="section section--tight" id="pacientes">
-    <div class="section-head">
-      <h2 class="section-title">Todos los pacientes</h2>
-      <span class="label" data-admin-total>[ 0 ]</span>
-    </div>
-
-    <div class="admin-filters">
-      <input type="search" placeholder="Buscar nombre, correo, teléfono..." data-admin-search class="admin-search" autocomplete="off">
-      <div class="admin-filter-pills">
-        <button type="button" data-admin-filter="todos" class="admin-pill is-active">Todos</button>
-        <button type="button" data-admin-filter="activos" class="admin-pill">Activos</button>
-        <button type="button" data-admin-filter="atencion" class="admin-pill">Atención</button>
-        <button type="button" data-admin-filter="con-cita" class="admin-pill">Con cita próxima</button>
+  <!-- ============ VISTA PANEL (app dashboard) ============ -->
+  <div class="admin-panel" data-admin-panel hidden>
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-brand">
+        <a href="/" class="admin-sidebar-logo" aria-label="PRADO Admin">
+          <svg viewBox="80 360 920 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g fill="currentColor">
+              <path d="M292.56,551.51c-10.04,8.37-24.36,12.56-42.99,12.56h-35.69v61.64h-35.59v-171.42h73.61c16.97,0,30.5,4.42,40.58,13.26,10.09,8.84,15.13,22.52,15.13,41.05,0,20.24-5.02,34.54-15.05,42.91ZM265.23,489.76c-4.54-3.8-10.89-5.7-19.07-5.7h-32.28v50.47h32.28c8.17,0,14.53-2.05,19.07-6.16,4.54-4.11,6.8-10.62,6.8-19.54s-2.27-15.27-6.8-19.07Z"/>
+              <path d="M414.2,458.71c6.31,2.72,11.66,6.71,16.05,11.98,3.63,4.34,6.5,9.15,8.62,14.42,2.12,5.27,3.17,11.28,3.17,18.03,0,8.14-2.05,16.15-6.16,24.02-4.11,7.87-10.89,13.43-20.35,16.69,7.91,3.18,13.51,7.7,16.81,13.55,3.3,5.86,4.94,14.79,4.94,26.81v11.51c0,7.83.31,13.14.95,15.93.95,4.42,3.15,7.68,6.61,9.77v4.3h-39.54c-1.09-3.8-1.86-6.86-2.33-9.19-.93-4.81-1.43-9.73-1.51-14.77l-.23-15.93c-.15-10.93-2.04-18.22-5.67-21.86-3.63-3.64-10.43-5.47-20.41-5.47h-34.98v67.22h-35.01v-171.42h81.99c11.72.23,20.73,1.71,27.05,4.42ZM340.16,484.06v46.05h38.55c7.66,0,13.4-.93,17.23-2.79,6.77-3.26,10.16-9.69,10.16-19.31,0-10.39-3.28-17.37-9.83-20.93-3.68-2.02-9.2-3.02-16.57-3.02h-39.54Z"/>
+              <path d="M504.37,454.29h40.53l60.65,171.42h-38.84l-11.31-35.24h-63.13l-11.62,35.24h-37.47l61.19-171.42ZM502.01,560.93h43.9l-21.65-67.45-22.25,67.45Z"/>
+              <path d="M704.8,458.01c12.03,3.95,21.76,11.21,29.21,21.75,5.97,8.53,10.04,17.75,12.22,27.68,2.17,9.93,3.26,19.38,3.26,28.38,0,22.79-4.58,42.1-13.73,57.92-12.41,21.32-31.58,31.98-57.5,31.98h-73.91v-171.42h73.91c10.63.16,19.48,1.4,26.54,3.72ZM639.13,484.06v111.88h33.08c16.93,0,28.73-8.33,35.41-25,3.65-9.15,5.47-20.04,5.47-32.68,0-17.44-2.74-30.84-8.21-40.18-5.48-9.34-16.37-14.01-32.67-14.01h-33.08Z"/>
+              <path d="M885.36,612.48c-12.95,13.34-31.67,20-56.17,20s-43.22-6.67-56.17-20c-17.37-16.36-26.05-39.93-26.05-70.71s8.68-54.97,26.05-70.71c12.95-13.33,31.67-20,56.17-20s43.22,6.67,56.17,20c17.29,15.74,25.93,39.31,25.93,70.71s-8.64,54.35-25.93,70.71ZM862.97,586.43c8.33-10.47,12.5-25.35,12.5-44.66s-4.17-34.09-12.5-44.6c-8.33-10.51-19.6-15.76-33.78-15.76s-25.51,5.23-33.96,15.7c-8.45,10.47-12.68,25.35-12.68,44.66s4.23,34.19,12.68,44.66c8.45,10.47,19.77,15.7,33.96,15.7s25.45-5.23,33.78-15.7Z"/>
+              <polygon points="142.71 383.11 107.12 383.11 107.12 418.7 107.12 454.29 142.71 454.29 142.71 418.7 178.29 418.7 178.29 383.11 142.71 383.11"/>
+              <polygon points="142.71 661.3 142.71 625.71 107.12 625.71 107.12 661.3 107.12 696.89 142.71 696.89 178.29 696.89 178.29 661.3 142.71 661.3"/>
+              <polygon points="937.29 625.71 937.29 661.3 901.71 661.3 901.71 696.89 937.29 696.89 972.88 696.89 972.88 661.3 972.88 625.71 937.29 625.71"/>
+              <polygon points="937.29 383.11 901.71 383.11 901.71 418.7 937.29 418.7 937.29 454.29 972.88 454.29 972.88 418.7 972.88 383.11 937.29 383.11"/>
+            </g>
+          </svg>
+        </a>
+        <span class="label">[ Admin ]</span>
       </div>
-    </div>
 
-    <div class="admin-patients-table-wrap">
-      <table class="admin-patients-table" data-admin-table>
-        <thead>
-          <tr>
-            <th>Paciente</th>
-            <th>Contacto</th>
-            <th>Última</th>
-            <th>Próxima</th>
-            <th>Tier</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody data-admin-tbody>
-          <tr><td colspan="6" class="smae-empty label" style="text-align: center; padding: 40px;">[ Cargando... ]</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+      <nav class="admin-sidebar-nav">
+        <button type="button" class="admin-tab is-active" data-tab="pacientes">
+          <span class="label">[ 01 ]</span>
+          <span>Pacientes</span>
+          <span class="admin-tab-count" data-tab-count="pacientes">0</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="atencion">
+          <span class="label">[ 02 ]</span>
+          <span>Atención</span>
+          <span class="admin-tab-count admin-tab-count--warn" data-tab-count="atencion">0</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="agenda">
+          <span class="label">[ 03 ]</span>
+          <span>Agenda</span>
+          <span class="admin-tab-count" data-tab-count="agenda">0</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="mensajes">
+          <span class="label">[ 04 ]</span>
+          <span>Mensajes</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="recompensas">
+          <span class="label">[ 05 ]</span>
+          <span>Recompensas</span>
+        </button>
+      </nav>
 
-  <!-- Templates de mensaje -->
-  <section class="section section--tight" id="mensajes">
-    <div class="section-head">
-      <h2 class="section-title">Mensajes pre-armados</h2>
-      <span class="label">[ Plantillas ]</span>
-    </div>
-    <p class="label" style="color: var(--gray); margin-bottom: 24px;">
-      Click "Copiar" y pega en WhatsApp. Los <code>{nombre}</code> los rellenas a mano o se sustituyen automático cuando lo abres desde la tabla.
-    </p>
-    <div class="admin-templates" data-admin-templates>
-      <div class="admin-template">
-        <div class="admin-template-head">
-          <span class="label">[ Recordatorio amistoso ]</span>
-          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="reminder">Copiar</button>
+      <div class="admin-sidebar-footer">
+        <button type="button" class="admin-sidebar-back" data-admin-home-btn>← Inicio</button>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+
+      <!-- TAB: PACIENTES -->
+      <section class="admin-tab-content" data-tab-content="pacientes">
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Pacientes</h1>
+            <p class="label admin-content-sub" data-admin-total>—</p>
+          </div>
+          <button type="button" class="closing-cta-btn" data-admin-new>+ Nuevo paciente</button>
         </div>
-        <textarea data-tpl="reminder" rows="4">Hola {nombre}! Soy Hugo. ¿Cómo te ha ido? Veo que tiene rato que no te veo, ¿quieres agendar una consulta para ver cómo vas? Te mando link para que escojas día y hora.</textarea>
-      </div>
-      <div class="admin-template">
-        <div class="admin-template-head">
-          <span class="label">[ Próxima cita confirmada ]</span>
-          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="upcoming">Copiar</button>
-        </div>
-        <textarea data-tpl="upcoming" rows="4">Hola {nombre}! Te recuerdo que tenemos consulta el {fecha}. Si necesitas mover o confirmar, avísame por aquí. ¡Nos vemos!</textarea>
-      </div>
-      <div class="admin-template">
-        <div class="admin-template-head">
-          <span class="label">[ Cumpleaños / aniversario ]</span>
-          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="bday">Copiar</button>
-        </div>
-        <textarea data-tpl="bday" rows="3">¡Felicidades {nombre}! Espero que tengas un día increíble. Aquí seguimos cuando quieras retomar consulta.</textarea>
-      </div>
-      <div class="admin-template">
-        <div class="admin-template-head">
-          <span class="label">[ Avance / motivación ]</span>
-          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="motivation">Copiar</button>
-        </div>
-        <textarea data-tpl="motivation" rows="3">Hola {nombre}! Solo paso a saludar y a recordarte que vas avanzando paso a paso. Si necesitas ajustar algo del plan, avísame.</textarea>
-      </div>
-    </div>
-  </section>
 
-  <!-- Sistema de recompensas -->
-  <section class="section section--tight" id="recompensas">
-    <div class="section-head">
-      <h2 class="section-title">Sistema de recompensas</h2>
-      <span class="label">[ Tier por consultas ]</span>
-    </div>
-    <div class="admin-tiers">
-      <div class="admin-tier"><span class="label">[ Bronce ]</span><strong>1 — 5</strong><span class="kpi-meta">consultas</span></div>
-      <div class="admin-tier"><span class="label">[ Plata ]</span><strong>6 — 15</strong><span class="kpi-meta">consultas</span></div>
-      <div class="admin-tier"><span class="label">[ Oro ]</span><strong>16 — 30</strong><span class="kpi-meta">consultas</span></div>
-      <div class="admin-tier admin-tier--top"><span class="label">[ Platino ]</span><strong>30+</strong><span class="kpi-meta">consultas</span></div>
-    </div>
-    <p class="label" style="color: var(--gray); margin-top: 24px;">
-      El tier aparece junto al nombre del paciente en la tabla. Beneficios por tier los defines tú (descuento, regalo, sesión bonus, etc.) y comunicas en consulta.
-    </p>
-  </section>
+        <div class="admin-toolbar">
+          <input type="search" placeholder="Buscar nombre, correo, teléfono..." data-admin-search class="admin-search" autocomplete="off">
+          <div class="admin-filter-pills">
+            <button type="button" data-admin-filter="todos" class="admin-pill is-active">Todos</button>
+            <button type="button" data-admin-filter="activos" class="admin-pill">Activos</button>
+            <button type="button" data-admin-filter="atencion" class="admin-pill">Atención</button>
+            <button type="button" data-admin-filter="con-cita" class="admin-pill">Con cita</button>
+          </div>
+        </div>
 
-  <footer class="footer">
-    <div>
-      <h4>PRADO Admin</h4>
-      <p>Monterrey, MX<br/>admin.prado-mx.com</p>
-    </div>
-    <div>
-      <h4>Herramientas</h4>
-      <a href="https://prado-mx.com/smae" target="_blank" rel="noopener">SMAE</a><br/>
-      <a href="https://prado-mx.com" target="_blank" rel="noopener">Sitio público</a>
-    </div>
-    <div>
-      <h4>Contacto</h4>
-      <a href="mailto:contacto@prado-mx.com">contacto@prado-mx.com</a>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 PRADO</span>
-      <span>Diseñado por sopadeletras®</span>
-    </div>
-  </footer>
+        <div class="admin-cards" data-admin-cards>
+          <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </section>
 
-  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
-  <script src="/scroll.js?v=4"></script>
+      <!-- TAB: ATENCIÓN -->
+      <section class="admin-tab-content" data-tab-content="atencion" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Necesitan atención</h1>
+            <p class="label admin-content-sub">Pacientes con 30+ días sin consulta. Click en WhatsApp para mandar recordatorio.</p>
+          </div>
+        </div>
+        <div class="admin-cards" data-admin-atencion>
+          <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </section>
+
+      <!-- TAB: AGENDA -->
+      <section class="admin-tab-content" data-tab-content="agenda" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Agenda próxima</h1>
+            <p class="label admin-content-sub">Citas en los próximos 14 días.</p>
+          </div>
+        </div>
+        <div class="admin-cards" data-admin-agenda>
+          <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </section>
+
+      <!-- TAB: MENSAJES -->
+      <section class="admin-tab-content" data-tab-content="mensajes" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Mensajes</h1>
+            <p class="label admin-content-sub">Templates pre-armados. Click "Copiar" y pega en WhatsApp.</p>
+          </div>
+        </div>
+        <div class="admin-templates" data-admin-templates>
+          <div class="admin-template">
+            <div class="admin-template-head">
+              <span class="label">[ Recordatorio amistoso ]</span>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="reminder">Copiar</button>
+            </div>
+            <textarea data-tpl="reminder" rows="4">Hola {nombre}! Soy Hugo. ¿Cómo te ha ido? Veo que tiene rato que no te veo, ¿quieres agendar una consulta para ver cómo vas? Te mando link para que escojas día y hora.</textarea>
+          </div>
+          <div class="admin-template">
+            <div class="admin-template-head">
+              <span class="label">[ Próxima cita confirmada ]</span>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="upcoming">Copiar</button>
+            </div>
+            <textarea data-tpl="upcoming" rows="4">Hola {nombre}! Te recuerdo que tenemos consulta el {fecha}. Si necesitas mover o confirmar, avísame por aquí. ¡Nos vemos!</textarea>
+          </div>
+          <div class="admin-template">
+            <div class="admin-template-head">
+              <span class="label">[ Cumpleaños ]</span>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="bday">Copiar</button>
+            </div>
+            <textarea data-tpl="bday" rows="3">¡Felicidades {nombre}! Espero que tengas un día increíble. Aquí seguimos cuando quieras retomar consulta.</textarea>
+          </div>
+          <div class="admin-template">
+            <div class="admin-template-head">
+              <span class="label">[ Motivación ]</span>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="motivation">Copiar</button>
+            </div>
+            <textarea data-tpl="motivation" rows="3">Hola {nombre}! Solo paso a saludar y a recordarte que vas avanzando paso a paso. Si necesitas ajustar algo del plan, avísame.</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: RECOMPENSAS -->
+      <section class="admin-tab-content" data-tab-content="recompensas" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Sistema de recompensas</h1>
+            <p class="label admin-content-sub">Tier por número de consultas. Beneficios los defines tú.</p>
+          </div>
+        </div>
+        <div class="admin-tiers">
+          <div class="admin-tier"><span class="label">[ Bronce ]</span><strong>1 — 5</strong><span class="kpi-meta">consultas</span></div>
+          <div class="admin-tier"><span class="label">[ Plata ]</span><strong>6 — 15</strong><span class="kpi-meta">consultas</span></div>
+          <div class="admin-tier"><span class="label">[ Oro ]</span><strong>16 — 30</strong><span class="kpi-meta">consultas</span></div>
+          <div class="admin-tier admin-tier--top"><span class="label">[ Platino ]</span><strong>30+</strong><span class="kpi-meta">consultas</span></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ DRAWER PACIENTE ============ -->
+  <div class="patient-drawer" data-patient-drawer hidden>
+    <div class="patient-drawer-backdrop" data-drawer-close></div>
+    <aside class="patient-drawer-panel">
+      <header class="patient-drawer-head">
+        <div>
+          <span class="label" data-drawer-tier>[ Bronce ]</span>
+          <h2 data-drawer-name>—</h2>
+        </div>
+        <button type="button" class="patient-drawer-close" data-drawer-close aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="patient-drawer-body">
+
+        <!-- SECCIÓN: Datos del paciente (form siempre editable) -->
+        <details class="drawer-section" open>
+          <summary>
+            <span class="label">[ Datos del paciente ]</span>
+            <span class="drawer-toggle" aria-hidden="true">+</span>
+          </summary>
+          <form class="smae-form" data-patient-form>
+            <div class="field field--wide">
+              <label class="label" for="dr-name">Nombre</label>
+              <input type="text" id="dr-name" name="name" autocomplete="off" required>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label class="label">Sexo</label>
+                <div class="segmented" role="radiogroup">
+                  <label><input type="radio" name="sex" value="f" checked><span>Mujer</span></label>
+                  <label><input type="radio" name="sex" value="m"><span>Hombre</span></label>
+                </div>
+              </div>
+              <div class="field"><label class="label" for="dr-age">Edad</label><input type="number" id="dr-age" name="age" min="14" max="90"></div>
+              <div class="field"><label class="label" for="dr-weight">Peso (kg)</label><input type="number" id="dr-weight" name="weight" min="30" max="250" step="0.1"></div>
+              <div class="field"><label class="label" for="dr-weight-target">Peso objetivo</label><input type="number" id="dr-weight-target" name="weight_target" min="30" max="250" step="0.1"></div>
+              <div class="field"><label class="label" for="dr-height">Altura (cm)</label><input type="number" id="dr-height" name="height" min="120" max="220"></div>
+              <div class="field">
+                <label class="label" for="dr-activity">Actividad</label>
+                <select id="dr-activity" name="activity">
+                  <option value="1.2">Sedentario</option>
+                  <option value="1.375" selected>Ligero (1-3 d/sem)</option>
+                  <option value="1.55">Moderado (3-5 d/sem)</option>
+                  <option value="1.725">Alto (6-7 d/sem)</option>
+                  <option value="1.9">Muy alto (2x día)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="dr-goal">Objetivo</label>
+                <select id="dr-goal" name="goal">
+                  <option value="0.8">Déficit</option>
+                  <option value="1.0" selected>Mantener</option>
+                  <option value="1.1">Superávit</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="dr-mode">Modo</label>
+                <select id="dr-mode" name="mode">
+                  <option value="normal" selected>Normal</option>
+                  <option value="vegetariano">Vegetariano</option>
+                  <option value="vegano">Vegano</option>
+                  <option value="renal">Renal</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label class="label" for="dr-email">Correo</label><input type="email" id="dr-email" name="email" autocomplete="off"></div>
+              <div class="field"><label class="label" for="dr-phone">Teléfono</label><input type="tel" id="dr-phone" name="phone" autocomplete="off"></div>
+              <div class="field"><label class="label" for="dr-seca">Link seca</label><input type="url" id="dr-seca" name="seca_link" autocomplete="off"></div>
+              <div class="field"><label class="label" for="dr-next">Próxima cita</label><input type="date" id="dr-next" name="next_appointment"></div>
+            </div>
+            <div class="field field--wide">
+              <label class="label" for="dr-conditions">Condiciones / alergias</label>
+              <input type="text" id="dr-conditions" name="conditions" autocomplete="off">
+            </div>
+            <div class="field field--wide">
+              <label class="label" for="dr-notes">Notas</label>
+              <textarea id="dr-notes" name="notes" rows="3"></textarea>
+            </div>
+            <div class="smae-form-actions">
+              <button type="button" class="closing-cta-btn" data-drawer-save-patient>Guardar datos</button>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost smae-danger" data-drawer-delete hidden>Eliminar paciente</button>
+            </div>
+          </form>
+        </details>
+
+        <!-- SECCIÓN: Antropométricos de esta cita -->
+        <details class="drawer-section">
+          <summary>
+            <span class="label">[ Antropométricos de esta cita ]</span>
+            <span class="drawer-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div class="field-row">
+            <div class="field"><label class="label" for="dr-cita">N° cita</label><input type="number" id="dr-cita" name="cita_num" min="1" max="999"></div>
+            <div class="field"><label class="label" for="dr-muslo">Muslo</label><input type="number" id="dr-muslo" name="muslo" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-pierna">Pierna</label><input type="number" id="dr-pierna" name="pierna" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-bicep">Bícep</label><input type="number" id="dr-bicep" name="bicep" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-bicep-flex">Bícep flex</label><input type="number" id="dr-bicep-flex" name="bicep_flex" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-cintura">Cintura</label><input type="number" id="dr-cintura" name="cintura" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-cadera">Cadera</label><input type="number" id="dr-cadera" name="cadera" step="0.1"></div>
+            <div class="field"><label class="label" for="dr-ombligo">Ombligo</label><input type="number" id="dr-ombligo" name="ombligo" step="0.1"></div>
+          </div>
+        </details>
+
+        <!-- SECCIÓN: Plan SMAE -->
+        <details class="drawer-section" open>
+          <summary>
+            <span class="label">[ Plan SMAE ]</span>
+            <span class="drawer-toggle" aria-hidden="true">+</span>
+          </summary>
+
+          <div class="smae-form-actions" style="margin-bottom: 16px;">
+            <button type="button" class="closing-cta-btn" data-drawer-calc>Calcular plan →</button>
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-drawer-recalc hidden>Recalcular base</button>
+          </div>
+
+          <div data-drawer-plan hidden>
+            <div class="smae-plan">
+              <div class="smae-groups" data-drawer-groups></div>
+              <aside class="smae-totals" data-drawer-totals>
+                <div class="smae-totals-head"><span class="label">[ Totales ]</span></div>
+                <ul class="smae-totals-list">
+                  <li><span class="label">Kcal</span><strong data-total="kcal">0</strong><span class="smae-target" data-target="kcal">/ 0</span></li>
+                  <li><span class="label">Proteína</span><strong data-total="protein">0</strong><span class="smae-target" data-target="protein">/ 0 g</span></li>
+                  <li><span class="label">Carbohidratos</span><strong data-total="carb">0</strong><span class="smae-target" data-target="carb">/ 0 g</span></li>
+                  <li><span class="label">Grasa</span><strong data-total="fat">0</strong><span class="smae-target" data-target="fat">/ 0 g</span></li>
+                </ul>
+                <p class="smae-totals-hint label" data-drawer-deviation>± 0%</p>
+                <div class="smae-kcal-deltas">
+                  <span class="label">[ Ajuste rápido ]</span>
+                  <div class="smae-kcal-deltas-row">
+                    <button type="button" data-kcal-delta="-0.10">−10%</button>
+                    <button type="button" data-kcal-delta="-0.05">−5%</button>
+                    <button type="button" data-kcal-delta="0.05">+5%</button>
+                    <button type="button" data-kcal-delta="0.10">+10%</button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            <div class="section-head" style="margin-top: 32px;">
+              <h3 class="section-title" style="font-size: 22px;">Distribución por tiempos</h3>
+              <span class="label">[ Editable ]</span>
+            </div>
+
+            <div class="field" style="max-width: 320px; margin-bottom: 16px;">
+              <label class="label" for="dr-meals-preset">Preset</label>
+              <select id="dr-meals-preset">
+                <option value="estandar-5" selected>5 tiempos</option>
+                <option value="tres-comidas">3 comidas</option>
+                <option value="pre-post-entreno">Pre/Post entreno</option>
+              </select>
+            </div>
+
+            <div class="smae-meals" data-drawer-meals></div>
+
+            <div class="smae-form-actions" style="margin-top: 24px;">
+              <button type="button" class="closing-cta-btn" data-drawer-save-plan>Guardar plan</button>
+              <button type="button" class="closing-cta-btn" data-drawer-print>Imprimir / PDF →</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- SECCIÓN: Histórico de planes -->
+        <details class="drawer-section">
+          <summary>
+            <span class="label">[ Histórico ]</span>
+            <span class="drawer-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div data-drawer-historial>
+            <p class="smae-empty label">[ Sin planes guardados aún ]</p>
+          </div>
+        </details>
+
+        <!-- ACCIONES rápidas -->
+        <div class="patient-drawer-actions">
+          <a class="closing-cta-btn closing-cta-btn--ghost" data-drawer-wa target="_blank" rel="noopener" hidden>WhatsApp →</a>
+          <a class="closing-cta-btn closing-cta-btn--ghost" data-drawer-mail hidden>Correo →</a>
+          <a class="closing-cta-btn closing-cta-btn--ghost" data-drawer-seca target="_blank" rel="noopener" hidden>Seca →</a>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- Print area -->
+  <div class="print-only" data-smae-print-area aria-hidden="true"></div>
+
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=1" defer></script>
+  <script src="/admin.js?v=2" defer></script>
 </body>
 </html>
