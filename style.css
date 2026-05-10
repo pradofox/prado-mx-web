@@ -2466,8 +2466,32 @@ a.line-card:hover { text-decoration: none; }
   flex-wrap: wrap;
 }
 
-/* Opciones de menú por tiempo (dashboard B2C) */
-.app-dash-meal { padding: 20px; }
+/* Dashboard B2C: tiempos en columna única para dar espacio a las 3 opciones.
+   Override del grid de .smae-meals (que en admin es 5 cols apretadas). */
+[data-dash-meals].smae-meals {
+  display: flex !important;
+  flex-direction: column;
+  gap: 16px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+[data-dash-meals] .smae-meal {
+  border: 1px solid var(--divider);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 900px) {
+  [data-dash-meals] .smae-meal {
+    grid-template-columns: 280px 1fr;
+    align-items: start;
+  }
+  [data-dash-meals] .smae-meal-head { grid-column: 1 / 2; }
+  [data-dash-meals] .smae-meal-list { grid-column: 1 / 2; }
+  [data-dash-meals] .app-meal-options { grid-column: 2 / 3; grid-row: 1 / span 3; margin-top: 0; padding-top: 0; border-top: 0; padding-left: 24px; border-left: 1px solid var(--divider); }
+}
+
 .app-meal-options {
   display: grid;
   grid-template-columns: 1fr;
@@ -2479,10 +2503,10 @@ a.line-card:hover { text-decoration: none; }
 @media (min-width: 720px) { .app-meal-options { grid-template-columns: 1fr 1fr 1fr; } }
 .app-meal-option {
   border: 1px solid var(--divider);
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--surface);
 }
-.app-meal-option .label { color: var(--gray); display: block; margin-bottom: 6px; }
+.app-meal-option .label { color: var(--gray); display: block; margin-bottom: 8px; }
 .app-meal-option-text {
   font-family: var(--font-sans);
   font-size: 13px;
