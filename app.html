@@ -53,6 +53,7 @@
       </svg>
     </a>
     <div class="nav-right">
+      <a href="/api/app/dev/login" class="app-nav-link app-dev-link" data-dev-only hidden>[ Demo ]</a>
       <a href="/login" class="app-nav-link" data-app-route>Entrar</a>
       <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
         <span data-theme-label>Dark</span>
@@ -137,6 +138,9 @@
       <div class="app-cta-row">
         <a href="/signup" class="closing-cta-btn app-enter-btn" data-app-route>Empezar mi plan →</a>
       </div>
+      <p class="label app-dev-banner" data-dev-only hidden style="text-align: center; margin-top: 24px;">
+        [ Modo demo activo ] · <a href="/api/app/dev/login" style="color: var(--fg); text-decoration: underline;">Entrar sin email →</a>
+      </p>
     </section>
 
     <section class="section section--tight">
@@ -249,6 +253,16 @@
         </div>
       </form>
       <p class="smae-empty label" data-signup-result hidden></p>
+
+      <div data-dev-only hidden style="margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--divider);">
+        <p class="label" style="color: var(--gray); margin-bottom: 12px;">
+          [ Modo demo · Resend no configurado ]
+        </p>
+        <p style="font-size: 13px; color: var(--gray); margin-bottom: 16px; line-height: 1.5;">
+          Mientras conectamos el sistema de correos, puedes entrar como usuario demo sin necesidad de validar email. Tu cuenta demo se guarda igual que una real.
+        </p>
+        <a href="/api/app/dev/login" class="closing-cta-btn closing-cta-btn--ghost">Entrar sin email →</a>
+      </div>
     </section>
   </div>
 
@@ -580,6 +594,6 @@
   </footer>
 
   <script src="/app-ascii.js?v=1" defer></script>
-  <script src="/app.js?v=2" defer></script>
+  <script src="/app.js?v=3" defer></script>
 </body>
 </html>

@@ -589,8 +589,19 @@
 
   // ---------- Init ------------------------------------------------------
 
+  async function checkDevMode() {
+    try {
+      const r = await fetch(API_BASE + '/dev/status');
+      const j = await r.json();
+      if (j.dev) {
+        document.querySelectorAll('[data-dev-only]').forEach(el => { el.hidden = false; });
+      }
+    } catch (e) {}
+  }
+
   function init() {
     handleRoute();
+    checkDevMode();
 
     window.addEventListener('popstate', handleRoute);
 
@@ -602,6 +613,8 @@
       if (!href || a.target === '_blank' || href.startsWith('http') || href.startsWith('mailto:')) return;
       // Páginas standalone (no SPA): terminos, privacidad
       if (href === '/terminos' || href === '/privacidad' || href === '/terms' || href === '/privacy') return;
+      // Endpoints API (dev login redirect, etc): no interceptar
+      if (href.startsWith('/api/')) return;
       if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta'].includes(href)) {
         e.preventDefault();
         navigate(href);

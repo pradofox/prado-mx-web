@@ -511,6 +511,14 @@ async function handleAppApi(request, env, url) {
     return new Response(null, { status: 204, headers: corsHeaders(request) });
   }
 
+  // MODO DEV: bypass email/Stripe para probar el flow end-to-end.
+  // Se desactiva automáticamente cuando ambos estén configurados.
+  if (path === '/dev/login' && request.method === 'GET') return appDevLogin(request, env, url);
+  if (path === '/dev/status' && request.method === 'GET') {
+    const isDev = !env.RESEND_API_KEY || !env.STRIPE_SECRET_KEY;
+    return jsonResponse({ dev: isDev, hasResend: !!env.RESEND_API_KEY, hasStripe: !!env.STRIPE_SECRET_KEY }, 200, request);
+  }
+
   // Sign up / magic link request
   if (path === '/signup' && request.method === 'POST') return appSignup(request, env);
   if (path === '/login' && request.method === 'POST') return appLogin(request, env);
@@ -786,6 +794,44 @@ async function appCreateCheckout(request, env) {
   const session = await r.json();
   if (!r.ok) return jsonResponse({ error: session.error?.message || 'stripe error' }, 500, request);
   return jsonResponse({ url: session.url }, 200, request);
+}
+
+// Login demo: bypass auth, crea sesión con un subscriber demo. Solo en modo
+// dev (cuando Resend o Stripe no están configurados). Crea el subscriber si
+// no existe, le asigna una sesión, y redirige al dashboard.
+async function appDevLogin(request, env, url) {
+  if (env.RESEND_API_KEY && env.STRIPE_SECRET_KEY) {
+    return jsonResponse({ error: 'modo demo deshabilitado en producción' }, 403, request);
+  }
+  // Permitir email custom via ?email=foo o usar el demo por default
+  const customEmail = (url.searchParams.get('email') || '').trim().toLowerCase();
+  const email = customEmail && customEmail.includes('@') ? customEmail : 'demo@prado-mx.com';
+  const name = url.searchParams.get('name') || (email === 'demo@prado-mx.com' ? 'Demo PRADO' : 'Usuario demo');
+
+  let sub = await env.DB.prepare(`SELECT id FROM subscribers WHERE email = ?`).bind(email).first();
+  if (!sub) {
+    const id = newId('sub');
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO subscribers (id, email, name, created_at, updated_at) VALUES (?,?,?,?,?)`
+    ).bind(id, email, name, now, now).run();
+    sub = { id };
+  }
+
+  const sessionToken = crypto.randomUUID().replace(/-/g, '');
+  const expiresIn = APP_SESSION_DAYS * 24 * 60 * 60;
+  const expires = new Date(Date.now() + expiresIn * 1000).toISOString();
+  await env.DB.prepare(
+    `INSERT INTO sessions (token, subscriber_id, expires_at) VALUES (?,?,?)`
+  ).bind(sessionToken, sub.id, expires).run();
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'location': 'https://app.prado-mx.com/dashboard',
+      'set-cookie': `${APP_COOKIE_NAME}=${sessionToken}; Path=/; Max-Age=${expiresIn}; HttpOnly; Secure; SameSite=Lax`,
+    },
+  });
 }
 
 async function appCancelSubscription(request, env) {
