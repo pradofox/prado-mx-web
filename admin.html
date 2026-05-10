@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=11" />
+  <link rel="stylesheet" href="/style.css?v=12" />
 
   <script>
     (function () {
@@ -151,12 +151,16 @@
           <span>Agenda</span>
           <span class="admin-tab-count" data-tab-count="agenda">0</span>
         </button>
-        <button type="button" class="admin-tab" data-tab="mensajes">
+        <button type="button" class="admin-tab" data-tab="finanzas">
           <span class="label">[ 04 ]</span>
+          <span>Finanzas</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="mensajes">
+          <span class="label">[ 05 ]</span>
           <span>Mensajes</span>
         </button>
         <button type="button" class="admin-tab" data-tab="recompensas">
-          <span class="label">[ 05 ]</span>
+          <span class="label">[ 06 ]</span>
           <span>Recompensas</span>
         </button>
       </nav>
@@ -219,6 +223,52 @@
         </div>
         <div class="admin-cards" data-admin-agenda>
           <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </section>
+
+      <!-- TAB: FINANZAS -->
+      <section class="admin-tab-content" data-tab-content="finanzas" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Finanzas</h1>
+            <p class="label admin-content-sub">Ingresos y egresos del negocio. Stripe se conecta automático cuando se configure.</p>
+          </div>
+          <button type="button" class="closing-cta-btn" data-fin-new>+ Nueva transacción</button>
+        </div>
+
+        <div class="admin-kpis" data-fin-kpis>
+          <div class="kpi"><span class="label">[ Mes ]</span><strong data-fin-month>—</strong><span class="kpi-meta" data-fin-month-label>—</span></div>
+          <div class="kpi"><span class="label">[ Ingresos ]</span><strong data-fin-income>$0</strong><span class="kpi-meta">MXN este mes</span></div>
+          <div class="kpi"><span class="label">[ Egresos ]</span><strong data-fin-expense>$0</strong><span class="kpi-meta">MXN este mes</span></div>
+          <div class="kpi kpi--accent"><span class="label">[ Neto ]</span><strong data-fin-net>$0</strong><span class="kpi-meta">MXN este mes</span></div>
+        </div>
+
+        <div class="admin-toolbar" style="margin-top: 32px;">
+          <input type="month" data-fin-month-input class="admin-search" style="max-width: 200px;">
+          <div class="admin-filter-pills">
+            <button type="button" data-fin-filter="todos" class="admin-pill is-active">Todos</button>
+            <button type="button" data-fin-filter="income" class="admin-pill">Ingresos</button>
+            <button type="button" data-fin-filter="expense" class="admin-pill">Egresos</button>
+          </div>
+        </div>
+
+        <div class="admin-patients-table-wrap">
+          <table class="admin-patients-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Categoría</th>
+                <th>Concepto</th>
+                <th>Origen</th>
+                <th style="text-align: right;">Monto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody data-fin-tbody>
+              <tr><td colspan="7" class="smae-empty label" style="text-align: center; padding: 40px;">[ Cargando... ]</td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -466,10 +516,52 @@
     </aside>
   </div>
 
+  <!-- ============ MODAL NUEVA TRANSACCIÓN ============ -->
+  <div class="fin-modal" data-fin-modal hidden>
+    <div class="fin-modal-backdrop" data-fin-modal-close></div>
+    <div class="fin-modal-panel">
+      <header class="fin-modal-head">
+        <h3>Nueva transacción</h3>
+        <button type="button" class="patient-drawer-close" data-fin-modal-close aria-label="Cerrar">×</button>
+      </header>
+      <form class="smae-form" data-fin-form>
+        <div class="field-row">
+          <div class="field">
+            <label class="label">Tipo</label>
+            <div class="segmented" role="radiogroup">
+              <label><input type="radio" name="type" value="income" checked><span>Ingreso</span></label>
+              <label><input type="radio" name="type" value="expense"><span>Egreso</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="fin-date">Fecha</label>
+            <input type="date" id="fin-date" name="date" required>
+          </div>
+          <div class="field">
+            <label class="label" for="fin-amount">Monto (MXN)</label>
+            <input type="number" id="fin-amount" name="amount" min="1" step="1" required inputmode="numeric">
+          </div>
+          <div class="field">
+            <label class="label" for="fin-category">Categoría</label>
+            <select id="fin-category" name="category" data-fin-category-select></select>
+          </div>
+        </div>
+        <div class="field field--wide">
+          <label class="label" for="fin-notes">Concepto / nota</label>
+          <input type="text" id="fin-notes" name="notes" autocomplete="off" placeholder="Consulta con María / Renta abril / etc">
+        </div>
+        <div class="smae-form-actions">
+          <button type="submit" class="closing-cta-btn">Guardar</button>
+          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-fin-modal-close>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Print area -->
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=3" defer></script>
+  <script src="/admin.js?v=4" defer></script>
 </body>
 </html>

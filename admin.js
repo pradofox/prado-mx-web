@@ -274,6 +274,7 @@
     if (state.activeTab === 'pacientes') renderPacientesTab();
     else if (state.activeTab === 'atencion') renderAtencionTab();
     else if (state.activeTab === 'agenda') renderAgendaTab();
+    else if (state.activeTab === 'finanzas') loadFinanzas();
   }
 
   // ---------- Pacientes Tab (cards grid) ---------------------------------
@@ -1050,6 +1051,7 @@
     '/pacientes': { view: 'panel', tab: 'pacientes' },
     '/atencion': { view: 'panel', tab: 'atencion' },
     '/agenda': { view: 'panel', tab: 'agenda' },
+    '/finanzas': { view: 'panel', tab: 'finanzas' },
     '/mensajes': { view: 'panel', tab: 'mensajes' },
     '/recompensas': { view: 'panel', tab: 'recompensas' },
     '/nuevo': { view: 'panel', tab: 'pacientes', action: 'new' },
@@ -1201,6 +1203,178 @@
     setInterval(loadAll, 120000);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  // ---------- FINANZAS (tracker ingresos/egresos) -----------------------
+
+  let finState = {
+    month: new Date().toISOString().slice(0, 7),
+    filter: 'todos',
+    transactions: [],
+    categories: [],
+  };
+
+  async function loadFinanzas() {
+    try {
+      const monthInput = document.querySelector('[data-fin-month-input]');
+      if (monthInput && !monthInput.value) monthInput.value = finState.month;
+      const [{ transactions }, summary, { categories }] = await Promise.all([
+        api('/transactions?month=' + finState.month),
+        api('/transactions/summary?month=' + finState.month),
+        api('/tx-categories'),
+      ]);
+      finState.transactions = transactions || [];
+      finState.categories = categories || [];
+      renderFinKPIs(summary);
+      renderFinTable();
+      renderFinCategoriesSelect();
+    } catch (e) {
+      const tbody = document.querySelector('[data-fin-tbody]');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="smae-empty label" style="text-align: center; padding: 40px;">[ Error: ${escapeHTML(e.message)} ]</td></tr>`;
+    }
+  }
+
+  function renderFinKPIs(s) {
+    const fmt = (cents) => '$' + (cents / 100).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+    document.querySelector('[data-fin-month]').textContent = monthLabel(s.month);
+    const ml = document.querySelector('[data-fin-month-label]');
+    if (ml) ml.textContent = 'período';
+    document.querySelector('[data-fin-income]').textContent = fmt(s.income || 0);
+    document.querySelector('[data-fin-expense]').textContent = fmt(s.expense || 0);
+    const net = (s.income || 0) - (s.expense || 0);
+    const netEl = document.querySelector('[data-fin-net]');
+    netEl.textContent = (net >= 0 ? '' : '-') + fmt(Math.abs(net));
+    netEl.style.color = net >= 0 ? 'var(--fg)' : 'var(--gray)';
+  }
+
+  function monthLabel(yyyymm) {
+    if (!yyyymm) return '—';
+    const [y, m] = yyyymm.split('-');
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return `${months[parseInt(m, 10) - 1] || ''} ${y}`;
+  }
+
+  function renderFinTable() {
+    const tbody = document.querySelector('[data-fin-tbody]');
+    if (!tbody) return;
+    let tx = [...finState.transactions];
+    if (finState.filter !== 'todos') tx = tx.filter(t => t.type === finState.filter);
+    if (tx.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="smae-empty label" style="text-align: center; padding: 40px;">[ Sin movimientos ]</td></tr>`;
+      return;
+    }
+    const fmt = (cents) => '$' + (cents / 100).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+    tbody.innerHTML = tx.map(t => {
+      const cat = finState.categories.find(c => c.id === t.category);
+      const isIncome = t.type === 'income';
+      const subjectName = t.patient_name || t.subscriber_name || '';
+      return `
+        <tr>
+          <td>${escapeHTML(t.date)}</td>
+          <td>${isIncome ? '<span class="fin-tag fin-tag--in">Ingreso</span>' : '<span class="fin-tag fin-tag--out">Egreso</span>'}</td>
+          <td>${cat ? escapeHTML((cat.emoji || '') + ' ' + cat.name) : '<span class="label">—</span>'}</td>
+          <td>${escapeHTML(t.notes || '')}${subjectName ? `<div class="label admin-cell-sub">${escapeHTML(subjectName)}</div>` : ''}</td>
+          <td><span class="label">${escapeHTML(t.source || 'manual')}</span></td>
+          <td style="text-align: right; font-family: var(--font-mono); font-size: 14px;">${isIncome ? '+' : '-'}${fmt(t.amount)}</td>
+          <td class="admin-cell-actions">
+            <a href="#" data-fin-delete="${escapeHTML(t.id)}">×</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    tbody.querySelectorAll('[data-fin-delete]').forEach(a => {
+      a.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!confirm('¿Eliminar transacción?')) return;
+        try {
+          await api('/transactions/' + a.dataset.finDelete, { method: 'DELETE' });
+          await loadFinanzas();
+        } catch (err) { alert('Error: ' + err.message); }
+      });
+    });
+  }
+
+  function renderFinCategoriesSelect() {
+    const sel = document.querySelector('[data-fin-category-select]');
+    if (!sel) return;
+    const typeInput = document.querySelector('[data-fin-modal] input[name="type"]:checked');
+    const type = typeInput ? typeInput.value : 'income';
+    const cats = finState.categories.filter(c => c.type === type);
+    sel.innerHTML = cats.map(c => `<option value="${escapeHTML(c.id)}">${escapeHTML((c.emoji || '') + ' ' + c.name)}</option>`).join('');
+  }
+
+  function openFinModal() {
+    const modal = document.querySelector('[data-fin-modal]');
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    const today = new Date().toISOString().slice(0, 10);
+    document.querySelector('#fin-date').value = today;
+    document.querySelector('#fin-amount').value = '';
+    document.querySelector('#fin-notes').value = '';
+    renderFinCategoriesSelect();
+  }
+  function closeFinModal() {
+    const modal = document.querySelector('[data-fin-modal]');
+    modal.classList.remove('is-open');
+    setTimeout(() => { modal.hidden = true; }, 200);
+  }
+
+  async function submitFinForm(e) {
+    e.preventDefault();
+    const form = e.target;
+    const fd = new FormData(form);
+    const amount = parseFloat(fd.get('amount'));
+    if (!Number.isFinite(amount) || amount <= 0) { alert('Monto inválido'); return; }
+    try {
+      await api('/transactions', {
+        method: 'POST',
+        body: {
+          date: fd.get('date'),
+          type: fd.get('type'),
+          category: fd.get('category'),
+          amount: Math.round(amount * 100), // a centavos
+          notes: (fd.get('notes') || '').toString().trim() || null,
+          source: 'manual',
+          created_by: 'hugo',
+        },
+      });
+      closeFinModal();
+      await loadFinanzas();
+    } catch (err) { alert('Error: ' + err.message); }
+  }
+
+  // Listeners de finanzas se montan en init() — se agrega aquí abajo
+
+  function initFinanzas() {
+    const newBtn = document.querySelector('[data-fin-new]');
+    if (newBtn) newBtn.addEventListener('click', openFinModal);
+    document.querySelectorAll('[data-fin-modal-close]').forEach(b => b.addEventListener('click', closeFinModal));
+    const form = document.querySelector('[data-fin-form]');
+    if (form) {
+      form.addEventListener('submit', submitFinForm);
+      form.querySelectorAll('input[name="type"]').forEach(r => r.addEventListener('change', renderFinCategoriesSelect));
+    }
+    const monthInput = document.querySelector('[data-fin-month-input]');
+    if (monthInput) monthInput.addEventListener('change', () => {
+      finState.month = monthInput.value;
+      loadFinanzas();
+    });
+    document.querySelectorAll('[data-fin-filter]').forEach(b => {
+      b.addEventListener('click', () => {
+        finState.filter = b.dataset.finFilter;
+        document.querySelectorAll('[data-fin-filter]').forEach(x => x.classList.toggle('is-active', x === b));
+        renderFinTable();
+      });
+    });
+  }
+
+  // Bootstrap del IIFE: init principal + initFinanzas
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      initFinanzas();
+    });
+  } else {
+    init();
+    initFinanzas();
+  }
+
 })();

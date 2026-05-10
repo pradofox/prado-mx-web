@@ -31,3 +31,8 @@ custom_domain = true
 [[routes]]
 pattern = "admin.prado-mx.com"
 custom_domain = true
+
+# Subdominio app.prado-mx.com → producto B2C self-service (suscripción)
+[[routes]]
+pattern = "app.prado-mx.com"
+custom_domain = true

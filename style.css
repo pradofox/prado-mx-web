@@ -2254,6 +2254,253 @@ a.line-card:hover { text-decoration: none; }
   opacity: 0.7;
 }
 
+/* ========================================================
+   PRADO Plan (app.prado-mx.com) - B2C product
+   ======================================================== */
+.app-body { background: var(--bg); }
+.app-nav { background: var(--bg); position: sticky; top: 0; z-index: 30; }
+.app-nav-link {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray);
+  text-decoration: none;
+  padding: 8px 12px;
+  border: 1px solid var(--divider);
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.app-nav-link:hover { color: var(--fg); border-color: var(--fg); }
+
+.app-hero { min-height: 65vh; }
+
+/* Pricing */
+.app-pricing {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+@media (min-width: 720px) { .app-pricing { grid-template-columns: 1fr 1fr; } }
+.app-price-card {
+  border: 1px solid var(--divider);
+  padding: 32px 28px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.app-price-card .label { color: var(--gray); }
+.app-price-card--featured {
+  border: 1px solid var(--fg);
+  background: var(--surface);
+}
+.app-price-amount {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(36px, 5vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0;
+}
+.app-price-amount span {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--gray);
+  display: block;
+  margin-top: 6px;
+}
+.app-price-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 3px 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+.app-price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.app-price-list li {
+  padding-left: 20px;
+  position: relative;
+}
+.app-price-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+.app-trial-note {
+  margin-top: 24px;
+  color: var(--gray);
+  text-align: center;
+}
+.app-cta-row {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+.app-enter-btn {
+  font-size: 16px;
+  padding: 20px 36px;
+}
+
+/* Cuestionario */
+.q-progress {
+  height: 4px;
+  background: var(--divider);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.q-progress-bar {
+  height: 100%;
+  background: var(--fg);
+  width: 16.67%;
+  transition: width 240ms ease;
+}
+.q-step {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.q-step[hidden] { display: none; }
+.q-step legend {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--gray);
+  text-transform: uppercase;
+  padding: 0;
+  margin-bottom: 8px;
+}
+.q-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.q-checks label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--divider);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.q-checks label:hover { border-color: var(--fg); }
+.q-checks input[type="checkbox"] { margin: 0; }
+.q-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+/* Dashboard del usuario */
+.app-dashboard-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--divider);
+  border: 1px solid var(--divider);
+  margin-top: 32px;
+}
+@media (min-width: 720px) { .app-dashboard-summary { grid-template-columns: repeat(4, 1fr); } }
+.app-dashboard-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ========================================================
+   FINANZAS tracker (admin tab)
+   ======================================================== */
+.kpi--accent { background: var(--fg); color: var(--bg); }
+.kpi--accent .label, .kpi--accent .kpi-meta { color: var(--bg); opacity: 0.75; }
+
+.fin-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--divider);
+  display: inline-block;
+}
+.fin-tag--in { color: var(--fg); border-color: var(--fg); }
+.fin-tag--out { color: var(--gray); }
+
+.fin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+}
+.fin-modal:not([hidden]) { pointer-events: auto; }
+.fin-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.dark .fin-modal-backdrop { background: rgba(0, 0, 0, 0.7); }
+.fin-modal.is-open .fin-modal-backdrop { opacity: 1; }
+.fin-modal-panel {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--divider);
+  max-width: 720px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+  transform: scale(0.98);
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.fin-modal.is-open .fin-modal-panel { opacity: 1; transform: scale(1); }
+.fin-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--divider);
+}
+.fin-modal-head h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.fin-modal .smae-form {
+  padding: 24px;
+  border-top: 0;
+}
+
 /* Print only */
 .print-only { display: none; }
 
