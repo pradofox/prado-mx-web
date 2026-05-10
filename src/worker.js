@@ -43,9 +43,16 @@ export default {
       }
     }
 
-    // Subdominio app: cualquier path "lindo" sirve app.html del bundle.
+    // Subdominio app: terminos y privacidad son páginas standalone; los demás
+    // paths "lindos" sirven app.html (SPA).
     if (url.hostname === 'app.prado-mx.com') {
       if (!isAssetPath) {
+        if (url.pathname === '/terminos' || url.pathname === '/terms') {
+          return serveHtmlFromAssets(env, request, '/terminos.html');
+        }
+        if (url.pathname === '/privacidad' || url.pathname === '/privacy') {
+          return serveHtmlFromAssets(env, request, '/privacidad.html');
+        }
         return serveHtmlFromAssets(env, request, '/app.html');
       }
     }
@@ -515,6 +522,8 @@ async function handleAppApi(request, env, url) {
   if (path === '/plans' && request.method === 'GET') return appListPlans(request, env);
   if (path === '/checkout' && request.method === 'POST') return appCreateCheckout(request, env);
   if (path === '/webhook/stripe' && request.method === 'POST') return appStripeWebhook(request, env);
+  if (path === '/subscription/cancel' && request.method === 'POST') return appCancelSubscription(request, env);
+  if (path === '/account' && request.method === 'DELETE') return appDeleteAccount(request, env);
 
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
@@ -777,6 +786,77 @@ async function appCreateCheckout(request, env) {
   const session = await r.json();
   if (!r.ok) return jsonResponse({ error: session.error?.message || 'stripe error' }, 500, request);
   return jsonResponse({ url: session.url }, 200, request);
+}
+
+async function appCancelSubscription(request, env) {
+  const sub = await getSubscriberFromSession(request, env);
+  if (!sub) return jsonResponse({ error: 'unauthorized' }, 401, request);
+  if (!sub.stripe_customer_id) {
+    // Sin Stripe customer: marca local
+    await env.DB.prepare(
+      `UPDATE subscribers SET subscription_status = 'canceled', updated_at = ? WHERE id = ?`
+    ).bind(new Date().toISOString(), sub.id).run();
+    return jsonResponse({ ok: true }, 200, request);
+  }
+  if (!env.STRIPE_SECRET_KEY) {
+    return jsonResponse({ error: 'Stripe no configurado. Escribe a hola@prado-mx.com.' }, 503, request);
+  }
+  // Buscar suscripción activa del cliente y cancelarla al final del periodo
+  const r = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${sub.stripe_customer_id}&status=active&limit=1`, {
+    headers: { 'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY },
+  });
+  const data = await r.json();
+  if (!data.data || data.data.length === 0) {
+    await env.DB.prepare(
+      `UPDATE subscribers SET subscription_status = 'canceled', updated_at = ? WHERE id = ?`
+    ).bind(new Date().toISOString(), sub.id).run();
+    return jsonResponse({ ok: true }, 200, request);
+  }
+  const subId = data.data[0].id;
+  const body = new URLSearchParams();
+  body.append('cancel_at_period_end', 'true');
+  await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+  await env.DB.prepare(
+    `UPDATE subscribers SET subscription_status = 'canceled', updated_at = ? WHERE id = ?`
+  ).bind(new Date().toISOString(), sub.id).run();
+  return jsonResponse({ ok: true }, 200, request);
+}
+
+async function appDeleteAccount(request, env) {
+  const sub = await getSubscriberFromSession(request, env);
+  if (!sub) return jsonResponse({ error: 'unauthorized' }, 401, request);
+  // Cancelar Stripe si aplica
+  if (sub.stripe_customer_id && env.STRIPE_SECRET_KEY) {
+    try {
+      const r = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${sub.stripe_customer_id}&status=active&limit=1`, {
+        headers: { 'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY },
+      });
+      const data = await r.json();
+      if (data.data && data.data[0]) {
+        await fetch(`https://api.stripe.com/v1/subscriptions/${data.data[0].id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + env.STRIPE_SECRET_KEY },
+        });
+      }
+    } catch (e) { /* best-effort */ }
+  }
+  // Borrar de la DB (cascade borra plans, subscriptions, sessions)
+  await env.DB.prepare(`DELETE FROM subscribers WHERE id = ?`).bind(sub.id).run();
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: {
+      'content-type': 'application/json',
+      'set-cookie': `${APP_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
+      ...corsHeaders(request),
+    },
+  });
 }
 
 // Email HTML con lenguaje visual PRADO (mono brackets, Geist, sin colores).

@@ -158,6 +158,7 @@
     if (path === '/login' || path === '/signup' || path === '/entrar') return 'signup';
     if (path === '/cuestionario' || path === '/onboarding') return 'questionnaire';
     if (path === '/dashboard' || path === '/plan' || path === '/mi-plan') return 'dashboard';
+    if (path === '/cuenta' || path === '/mi-cuenta' || path === '/account') return 'account';
     return 'landing';
   }
 
@@ -180,6 +181,165 @@
     const view = resolveView();
     showView(view);
     if (view === 'dashboard') await loadDashboard();
+    if (view === 'account') await loadAccount();
+  }
+
+  // ---------- Toast notifications ----------------------------------------
+
+  function toast(message, kind) {
+    const container = document.querySelector('[data-toast-container]');
+    if (!container) { console.log('[toast]', message); return; }
+    const el = document.createElement('div');
+    el.className = 'toast toast--' + (kind || 'info');
+    el.innerHTML = `<span class="label">[ ${kind === 'error' ? '×' : kind === 'success' ? '✓' : '•'} ]</span> <span>${escapeHTML(message)}</span>`;
+    container.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+    setTimeout(() => {
+      el.classList.remove('is-visible');
+      setTimeout(() => el.remove(), 200);
+    }, kind === 'error' ? 5000 : 3000);
+  }
+
+  // ---------- Mi cuenta --------------------------------------------------
+
+  async function loadAccount() {
+    try {
+      const { subscriber } = await api('/me');
+      populateAccountForm(subscriber);
+      renderAccountSubscription(subscriber);
+    } catch (e) {
+      // unauth ya redirige
+    }
+  }
+
+  function populateAccountForm(s) {
+    const set = (sel, v) => { const el = document.querySelector(sel); if (el) el.value = v == null ? '' : v; };
+    set('#acc-name', s.name);
+    set('#acc-email', s.email);
+    set('#acc-age', s.age);
+    set('#acc-weight', s.weight);
+    set('#acc-weight-target', s.weight_target);
+    set('#acc-height', s.height);
+    if (s.activity) set('#acc-activity', s.activity);
+    if (s.goal) set('#acc-goal', s.goal);
+    const status = document.querySelector('[data-account-status]');
+    if (status) {
+      const map = {
+        none: '[ Sin suscripción · activa tu trial cuando quieras ]',
+        trialing: '[ Trial activo ]',
+        active: '[ Membresía activa ]',
+        past_due: '[ Pago pendiente ]',
+        canceled: '[ Cancelada ]',
+      };
+      status.textContent = map[s.subscription_status] || `[ ${s.subscription_status || 'pendiente'} ]`;
+    }
+  }
+
+  function renderAccountSubscription(s) {
+    const container = document.querySelector('[data-account-subscription]');
+    if (!container) return;
+    const status = s.subscription_status || 'none';
+    const ends = s.trial_ends_at || s.current_period_end;
+    const endsStr = ends ? new Date(ends).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+    let html = '';
+    if (status === 'active' || status === 'trialing') {
+      html = `
+        <div style="padding: 0 20px 20px;">
+          <p><strong>Estado:</strong> ${status === 'trialing' ? 'Periodo de prueba' : 'Membresía activa'}</p>
+          ${endsStr ? `<p><strong>${status === 'trialing' ? 'Trial termina' : 'Próximo cobro'}:</strong> ${endsStr}</p>` : ''}
+          <div class="smae-form-actions" style="margin-top: 16px;">
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost smae-danger" data-account-cancel-sub>Cancelar suscripción</button>
+          </div>
+          <p class="label" style="color: var(--gray); margin-top: 12px;">Al cancelar mantienes acceso hasta el final del periodo pagado. Sin reembolsos parciales.</p>
+        </div>`;
+    } else {
+      html = `
+        <div style="padding: 0 20px 20px;">
+          <p>No tienes una suscripción activa. Tu plan sigue disponible para visualizar.</p>
+          <div class="smae-form-actions" style="margin-top: 16px;">
+            <button type="button" class="closing-cta-btn" data-account-subscribe>Activar membresía →</button>
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+    const cancel = container.querySelector('[data-account-cancel-sub]');
+    if (cancel) cancel.addEventListener('click', cancelSubscription);
+    const sub = container.querySelector('[data-account-subscribe]');
+    if (sub) sub.addEventListener('click', () => startCheckout('mensual'));
+  }
+
+  async function saveAccount(e) {
+    e.preventDefault();
+    const form = e.target;
+    const fd = new FormData(form);
+    const num = k => { const n = parseFloat(fd.get(k)); return Number.isFinite(n) ? n : null; };
+    const data = {
+      name: (fd.get('name') || '').toString().trim() || null,
+      age: num('age'),
+      weight: num('weight'),
+      weight_target: num('weight_target'),
+      height: num('height'),
+      activity: num('activity'),
+      goal: num('goal'),
+    };
+    try {
+      await api('/profile', { method: 'PATCH', body: data });
+      toast('Cambios guardados', 'success');
+      await loadAccount();
+    } catch (err) {
+      toast('Error: ' + err.message, 'error');
+    }
+  }
+
+  async function regenAccount() {
+    try {
+      const { subscriber } = await api('/me');
+      const macros = autoMacros(subscriber);
+      if (!macros) { toast('Faltan datos para generar plan', 'error'); return; }
+      const eq = calculateBase(macros, subscriber.mode || 'normal', (subscriber.preferences && subscriber.preferences.dislikes) || []);
+      const meals = MEAL_PRESETS[(subscriber.preferences && subscriber.preferences.meals_preset) || 'estandar-5'];
+      const m = distributeMeals(eq, meals);
+      await api('/profile', { method: 'PATCH', body: {
+        kcal_target: macros.kcal,
+        protein_target: macros.protein,
+        carb_target: macros.carb,
+        fat_target: macros.fat,
+      }});
+      await api('/plan/generate', {
+        method: 'POST',
+        body: {
+          macros, equivalencias: eq, meals: m,
+          meals_distribution: meals.map(mm => ({ key: mm.key, pct: mm.pct, label: mm.label })),
+          mode: subscriber.mode || 'normal',
+          examples: {}, menu_options: {},
+        },
+      });
+      toast('Plan regenerado', 'success');
+      navigate('/dashboard');
+    } catch (err) { toast('Error: ' + err.message, 'error'); }
+  }
+
+  async function cancelSubscription() {
+    if (!confirm('¿Cancelar tu suscripción? Mantendrás acceso hasta el final del periodo pagado.')) return;
+    try {
+      await api('/subscription/cancel', { method: 'POST' });
+      toast('Suscripción cancelada. Tendrás acceso hasta el final del periodo.', 'success');
+      await loadAccount();
+    } catch (err) {
+      toast('Por ahora cancela escribiendo a hola@prado-mx.com. Te lo procesamos.', 'info');
+    }
+  }
+
+  async function deleteAccount() {
+    if (!confirm('¿Eliminar tu cuenta y TODOS tus datos? Esta acción es irreversible.')) return;
+    if (!confirm('Última confirmación: vas a borrar todo. ¿Continuar?')) return;
+    try {
+      await api('/account', { method: 'DELETE' });
+      toast('Cuenta eliminada', 'success');
+      navigate('/');
+    } catch (err) {
+      toast('Por ahora escribe a hola@prado-mx.com para eliminar tu cuenta.', 'info');
+    }
   }
 
   // ---------- Signup / Login --------------------------------------------
@@ -265,11 +425,11 @@
         meals_preset: fd.get('meals_preset') || 'estandar-5',
       },
     };
-    if (!fd.get('consent')) { alert('Necesitas aceptar el aviso para continuar.'); return; }
+    if (!fd.get('consent')) { toast('Necesitas aceptar el aviso para continuar.', 'error'); return; }
 
     // Calcular macros + plan
     const macros = autoMacros(data);
-    if (!macros) { alert('Faltan datos.'); return; }
+    if (!macros) { toast('Faltan datos. Revisa los pasos anteriores.', 'error'); return; }
     data.kcal_target = macros.kcal;
     data.protein_target = macros.protein;
     data.carb_target = macros.carb;
@@ -294,7 +454,7 @@
       });
       navigate('/dashboard');
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast('Error: ' + err.message, 'error');
     }
   }
 
@@ -416,9 +576,9 @@
     try {
       const r = await api('/checkout', { method: 'POST', body: { plan: plan || 'mensual' } });
       if (r.url) window.location.href = r.url;
-      else if (r.stub) alert('Stripe aún no está configurado. Pronto.');
+      else if (r.stub) toast('Stripe aún no está configurado. Pronto.', 'info');
     } catch (e) {
-      alert('Error: ' + e.message);
+      toast('Error: ' + e.message, 'error');
     }
   }
 
@@ -440,11 +600,23 @@
       if (!a) return;
       const href = a.getAttribute('href');
       if (!href || a.target === '_blank' || href.startsWith('http') || href.startsWith('mailto:')) return;
-      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard'].includes(href)) {
+      // Páginas standalone (no SPA): terminos, privacidad
+      if (href === '/terminos' || href === '/privacidad' || href === '/terms' || href === '/privacy') return;
+      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta'].includes(href)) {
         e.preventDefault();
         navigate(href);
       }
     });
+
+    // Account form
+    const accForm = document.querySelector('[data-account-form]');
+    if (accForm) accForm.addEventListener('submit', saveAccount);
+    const accRegen = document.querySelector('[data-account-regen]');
+    if (accRegen) accRegen.addEventListener('click', regenAccount);
+    const accDelete = document.querySelector('[data-account-delete]');
+    if (accDelete) accDelete.addEventListener('click', deleteAccount);
+    const accLogout = document.querySelector('[data-account-logout]');
+    if (accLogout) accLogout.addEventListener('click', doLogout);
 
     // Forms
     const signupForm = document.querySelector('[data-signup-form]');

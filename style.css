@@ -2170,6 +2170,42 @@ a.line-card:hover { text-decoration: none; }
 }
 .admin-cell-actions a:hover { background: var(--fg); color: var(--bg); }
 
+/* Tier progress bar (drawer paciente) */
+.tier-progress {
+  border: 1px solid var(--divider);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tier-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tier-progress-bar {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  margin: 0;
+  color: var(--fg);
+  overflow-x: auto;
+  white-space: pre;
+}
+.tier-progress p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--gray);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* Tier badges */
 .admin-tier-badge {
   display: inline-block;
@@ -2429,6 +2465,120 @@ a.line-card:hover { text-decoration: none; }
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* "Para quién es / no es" en landing B2C */
+.app-for-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--divider);
+  border: 1px solid var(--divider);
+  margin-top: 24px;
+}
+@media (min-width: 720px) { .app-for-grid { grid-template-columns: 1fr 1fr; } }
+.app-for {
+  background: var(--bg);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.app-for .label { color: var(--gray); }
+.app-for h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.1;
+}
+.app-for ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.app-for ul li {
+  padding-left: 18px;
+  position: relative;
+  color: var(--fg);
+}
+.app-for ul li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.app-for--no { border-left: 3px solid var(--gray); }
+.app-for--no ul li { color: var(--gray); }
+
+/* Bloque "quien arma esto" */
+.app-author {
+  border: 1px solid var(--divider);
+  padding: 36px 32px;
+  background: var(--surface);
+  margin-top: 24px;
+}
+.app-author-cred .label { color: var(--gray); margin-bottom: 12px; display: block; }
+.app-author-cred h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0 0 20px;
+}
+.app-author-cred p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  max-width: 64ch;
+}
+.app-author-cred p:last-child { margin-bottom: 0; }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100% - 48px);
+}
+.toast {
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  padding: 14px 18px;
+  font-size: 13px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  pointer-events: auto;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.dark .toast { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.toast.is-visible { transform: translateY(0); opacity: 1; }
+.toast .label {
+  color: var(--gray);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.toast--success { border-color: var(--fg); }
+.toast--error { border-color: var(--gray); }
+.toast--info { border-color: var(--divider); }
 
 /* ========================================================
    FINANZAS tracker (admin tab)

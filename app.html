@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=12" />
+  <link rel="stylesheet" href="/style.css?v=13" />
 
   <script>
     (function () {
@@ -165,9 +165,57 @@
     </section>
 
     <section class="section section--tight">
+      <div class="section-head">
+        <h2 class="section-title">Para quién</h2>
+        <span class="label">[ Honesto ]</span>
+      </div>
+      <div class="app-for-grid">
+        <article class="app-for">
+          <span class="label">[ ✓ ] Sí </span>
+          <h3>Para ti si...</h3>
+          <ul>
+            <li>Eres adulto sano que quiere ordenar su nutrición</li>
+            <li>Tienes un objetivo claro (bajar grasa, mantener, ganar músculo)</li>
+            <li>Entrenas con cierta regularidad o quieres empezar</li>
+            <li>Buscas un punto de partida calibrado, no improvisado</li>
+            <li>Prefieres herramientas que respetan tu tiempo</li>
+          </ul>
+        </article>
+        <article class="app-for app-for--no">
+          <span class="label">[ × ] No </span>
+          <h3>No es para ti si...</h3>
+          <ul>
+            <li>Eres menor de 18 años</li>
+            <li>Estás en embarazo o lactancia</li>
+            <li>Tienes diabetes, ED, condición renal/cardiovascular activa</li>
+            <li>Necesitas seguimiento clínico semanal</li>
+            <li>Buscas el plan de "perder 10 kg en una semana"</li>
+          </ul>
+          <p class="label" style="margin-top: 12px; color: var(--gray);">→ En esos casos: <a href="https://api.whatsapp.com/send?phone=5218132446886" target="_blank" rel="noopener" style="color: var(--fg); text-decoration: underline;">consulta directa con Hugo</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section--tight">
+      <div class="section-head">
+        <h2 class="section-title">Quien arma esto</h2>
+        <span class="label">[ Hugo Prado ]</span>
+      </div>
+      <article class="app-author">
+        <div class="app-author-cred">
+          <span class="label">[ Cédula UANL ]</span>
+          <h3>Hugo Prado</h3>
+          <p>Nutriólogo licenciado, Universidad Autónoma de Nuevo León. Diplomado en Nutrición Deportiva. +7 años entrenando y dando consulta en estudios boutique de Monterrey. Coach en <strong>Energee</strong> (único estudio de Lagree en MTY) e <strong>Impulse</strong>.</p>
+          <p>Collabs activas con marcas: <strong>Champs · Lululemon · New Balance · GNC · Habits · Birkenstock</strong>. Audiencia en IG: <a href="https://instagram.com/hugopradoo" target="_blank" rel="noopener" style="color: var(--fg); text-decoration: underline;">@hugopradoo</a>.</p>
+          <p>Toda la metodología y los planes del SMAE están calibrados con su criterio clínico. La app aplica esa metodología; la consulta personal con Hugo agrega seguimiento clínico, composición corporal y antropométricos.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="section section--tight">
       <div class="legal" id="aviso">
         <p>
-          <strong>PRADO Plan</strong> es una herramienta educativa basada en la metodología del nutriólogo Hugo Prado (UANL). No constituye consulta médica ni nutricional personalizada. No sustituye valoración profesional.
+          <strong>PRADO Plan</strong> es una herramienta educativa basada en la metodología del nutriólogo Hugo Prado (UANL). No constituye consulta médica ni nutricional personalizada. No sustituye valoración profesional. Lee los <a href="/terminos" style="color: var(--fg); text-decoration: underline;">Términos</a> y la <a href="/privacidad" style="color: var(--fg); text-decoration: underline;">Política de Privacidad</a>.
         </p>
         <p>
           No está diseñado para menores de 18 años, embarazo, lactancia, ni condiciones médicas activas. El uso es bajo tu responsabilidad. Para plan supervisado, agenda consulta con Hugo Prado.
@@ -354,6 +402,7 @@
         </div>
         <div class="app-dashboard-actions">
           <button type="button" class="closing-cta-btn" data-dash-checkout hidden>Activar membresía →</button>
+          <a class="closing-cta-btn closing-cta-btn--ghost" href="/cuenta" data-app-route>Mi cuenta</a>
           <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-dash-edit>Editar perfil</button>
           <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-dash-print>PDF →</button>
         </div>
@@ -402,6 +451,106 @@
     </section>
   </div>
 
+  <!-- ============ VISTA: MI CUENTA ============ -->
+  <div data-view="account" hidden>
+    <section class="section section--tight" style="max-width: 720px; margin: 60px auto;">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Mi cuenta</h2>
+          <p class="label admin-content-sub" data-account-status>[ Cargando... ]</p>
+        </div>
+        <a class="closing-cta-btn closing-cta-btn--ghost" href="/dashboard" data-app-route>← Volver</a>
+      </div>
+
+      <details class="drawer-section" open>
+        <summary>
+          <span class="label">[ Datos personales ]</span>
+          <span class="drawer-toggle" aria-hidden="true">+</span>
+        </summary>
+        <form class="smae-form" data-account-form>
+          <div class="field field--wide">
+            <label class="label" for="acc-name">Nombre</label>
+            <input type="text" id="acc-name" name="name" autocomplete="given-name">
+          </div>
+          <div class="field field--wide">
+            <label class="label" for="acc-email">Correo</label>
+            <input type="email" id="acc-email" name="email" disabled style="opacity: 0.6;">
+            <small class="label" style="color: var(--gray);">El correo no se puede cambiar. Para mover tu cuenta a otro correo, escribe a hola@prado-mx.com.</small>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="acc-age">Edad</label>
+              <input type="number" id="acc-age" name="age" min="18" max="90">
+            </div>
+            <div class="field">
+              <label class="label" for="acc-weight">Peso (kg)</label>
+              <input type="number" id="acc-weight" name="weight" step="0.1">
+            </div>
+            <div class="field">
+              <label class="label" for="acc-weight-target">Peso objetivo</label>
+              <input type="number" id="acc-weight-target" name="weight_target" step="0.1">
+            </div>
+            <div class="field">
+              <label class="label" for="acc-height">Altura (cm)</label>
+              <input type="number" id="acc-height" name="height">
+            </div>
+            <div class="field">
+              <label class="label" for="acc-activity">Actividad</label>
+              <select id="acc-activity" name="activity">
+                <option value="1.2">Sedentario</option>
+                <option value="1.375">Ligero</option>
+                <option value="1.55">Moderado</option>
+                <option value="1.725">Alto</option>
+                <option value="1.9">Muy alto</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="acc-goal">Objetivo</label>
+              <select id="acc-goal" name="goal">
+                <option value="0.8">Déficit</option>
+                <option value="1.0">Mantener</option>
+                <option value="1.1">Superávit</option>
+              </select>
+            </div>
+          </div>
+          <div class="smae-form-actions">
+            <button type="submit" class="closing-cta-btn">Guardar cambios</button>
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-account-regen>Regenerar plan con estos datos</button>
+          </div>
+        </form>
+      </details>
+
+      <details class="drawer-section">
+        <summary>
+          <span class="label">[ Suscripción ]</span>
+          <span class="drawer-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div data-account-subscription>
+          <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </details>
+
+      <details class="drawer-section">
+        <summary>
+          <span class="label">[ Zona peligrosa ]</span>
+          <span class="drawer-toggle" aria-hidden="true">+</span>
+        </summary>
+        <div style="padding: 0 20px 20px;">
+          <p class="label" style="color: var(--gray); margin-bottom: 16px;">
+            Eliminar tu cuenta borra todos tus datos (perfil, planes, histórico) de forma irreversible. Si tienes suscripción activa, cancélala primero.
+          </p>
+          <div class="smae-form-actions">
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost smae-danger" data-account-delete>Eliminar mi cuenta</button>
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-account-logout>Cerrar sesión</button>
+          </div>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <!-- Toast notifications container -->
+  <div class="toast-container" data-toast-container aria-live="polite" aria-atomic="true"></div>
+
   <!-- Print area -->
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
@@ -416,6 +565,11 @@
       <a href="https://prado-mx.com/hugo">Hugo Prado</a>
     </div>
     <div>
+      <h4>Legal</h4>
+      <a href="/terminos">Términos</a><br/>
+      <a href="/privacidad">Privacidad</a>
+    </div>
+    <div>
       <h4>Contacto</h4>
       <a href="mailto:hola@prado-mx.com">hola@prado-mx.com</a>
     </div>
@@ -426,6 +580,6 @@
   </footer>
 
   <script src="/app-ascii.js?v=1" defer></script>
-  <script src="/app.js?v=1" defer></script>
+  <script src="/app.js?v=2" defer></script>
 </body>
 </html>

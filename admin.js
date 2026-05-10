@@ -177,11 +177,34 @@
   }
   function tierFor(n) {
     n = n || 0;
-    if (n >= 31) return { label: 'Platino', cls: 'tier-platino' };
-    if (n >= 16) return { label: 'Oro', cls: 'tier-oro' };
-    if (n >= 6)  return { label: 'Plata', cls: 'tier-plata' };
-    if (n >= 1)  return { label: 'Bronce', cls: 'tier-bronce' };
-    return { label: 'Nuevo', cls: '' };
+    if (n >= 31) return { label: 'Platino', cls: 'tier-platino', icon: '◆', next: null, min: 31 };
+    if (n >= 16) return { label: 'Oro', cls: 'tier-oro', icon: '◇', next: 'Platino', min: 16, nextAt: 31 };
+    if (n >= 6)  return { label: 'Plata', cls: 'tier-plata', icon: '○', next: 'Oro', min: 6, nextAt: 16 };
+    if (n >= 1)  return { label: 'Bronce', cls: 'tier-bronce', icon: '·', next: 'Plata', min: 1, nextAt: 6 };
+    return { label: 'Nuevo', cls: '', icon: '·', next: 'Bronce', min: 0, nextAt: 1 };
+  }
+  function tierProgressBar(count, width = 24) {
+    const t = tierFor(count);
+    if (!t.next) {
+      return `<span class="label" style="color: var(--fg);">[ Tier máximo alcanzado ]</span>`;
+    }
+    const span = t.nextAt - t.min;
+    const inTier = (count || 0) - t.min;
+    const pct = span > 0 ? inTier / span : 1;
+    const filled = Math.max(0, Math.min(width, Math.round(pct * width)));
+    const empty = width - filled;
+    const bar = '#'.repeat(filled) + '.'.repeat(empty);
+    const toGo = t.nextAt - (count || 0);
+    return `
+      <div class="tier-progress">
+        <div class="tier-progress-label">
+          <span class="label">${t.icon} ${t.label}</span>
+          <span class="label">→ ${t.next}</span>
+        </div>
+        <pre class="tier-progress-bar">[${bar}]</pre>
+        <p class="label">Faltan ${toGo} consulta${toGo === 1 ? '' : 's'} para ${t.next}</p>
+      </div>
+    `;
   }
   function escapeHTML(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -470,7 +493,10 @@
       populateDrawer(patient, plans || []);
       const tier = tierFor(plans && plans.length || 0);
       document.querySelector('[data-drawer-name]').textContent = patient.name;
-      document.querySelector('[data-drawer-tier]').textContent = `[ ${tier.label} · ${plans.length} plan${plans.length === 1 ? '' : 'es'} ]`;
+      document.querySelector('[data-drawer-tier]').innerHTML = `<span class="admin-tier-badge ${tier.cls}">${tier.icon} ${tier.label}</span> <span class="label">${plans.length} plan${plans.length === 1 ? '' : 'es'}</span>`;
+      // Renderizar barra de progreso al siguiente tier en el historial
+      const histContainer = document.querySelector('[data-drawer-historial]');
+      // se renderiza en renderDrawerHistorial pero le agregamos prefix
       document.querySelector('[data-drawer-delete]').hidden = false;
       showDrawer();
     } catch (e) {
@@ -827,11 +853,14 @@
   function renderDrawerHistorial(plans) {
     const c = document.querySelector('[data-drawer-historial]');
     if (!c) return;
-    if (!plans || plans.length === 0) {
-      c.innerHTML = '<p class="smae-empty label">[ Sin planes guardados aún ]</p>';
+    const count = (plans && plans.length) || 0;
+    const tierBar = tierProgressBar(count);
+    if (count === 0) {
+      c.innerHTML = `${tierBar}<p class="smae-empty label">[ Sin planes guardados aún ]</p>`;
       return;
     }
     c.innerHTML = `
+      ${tierBar}
       <ul class="drawer-historial-list">
         ${plans.map(p => `
           <li>
