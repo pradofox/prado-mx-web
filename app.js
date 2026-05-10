@@ -6,6 +6,11 @@
   'use strict';
 
   const API_BASE = '/api/app';
+  const SMAE_API = '/api/smae';
+
+  // Foods se cargan una vez al inicio (catálogo SMAE) para auto-generar
+  // opciones de menú por tiempo. Sin esto el plan queda muy abstracto.
+  let CATALOG_FOODS = [];
 
   // ---------- SMAE constants ---------------------------------------------
 
@@ -98,6 +103,86 @@
       kcal += n * grp.kcal; c += n * grp.c; p += n * grp.p; g += n * grp.g;
     });
     return { kcal, c, p, g };
+  }
+
+  // Filtra foods según preferencias del usuario (dislikes del cuestionario)
+  // y mode. Devuelve los foods elegibles para cada grupo.
+  function filterFoods(foods, mode, dislikes) {
+    const dislikeSet = new Set((dislikes || []).map(d => d.toLowerCase()));
+    return foods.filter(f => {
+      const name = (f.name || '').toLowerCase();
+      const group = (f.group_key || '').toLowerCase();
+      // Vegano: sin AOA ni leche ni huevo
+      if (mode === 'vegano') {
+        if (group.startsWith('aoa-') || group.startsWith('leche-')) return false;
+        if (name.includes('huevo') || name.includes('atún') || name.includes('atun') || name.includes('pollo') || name.includes('res') || name.includes('cerdo') || name.includes('pavo') || name.includes('pescado') || name.includes('salmón') || name.includes('salmon') || name.includes('camarón') || name.includes('camaron') || name.includes('tocino') || name.includes('chorizo') || name.includes('queso') || name.includes('yogurt') || name.includes('leche')) return false;
+      }
+      // Vegetariano: sin AOA con carne
+      if (mode === 'vegetariano') {
+        if (name.includes('pollo') || name.includes('res') || name.includes('cerdo') || name.includes('pavo') || name.includes('pescado') || name.includes('salmón') || name.includes('salmon') || name.includes('camarón') || name.includes('camaron') || name.includes('tocino') || name.includes('chorizo') || name.includes('arrachera') || name.includes('jamón') || name.includes('jamon') || name.includes('atún') || name.includes('atun') || name.includes('tilapia') || name.includes('mero') || name.includes('bistec') || name.includes('costilla') || name.includes('salchicha')) return false;
+      }
+      // Renal: limitar AOA alto y embutidos
+      if (mode === 'renal') {
+        if (group === 'aoa-a') return false;
+        if (name.includes('chorizo') || name.includes('tocino') || name.includes('salchicha') || name.includes('queso amarillo')) return false;
+      }
+      // Dislikes globales
+      if (dislikeSet.has('huevo') && name.includes('huevo')) return false;
+      if (dislikeSet.has('leche') && (group.startsWith('leche-') || name.includes('leche') || name.includes('yogurt') || name.includes('queso'))) return false;
+      if (dislikeSet.has('cerdo') && (name.includes('cerdo') || name.includes('tocino') || name.includes('chorizo'))) return false;
+      if (dislikeSet.has('mariscos') && (name.includes('camarón') || name.includes('camaron') || name.includes('marisco'))) return false;
+      if (dislikeSet.has('gluten') && (name.includes('pan') || name.includes('pasta') || name.includes('galleta') || name.includes('bisquet') || name.includes('bolillo') || name.includes('waffle'))) return false;
+      return true;
+    });
+  }
+
+  // Para cada grupo con equivalencias > 0, escoge 2-3 foods elegibles como
+  // sugerencias por defecto. Esto alimenta el algoritmo de menú.
+  function pickDefaultExamples(equivalencias, mode, dislikes) {
+    if (!CATALOG_FOODS.length) return {};
+    const eligible = filterFoods(CATALOG_FOODS, mode, dislikes);
+    const byGroup = {};
+    eligible.forEach(f => {
+      if (!byGroup[f.group_key]) byGroup[f.group_key] = [];
+      byGroup[f.group_key].push(f);
+    });
+    const examples = {};
+    GROUPS.forEach(g => {
+      if ((equivalencias[g.key] || 0) === 0) return;
+      const pool = byGroup[g.key] || [];
+      if (pool.length === 0) return;
+      // Toma hasta 3 distintos para variar entre opciones de menú
+      const picks = pool.slice(0, 3).map(f => f.id);
+      examples[g.key] = picks;
+    });
+    return examples;
+  }
+
+  // Genera 3 opciones de menú por tiempo a partir de meals + examples.
+  // Rota foods entre opciones para que cada una sea distinta.
+  function generateMenuOptions(meals, mealsArr, examples) {
+    const result = {};
+    if (!CATALOG_FOODS.length) return result;
+    mealsArr.forEach(m => {
+      const groupsWithEq = GROUPS.filter(g => (meals[m.key] && meals[m.key][g.key] || 0) > 0);
+      if (groupsWithEq.length === 0) { result[m.key] = ['', '', '']; return; }
+      result[m.key] = [0, 1, 2].map(optIdx => {
+        return groupsWithEq.map(g => {
+          const amount = meals[m.key][g.key];
+          const ids = (examples && examples[g.key]) || [];
+          const pool = ids.length
+            ? CATALOG_FOODS.filter(f => ids.includes(f.id))
+            : CATALOG_FOODS.filter(f => f.group_key === g.key);
+          if (pool.length === 0) return `${formatN(amount)} ${g.label}`;
+          const food = pool[optIdx % pool.length];
+          const portionText = amount === 1
+            ? food.portion
+            : `${food.portion} × ${formatN(amount)}`;
+          return `${food.name}: ${portionText}`;
+        }).join('\n');
+      });
+    });
+    return result;
   }
 
   function distributeMeals(eq, meals) {
@@ -439,6 +524,10 @@
     const mealsDistribution = distributeMeals(equivalencias, meals);
 
     try {
+      // Asegura que foods estén cargados antes de generar opciones
+      if (!CATALOG_FOODS.length) await loadFoods();
+      const examples = pickDefaultExamples(equivalencias, data.mode, data.preferences.dislikes);
+      const menuOptions = generateMenuOptions(mealsDistribution, meals, examples);
       await api('/profile', { method: 'PATCH', body: data });
       await api('/plan/generate', {
         method: 'POST',
@@ -448,14 +537,25 @@
           meals: mealsDistribution,
           meals_distribution: meals.map(m => ({ key: m.key, pct: m.pct, label: m.label })),
           mode: data.mode,
-          examples: {},
-          menu_options: {},
+          examples,
+          menu_options: menuOptions,
         },
       });
+      toast('Tu plan está listo', 'success');
       navigate('/dashboard');
     } catch (err) {
       toast('Error: ' + err.message, 'error');
     }
+  }
+
+  async function loadFoods() {
+    try {
+      const r = await fetch(SMAE_API + '/foods', { credentials: 'omit' });
+      if (r.ok) {
+        const j = await r.json();
+        CATALOG_FOODS = j.foods || [];
+      }
+    } catch (e) { /* ok, queda vacío */ }
   }
 
   // ---------- Dashboard -------------------------------------------------
@@ -469,7 +569,7 @@
     }
   }
 
-  function renderDashboard(sub, plan) {
+  async function renderDashboard(sub, plan) {
     const greeting = document.querySelector('[data-dash-greeting]');
     const status = document.querySelector('[data-dash-status]');
     if (greeting) greeting.textContent = sub.name ? `Hola, ${sub.name}` : 'Tu plan';
@@ -511,6 +611,36 @@
       const m = distributeMeals(eq, meals);
       plan = { macros, equivalencias: eq, meals: m, meals_distribution: meals };
     }
+
+    // Si el plan no tiene menu_options (plan viejo o sin foods), generarlas
+    // ahora con los foods cargados. No persiste hasta que el user re-guarde.
+    if (!plan.menu_options || Object.keys(plan.menu_options).length === 0) {
+      if (CATALOG_FOODS.length === 0) await loadFoods();
+      if (CATALOG_FOODS.length > 0) {
+        const mealsArr = plan.meals_distribution && plan.meals_distribution.length
+          ? plan.meals_distribution
+          : MEAL_PRESETS[(sub.preferences && sub.preferences.meals_preset) || 'estandar-5'];
+        const examples = plan.examples && Object.keys(plan.examples).length
+          ? plan.examples
+          : pickDefaultExamples(plan.equivalencias, sub.mode || 'normal', sub.preferences && sub.preferences.dislikes);
+        plan.examples = examples;
+        plan.menu_options = generateMenuOptions(plan.meals, mealsArr, examples);
+        // Persistir el plan enriquecido en background (no bloquea render)
+        api('/plan/generate', {
+          method: 'POST',
+          body: {
+            macros: plan.macros,
+            equivalencias: plan.equivalencias,
+            meals: plan.meals,
+            meals_distribution: mealsArr,
+            mode: plan.mode || sub.mode || 'normal',
+            examples: plan.examples,
+            menu_options: plan.menu_options,
+          },
+        }).catch(() => {});
+      }
+    }
+
     renderGroups(plan);
     renderTotals(plan);
     renderMeals(plan, sub);
@@ -555,18 +685,30 @@
     const mealsArr = plan.meals_distribution && plan.meals_distribution.length
       ? plan.meals_distribution
       : MEAL_PRESETS[(sub && sub.preferences && sub.preferences.meals_preset) || 'estandar-5'];
+    const menuOpts = plan.menu_options || {};
     c.innerHTML = '';
     mealsArr.forEach(m => {
       const items = GROUPS.filter(g => (plan.meals[m.key] && plan.meals[m.key][g.key] || 0) > 0)
         .map(g => `<li><span class="label">[ ${g.abbr} ]</span><span class="smae-meal-name">${g.label}</span><strong>${formatN(plan.meals[m.key][g.key])}</strong></li>`).join('');
+      const opts = menuOpts[m.key] || ['', '', ''];
+      const optsHtml = opts.some(o => o && o.trim())
+        ? `<div class="app-meal-options">
+            ${opts.map((opt, i) => opt && opt.trim() ? `
+              <div class="app-meal-option">
+                <span class="label">[ Opción ${i + 1} ]</span>
+                <pre class="app-meal-option-text">${escapeHTML(opt)}</pre>
+              </div>` : '').join('')}
+          </div>`
+        : '';
       const card = document.createElement('div');
-      card.className = 'smae-meal';
+      card.className = 'smae-meal app-dash-meal';
       card.innerHTML = `
         <div class="smae-meal-head">
           <span class="label">[ ${m.label} ]</span>
           <span class="label smae-meal-pct">${Math.round(m.pct * 100)}%</span>
         </div>
         ${items ? `<ul class="smae-meal-list">${items}</ul>` : '<p class="smae-empty label">[ vacío ]</p>'}
+        ${optsHtml}
       `;
       c.appendChild(card);
     });
@@ -602,6 +744,7 @@
   function init() {
     handleRoute();
     checkDevMode();
+    loadFoods();
 
     window.addEventListener('popstate', handleRoute);
 
@@ -650,7 +793,14 @@
     const editBtn = document.querySelector('[data-dash-edit]');
     if (editBtn) editBtn.addEventListener('click', () => navigate('/cuestionario'));
     const printBtn = document.querySelector('[data-dash-print]');
-    if (printBtn) printBtn.addEventListener('click', () => window.print());
+    if (printBtn) printBtn.addEventListener('click', async () => {
+      try {
+        const { subscriber, plan } = await api('/me');
+        if (!plan) { toast('Primero genera tu plan en el cuestionario.', 'info'); return; }
+        preparePrintB2C(subscriber, plan);
+        window.print();
+      } catch (e) { toast('Error al imprimir: ' + e.message, 'error'); }
+    });
 
     // Theme toggle
     document.querySelectorAll('[data-theme-toggle]').forEach(b => {
@@ -664,6 +814,105 @@
     document.querySelectorAll('[data-theme-label]').forEach(l => {
       l.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark';
     });
+  }
+
+  // ---------- PDF print (B2C) -------------------------------------------
+
+  function preparePrintB2C(sub, plan) {
+    const root = document.querySelector('[data-smae-print-area]');
+    if (!root) return;
+    const mealsArr = plan.meals_distribution && plan.meals_distribution.length
+      ? plan.meals_distribution
+      : MEAL_PRESETS[(sub.preferences && sub.preferences.meals_preset) || 'estandar-5'];
+    const target = plan.macros || {};
+    const totalKcal = target.kcal || 0;
+    const ptKcal = (target.protein || 0) * 4;
+    const lpKcal = (target.fat || 0) * 9;
+    const hcKcal = (target.carb || 0) * 4;
+    const pct = (n) => totalKcal > 0 ? (n / totalKcal * 100).toFixed(1) : 0;
+    const menuOpts = plan.menu_options || {};
+
+    const mealRows = mealsArr.map(m => {
+      const eqAbbrs = GROUPS
+        .filter(g => (plan.meals[m.key] && plan.meals[m.key][g.key] || 0) > 0)
+        .map(g => `${g.abbr} ${formatN(plan.meals[m.key][g.key])}`)
+        .join(' · ');
+      const opts = menuOpts[m.key] || ['', '', ''];
+      const escMl = s => s ? escapeHTML(s).replace(/\n/g, '<br/>') : '<span class="print-empty">-</span>';
+      return `
+        <tr>
+          <td class="print-meal-name">
+            <strong>${m.label.toUpperCase()}</strong>
+            <div class="print-meal-eqs">${eqAbbrs}</div>
+          </td>
+          <td>${escMl(opts[0])}</td>
+          <td>${escMl(opts[1])}</td>
+          <td>${escMl(opts[2])}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const recomendaciones = [
+      'Cocina a la plancha, al vapor, al carbón, hervido, al horno o en caldo.',
+      'Prepara tus comidas por adelantado para no romper el plan.',
+      'Duerme 7-8 horas con el cuarto oscuro a 18-21°C.',
+      'Hábitos para reducir estrés: respiración, meditación, introspección.',
+      'Tómate fotos 1 vez por semana, observa digestión y energía.',
+    ];
+
+    root.innerHTML = `
+      <section class="print-page print-cover">
+        <div class="print-cover-mark"><span class="print-bracket">[</span><span class="print-prado">PRADO PLAN</span><span class="print-bracket">]</span></div>
+        <div class="print-cover-x">x</div>
+        <div class="print-cover-name">${escapeHTML(sub.name || sub.email || 'Tu plan').toUpperCase()}</div>
+        <div class="print-cover-cita">${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+      </section>
+
+      <section class="print-page">
+        <h2 class="print-h2">[ Macronutrientes ]</h2>
+        <table class="print-macros-tbl">
+          <thead><tr><th></th><th>%</th><th>GR</th><th>KCAL</th></tr></thead>
+          <tbody>
+            <tr><th>PT</th><td>${pct(ptKcal)}</td><td>${target.protein || 0}</td><td>${ptKcal}</td></tr>
+            <tr><th>LP</th><td>${pct(lpKcal)}</td><td>${target.fat || 0}</td><td>${lpKcal}</td></tr>
+            <tr><th>HC</th><td>${pct(hcKcal)}</td><td>${target.carb || 0}</td><td>${hcKcal}</td></tr>
+            <tr class="print-total"><th>TOTAL</th><td>100</td><td></td><td>${totalKcal}</td></tr>
+          </tbody>
+        </table>
+
+        <h2 class="print-h2">[ Equivalencias por grupo ]</h2>
+        <table class="print-antro">
+          <thead><tr><th>Grupo</th><th>Equivalencias</th></tr></thead>
+          <tbody>
+            ${GROUPS.filter(g => (plan.equivalencias[g.key] || 0) > 0).map(g => `
+              <tr><th>${g.label}</th><td><strong>${formatN(plan.equivalencias[g.key])}</strong></td></tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="print-page print-menu-page">
+        <h2 class="print-h2">[ Menú semanal ]</h2>
+        <p class="print-leyenda">3 opciones por tiempo. Escoge la que más se te antoje cada día. Las porciones cumplen tus equivalencias del grupo.</p>
+        <table class="print-menu">
+          <thead><tr><th>Tiempo</th><th>Opción 1</th><th>Opción 2</th><th>Opción 3</th></tr></thead>
+          <tbody>${mealRows}</tbody>
+        </table>
+      </section>
+
+      <section class="print-page">
+        <h2 class="print-h2">[ Recomendaciones ]</h2>
+        <ul class="print-list">${recomendaciones.map(r => `<li>${r}</li>`).join('')}</ul>
+        <p class="print-footer">Para plan supervisado con seguimiento clínico, agenda consulta directa con Hugo Prado. <strong>PRADO Plan es información educativa, no consulta médica.</strong></p>
+      </section>
+
+      <section class="print-page print-close">
+        <p class="print-close-msg">¡Recuerda que es un proceso, y el proceso no es lineal! Todo gran esfuerzo traerá un gran resultado.</p>
+        <div class="print-close-pillars"><div>PACIENCIA</div><div>PERSEVERANCIA</div><div>DISCIPLINA</div></div>
+        <p class="print-close-wish">¡Te deseo muchísimo éxito!</p>
+        <div class="print-cover-mark print-close-mark"><span class="print-bracket">[</span><span class="print-prado">PRADO PLAN</span><span class="print-bracket">]</span></div>
+      </section>
+    `;
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -2466,6 +2466,32 @@ a.line-card:hover { text-decoration: none; }
   flex-wrap: wrap;
 }
 
+/* Opciones de menú por tiempo (dashboard B2C) */
+.app-dash-meal { padding: 20px; }
+.app-meal-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+@media (min-width: 720px) { .app-meal-options { grid-template-columns: 1fr 1fr 1fr; } }
+.app-meal-option {
+  border: 1px solid var(--divider);
+  padding: 12px 14px;
+  background: var(--surface);
+}
+.app-meal-option .label { color: var(--gray); display: block; margin-bottom: 6px; }
+.app-meal-option-text {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--fg);
+}
+
 /* "Para quién es / no es" en landing B2C */
 .app-for-grid {
   display: grid;
