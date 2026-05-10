@@ -1104,6 +1104,8 @@
   }
 
   function init() {
+    // Limpiar flag legacy de versiones anteriores
+    try { localStorage.removeItem('admin-skip-home'); } catch (e) {}
     applyRoute(resolveRoute());
 
     window.addEventListener('popstate', () => applyRoute(resolveRoute()));

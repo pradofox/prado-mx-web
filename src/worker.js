@@ -22,7 +22,6 @@ export default {
         return jsonResponse({ error: e.message || 'internal' }, 500, request);
       }
     }
-
     if (url.pathname.startsWith('/api/app/')) {
       try {
         return await handleAppApi(request, env, url);
@@ -31,60 +30,66 @@ export default {
       }
     }
 
-    // Subdominio app: cualquier path "lindo" sirve app.html (cliente SPA).
-    if (url.hostname === 'app.prado-mx.com') {
-      const isAssetPath = /\.[a-z0-9]{2,5}$/i.test(url.pathname);
+    const isAssetPath = /\.[a-z0-9]{2,5}$/i.test(url.pathname);
+
+    // Subdominio admin: cualquier path "lindo" sirve admin.html del bundle.
+    if (url.hostname === 'admin.prado-mx.com') {
+      const publicPaths = ['/hugo', '/consulting', '/macros'];
+      if (publicPaths.includes(url.pathname)) {
+        return Response.redirect('https://prado-mx.com' + url.pathname, 302);
+      }
       if (!isAssetPath) {
-        try { await caches.default.delete(request); } catch (e) {}
-        const appUrl = new URL('/app.html', request.url);
-        const appReq = new Request(appUrl, { method: 'GET', headers: request.headers });
-        const r = await env.ASSETS.fetch(appReq);
-        const headers = new Headers(r.headers);
-        headers.set('cache-control', 'no-store, no-cache, must-revalidate, max-age=0, private');
-        headers.set('cdn-cache-control', 'no-store');
-        headers.set('cf-cache-control', 'no-store');
-        headers.delete('etag');
-        headers.delete('last-modified');
-        headers.delete('expires');
-        return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
+        return serveHtmlFromAssets(env, request, '/admin.html');
       }
     }
 
-    // Subdominio admin: cualquier path "lindo" sirve admin.html.
-    // El JS del cliente lee window.location.pathname para decidir qué vista
-    // mostrar (landing o panel). Los assets concretos (style.css, admin.js,
-    // fuentes, etc.) caen al else normal.
-    if (url.hostname === 'admin.prado-mx.com') {
-      // Bloquear paths "públicos" que solo deben vivir en prado-mx.com
-      const publicPaths = ['/index.html', '/hugo.html', '/consulting.html', '/macros.html', '/smae.html'];
-      if (publicPaths.includes(url.pathname) || url.pathname === '/hugo' || url.pathname === '/consulting' || url.pathname === '/macros') {
-        return Response.redirect('https://prado-mx.com' + url.pathname, 302);
-      }
-
-      // Cualquier path "lindo" (sin extensión) sirve admin.html.
-      // El cliente decide qué renderizar via window.location.pathname.
-      // Assets concretos (.css, .js, .png, .svg, .jpg, .ico, .json, etc.)
-      // pasan al else normal.
-      const isAssetPath = /\.[a-z0-9]{2,5}$/i.test(url.pathname);
+    // Subdominio app: cualquier path "lindo" sirve app.html del bundle.
+    if (url.hostname === 'app.prado-mx.com') {
       if (!isAssetPath) {
-        try { await caches.default.delete(request); } catch (e) {}
-        const adminUrl = new URL('/admin.html', request.url);
-        const adminReq = new Request(adminUrl, { method: 'GET', headers: request.headers });
-        const r = await env.ASSETS.fetch(adminReq);
-        const headers = new Headers(r.headers);
-        headers.set('cache-control', 'no-store, no-cache, must-revalidate, max-age=0, private');
-        headers.set('cdn-cache-control', 'no-store');
-        headers.set('cf-cache-control', 'no-store');
-        headers.delete('etag');
-        headers.delete('last-modified');
-        headers.delete('expires');
-        return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
+        return serveHtmlFromAssets(env, request, '/app.html');
+      }
+    }
+
+    // prado-mx.com: con html_handling=none necesitamos mapear paths sin ext
+    // a sus archivos .html. (auto-trailing-slash causaba conflictos con el
+    // routing por hostname; el mapeo explícito es más predecible.)
+    if (url.hostname === 'prado-mx.com' || url.hostname === 'www.prado-mx.com') {
+      if (!isAssetPath) {
+        const pathToHtml = {
+          '/': '/index.html',
+          '': '/index.html',
+          '/hugo': '/hugo.html',
+          '/consulting': '/consulting.html',
+          '/macros': '/macros.html',
+          '/smae': '/smae.html',
+        };
+        const htmlFile = pathToHtml[url.pathname];
+        if (htmlFile) {
+          return serveHtmlFromAssets(env, request, htmlFile);
+        }
       }
     }
 
     return env.ASSETS.fetch(request);
   },
 };
+
+// Sirve un HTML del bundle de assets con headers anti-cache. Usa un internal
+// fetch con cache-bust query string para forzar miss en el edge cache.
+async function serveHtmlFromAssets(env, request, filename) {
+  try { await caches.default.delete(request); } catch (e) {}
+  const internal = new URL(filename, 'https://internal.prado-mx.com');
+  internal.searchParams.set('_wkr', Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+  const r = await env.ASSETS.fetch(new Request(internal.toString(), { method: 'GET', headers: request.headers }));
+  const headers = new Headers(r.headers);
+  headers.set('cache-control', 'no-store, no-cache, must-revalidate, max-age=0, private');
+  headers.set('cdn-cache-control', 'no-store');
+  headers.set('cf-cache-control', 'no-store');
+  headers.delete('etag');
+  headers.delete('last-modified');
+  headers.delete('expires');
+  return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
+}
 
 // ----- API ---------------------------------------------------------------
 
@@ -553,13 +558,8 @@ async function appSignup(request, env) {
           from: 'PRADO Plan <hola@prado-mx.com>',
           to: [email],
           subject: 'Tu link para entrar a PRADO Plan',
-          html: `<div style="font-family: Geist, system-ui, sans-serif; line-height:1.5; color:#000;">
-            <p>Hola${name ? ' ' + name : ''},</p>
-            <p>Da click aquí para entrar a tu cuenta de PRADO Plan:</p>
-            <p><a href="${verifyUrl}" style="display:inline-block;padding:14px 22px;background:#000;color:#fff;text-decoration:none;font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;">Entrar →</a></p>
-            <p style="font-family:'Geist Mono',monospace;font-size:12px;color:#666;">El link expira en 15 minutos.</p>
-            <p style="font-family:'Geist Mono',monospace;font-size:11px;color:#999;">Hugo Prado · prado-mx.com</p>
-          </div>`,
+          html: buildMagicLinkEmail({ name, verifyUrl }),
+          text: buildMagicLinkEmailText({ name, verifyUrl }),
         }),
       });
     } catch (e) {
@@ -777,6 +777,73 @@ async function appCreateCheckout(request, env) {
   const session = await r.json();
   if (!r.ok) return jsonResponse({ error: session.error?.message || 'stripe error' }, 500, request);
   return jsonResponse({ url: session.url }, 200, request);
+}
+
+// Email HTML con lenguaje visual PRADO (mono brackets, Geist, sin colores).
+// Inline styles porque los clientes de correo eliminan <style> y <link>.
+function buildMagicLinkEmail({ name, verifyUrl }) {
+  const greeting = name ? `Hola ${escapeForEmail(name)},` : 'Hola,';
+  return `<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tu link de acceso</title></head>
+<body style="margin:0;padding:0;background:#f0f0f0;font-family:'Geist','Helvetica Neue',-apple-system,BlinkMacSystemFont,sans-serif;color:#000;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#f0f0f0;padding:48px 16px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background:#f0f0f0;max-width:520px;width:100%;">
+        <tr><td style="padding:0 0 40px;">
+          <span style="font-family:'Geist Mono','SF Mono',Menlo,Monaco,Consolas,monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#666;">[ PRADO PLAN ]</span>
+        </td></tr>
+        <tr><td style="padding:0 0 28px;">
+          <h1 style="font-family:'Geist','Helvetica Neue',sans-serif;font-size:36px;font-weight:700;letter-spacing:-0.03em;line-height:0.95;margin:0;color:#000;">Tu link de acceso</h1>
+        </td></tr>
+        <tr><td style="padding:0 0 36px;font-size:16px;line-height:1.5;color:#000;">
+          ${greeting} Da click en el botón para entrar a tu cuenta.
+        </td></tr>
+        <tr><td style="padding:0 0 36px;">
+          <table cellpadding="0" cellspacing="0" border="0" role="presentation"><tr><td>
+            <a href="${verifyUrl}" style="display:inline-block;padding:18px 28px;background:#000;color:#fff;text-decoration:none;font-family:'Geist Mono','SF Mono',Menlo,Monaco,Consolas,monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #000;mso-padding-alt:18px 28px;">Entrar  →</a>
+          </td></tr></table>
+        </td></tr>
+        <tr><td style="padding:0 0 24px;font-family:'Geist Mono','SF Mono',Menlo,Monaco,Consolas,monospace;font-size:11px;letter-spacing:0.06em;color:#666;text-transform:uppercase;">
+          [ EL LINK EXPIRA EN 15 MINUTOS ]
+        </td></tr>
+        <tr><td style="padding:0 0 36px;font-size:13px;line-height:1.5;color:#666;">
+          Si no fuiste tú, ignora este correo. Tu cuenta seguirá protegida.
+        </td></tr>
+        <tr><td style="padding:24px 0 0;border-top:1px solid #d0d0d0;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"><tr>
+            <td style="font-family:'Geist Mono','SF Mono',Menlo,Monaco,Consolas,monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.08em;">
+              PRADO · Monterrey, MX
+            </td>
+            <td align="right" style="font-family:'Geist Mono','SF Mono',Menlo,Monaco,Consolas,monospace;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.08em;">
+              <a href="https://prado-mx.com" style="color:#888;text-decoration:none;">prado-mx.com</a>
+            </td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+function buildMagicLinkEmailText({ name, verifyUrl }) {
+  return `${name ? 'Hola ' + name + ',' : 'Hola,'}
+
+Da click en el siguiente link para entrar a tu cuenta de PRADO Plan:
+
+${verifyUrl}
+
+El link expira en 15 minutos.
+Si no fuiste tú, ignora este correo.
+
+—
+PRADO · Monterrey, MX
+prado-mx.com`;
+}
+
+function escapeForEmail(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
 async function appStripeWebhook(request, env) {
