@@ -979,7 +979,14 @@ a.line-card:hover { text-decoration: none; }
   .smae-form .field-row { grid-template-columns: repeat(4, 1fr); }
 }
 .smae-form input[type="number"],
-.smae-form input[type="text"] {
+.smae-form input[type="text"],
+.smae-form input[type="email"],
+.smae-form input[type="tel"],
+.smae-form input[type="url"],
+.smae-form input[type="password"],
+.smae-form input[type="date"],
+.smae-form input[type="month"],
+.smae-form input[type="search"] {
   font: inherit;
   font-family: var(--font-mono);
   font-size: 18px;
