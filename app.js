@@ -240,6 +240,7 @@
   function resolveView() {
     const path = window.location.pathname;
     if (path === '/' || path === '/inicio') return 'landing';
+    if (path === '/cohorte' || path === '/protocolo' || path === '/inscribirse') return 'cohorte';
     if (path === '/login' || path === '/signup' || path === '/entrar') return 'signup';
     if (path === '/cuestionario') return 'questionnaire';
     if (path === '/bienvenida' || path === '/onboarding') return 'onboarding';
@@ -270,6 +271,37 @@
     if (view === 'dashboard') await loadDashboard();
     if (view === 'account') await loadAccount();
     if (view === 'onboarding') showOnbStep(1);
+    if (view === 'landing' || view === 'cohorte') await loadCohortInfo();
+  }
+
+  // ---------- Cohorte fetch ----------------------------------------------
+
+  async function loadCohortInfo() {
+    try {
+      const r = await fetch(API_BASE + '/cohorts/current', { credentials: 'omit' });
+      if (!r.ok) return;
+      const { cohort } = await r.json();
+      if (!cohort) return;
+      const fmtDate = iso => new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+      document.querySelectorAll('[data-cohort-name]').forEach(el => el.textContent = cohort.name);
+      document.querySelectorAll('[data-cohort-dates]').forEach(el => {
+        el.textContent = `${fmtDate(cohort.start_date)} — ${fmtDate(cohort.end_date)}`;
+      });
+      document.querySelectorAll('[data-cohort-price]').forEach(el => {
+        el.textContent = '$' + (cohort.price_mxn || 2999).toLocaleString('es-MX');
+      });
+      document.querySelectorAll('[data-cohort-seats]').forEach(el => {
+        const left = cohort.seats_left;
+        const total = cohort.capacity;
+        if (left === 0) {
+          el.innerHTML = '<strong>[ Cohorte llena ]</strong> · Apartamos para la siguiente';
+        } else if (left <= 5) {
+          el.innerHTML = `<strong>[ Solo ${left} de ${total} plazas ]</strong> · Cerrando pronto`;
+        } else {
+          el.textContent = `[ ${left} de ${total} plazas disponibles ]`;
+        }
+      });
+    } catch (e) { /* silencioso */ }
   }
 
   // ---------- Toast notifications ----------------------------------------
@@ -909,7 +941,7 @@
       if (href === '/terminos' || href === '/privacidad' || href === '/terms' || href === '/privacy') return;
       // Endpoints API (dev login redirect, etc): no interceptar
       if (href.startsWith('/api/')) return;
-      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta', '/ayuda', '/help', '/bienvenida'].includes(href)) {
+      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta', '/ayuda', '/help', '/bienvenida', '/cohorte', '/protocolo', '/inscribirse'].includes(href)) {
         e.preventDefault();
         navigate(href);
       }

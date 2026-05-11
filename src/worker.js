@@ -152,7 +152,104 @@ async function handleApi(request, env, url) {
   if (path === '/transactions/summary' && request.method === 'GET') return summaryTransactions(env, url, request);
   if (path === '/tx-categories' && request.method === 'GET') return listTxCategories(env, request);
 
+  // ----- Cohorts (admin) ---
+  if (path === '/cohorts' && request.method === 'GET') return adminListCohorts(env, request);
+  if (path === '/cohorts' && request.method === 'POST') return adminCreateCohort(request, env);
+  const cohortMatch = path.match(/^\/cohorts\/([^/]+)$/);
+  if (cohortMatch) {
+    const id = cohortMatch[1];
+    if (request.method === 'GET') return adminGetCohort(env, id, request);
+    if (request.method === 'PATCH') return adminUpdateCohort(request, env, id);
+    if (request.method === 'DELETE') return adminDeleteCohort(env, id, request);
+  }
+  const cohortMembersMatch = path.match(/^\/cohorts\/([^/]+)\/members$/);
+  if (cohortMembersMatch) {
+    const id = cohortMembersMatch[1];
+    if (request.method === 'GET') return adminListCohortMembers(env, id, request);
+  }
+
   return jsonResponse({ error: 'not found', path }, 404, request);
+}
+
+// ----- Admin: Cohorts -------------------------------------------------
+
+async function adminListCohorts(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM cohorts ORDER BY start_date DESC`
+  ).all();
+  return jsonResponse({ cohorts: results || [] }, 200, request);
+}
+
+async function adminGetCohort(env, id, request) {
+  const cohort = await env.DB.prepare(`SELECT * FROM cohorts WHERE id = ?`).bind(id).first();
+  if (!cohort) return jsonResponse({ error: 'not found' }, 404, request);
+  return jsonResponse({ cohort }, 200, request);
+}
+
+async function adminCreateCohort(request, env) {
+  const data = await request.json();
+  const id = data.id || newId('cohort');
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO cohorts (id, slug, name, start_date, end_date, capacity, sold,
+     price_cents, currency, enrollment_opens_at, enrollment_closes_at,
+     status, whatsapp_group_link, notes, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(
+    id,
+    data.slug || ('cohorte-' + id.slice(-8)),
+    data.name,
+    data.start_date,
+    data.end_date,
+    parseInt(data.capacity || 30, 10),
+    0,
+    Math.round((data.price_mxn || 2999) * 100),
+    data.currency || 'mxn',
+    data.enrollment_opens_at || null,
+    data.enrollment_closes_at || null,
+    data.status || 'planned',
+    data.whatsapp_group_link || null,
+    data.notes || null,
+    now, now,
+  ).run();
+  return jsonResponse({ id }, 200, request);
+}
+
+async function adminUpdateCohort(request, env, id) {
+  const data = await request.json();
+  const now = new Date().toISOString();
+  const fields = ['name', 'slug', 'start_date', 'end_date', 'capacity', 'price_cents',
+    'enrollment_opens_at', 'enrollment_closes_at', 'status', 'whatsapp_group_link', 'notes'];
+  const sets = [];
+  const args = [];
+  fields.forEach(f => {
+    if (data[f] !== undefined) { sets.push(`${f} = ?`); args.push(data[f]); }
+  });
+  if (data.price_mxn !== undefined) { sets.push('price_cents = ?'); args.push(Math.round(data.price_mxn * 100)); }
+  sets.push('updated_at = ?'); args.push(now);
+  args.push(id);
+  if (sets.length === 1) return jsonResponse({ ok: true }, 200, request); // nada para update
+  await env.DB.prepare(`UPDATE cohorts SET ${sets.join(', ')} WHERE id = ?`).bind(...args).run();
+  return jsonResponse({ ok: true }, 200, request);
+}
+
+async function adminDeleteCohort(env, id, request) {
+  // Solo si no tiene miembros
+  const members = await env.DB.prepare(`SELECT COUNT(*) as n FROM subscribers WHERE cohort_id = ?`).bind(id).first();
+  if (members && members.n > 0) {
+    return jsonResponse({ error: 'cohorte tiene miembros, no se puede borrar' }, 409, request);
+  }
+  await env.DB.prepare(`DELETE FROM cohorts WHERE id = ?`).bind(id).run();
+  return jsonResponse({ ok: true }, 200, request);
+}
+
+async function adminListCohortMembers(env, id, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT id, name, email, phone, enrolled_at, payment_status, kcal_target,
+       (SELECT COUNT(*) FROM subscriber_plans WHERE subscriber_id = subscribers.id) AS plan_count
+     FROM subscribers WHERE cohort_id = ? ORDER BY enrolled_at DESC`
+  ).bind(id).all();
+  return jsonResponse({ members: results || [] }, 200, request);
 }
 
 // ----- Transactions (ingresos / egresos del negocio) -------------------
@@ -533,6 +630,10 @@ async function handleAppApi(request, env, url) {
   if (path === '/subscription/cancel' && request.method === 'POST') return appCancelSubscription(request, env);
   if (path === '/account' && request.method === 'DELETE') return appDeleteAccount(request, env);
 
+  // Cohorts
+  if (path === '/cohorts/current' && request.method === 'GET') return appCurrentCohort(request, env);
+  if (path === '/cohorts/enroll' && request.method === 'POST') return appEnrollCohort(request, env);
+
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
@@ -768,21 +869,26 @@ async function appCreateCheckout(request, env) {
     return jsonResponse({ error: 'Stripe no configurado todavía', stub: true }, 503, request);
   }
   const data = await request.json();
-  const plan = data.plan || 'mensual'; // 'mensual' o 'anual'
-  const priceId = plan === 'anual' ? env.STRIPE_PRICE_ANUAL : env.STRIPE_PRICE_MENSUAL;
-  if (!priceId) {
-    return jsonResponse({ error: 'price_id no configurado' }, 503, request);
-  }
+  const cohortId = data.cohort_id;
+  if (!cohortId) return jsonResponse({ error: 'cohort_id requerido' }, 400, request);
+
+  const cohort = await env.DB.prepare(`SELECT * FROM cohorts WHERE id = ?`).bind(cohortId).first();
+  if (!cohort) return jsonResponse({ error: 'cohorte no existe' }, 404, request);
+  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'cohorte llena' }, 409, request);
+
   const body = new URLSearchParams();
-  body.append('mode', 'subscription');
-  body.append('line_items[0][price]', priceId);
+  body.append('mode', 'payment');
+  body.append('line_items[0][price_data][currency]', cohort.currency || 'mxn');
+  body.append('line_items[0][price_data][unit_amount]', String(cohort.price_cents));
+  body.append('line_items[0][price_data][product_data][name]', 'Protocolo 12 - ' + cohort.name);
+  body.append('line_items[0][price_data][product_data][description]', '12 semanas con Hugo Prado: plan personalizado, grupo cerrado y Q&A en vivo mensual.');
   body.append('line_items[0][quantity]', '1');
-  body.append('subscription_data[trial_period_days]', '7');
   body.append('customer_email', sub.email);
-  body.append('success_url', `https://app.prado-mx.com/dashboard?subscribed=1`);
-  body.append('cancel_url', `https://app.prado-mx.com/checkout?cancelled=1`);
+  body.append('success_url', `https://app.prado-mx.com/dashboard?enrolled=1`);
+  body.append('cancel_url', `https://app.prado-mx.com/cohorte?cancelled=1`);
   body.append('metadata[subscriber_id]', sub.id);
-  body.append('metadata[plan]', plan);
+  body.append('metadata[cohort_id]', cohortId);
+
   const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {
@@ -794,6 +900,51 @@ async function appCreateCheckout(request, env) {
   const session = await r.json();
   if (!r.ok) return jsonResponse({ error: session.error?.message || 'stripe error' }, 500, request);
   return jsonResponse({ url: session.url }, 200, request);
+}
+
+// Cohorte activa (la próxima a empezar o la que está en enrollment)
+async function appCurrentCohort(request, env) {
+  const cohort = await env.DB.prepare(
+    `SELECT * FROM cohorts
+     WHERE status IN ('planned', 'enrollment')
+     ORDER BY start_date ASC LIMIT 1`
+  ).first();
+  if (!cohort) return jsonResponse({ cohort: null }, 200, request);
+  return jsonResponse({
+    cohort: {
+      ...cohort,
+      seats_left: Math.max(0, cohort.capacity - cohort.sold),
+      price_mxn: Math.round(cohort.price_cents / 100),
+    },
+  }, 200, request);
+}
+
+// Enroll en cohorte (modo dev: sin pago, asocia al subscriber directamente)
+async function appEnrollCohort(request, env) {
+  const sub = await getSubscriberFromSession(request, env);
+  if (!sub) return jsonResponse({ error: 'unauthorized' }, 401, request);
+  const data = await request.json();
+  const cohortId = data.cohort_id;
+  if (!cohortId) return jsonResponse({ error: 'cohort_id requerido' }, 400, request);
+
+  // En producción esta función NO se debe usar para checkout real, solo
+  // como simulación. Stripe webhook hace el enroll real.
+  if (env.STRIPE_SECRET_KEY) {
+    return jsonResponse({ error: 'usa /checkout para producción' }, 400, request);
+  }
+
+  const cohort = await env.DB.prepare(`SELECT * FROM cohorts WHERE id = ?`).bind(cohortId).first();
+  if (!cohort) return jsonResponse({ error: 'cohorte no existe' }, 404, request);
+  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'cohorte llena' }, 409, request);
+
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE subscribers SET cohort_id = ?, enrolled_at = ?, access_until = ?, payment_status = 'paid', updated_at = ? WHERE id = ?`
+  ).bind(cohortId, now, cohort.end_date, now, sub.id).run();
+  await env.DB.prepare(
+    `UPDATE cohorts SET sold = sold + 1, updated_at = ? WHERE id = ?`
+  ).bind(now, cohortId).run();
+  return jsonResponse({ ok: true, enrolled_in: cohortId }, 200, request);
 }
 
 // Login demo: bypass auth, crea sesión con un subscriber demo. Solo en modo
@@ -976,15 +1127,45 @@ async function appStripeWebhook(request, env) {
   // TODO: validar firma Stripe con env.STRIPE_WEBHOOK_SECRET (constant time HMAC)
   const event = await request.json();
   const type = event.type;
-  // Eventos clave: checkout.session.completed, invoice.paid, customer.subscription.updated/deleted
+
   if (type === 'checkout.session.completed') {
     const session = event.data.object;
     const subscriberId = session.metadata && session.metadata.subscriber_id;
-    if (subscriberId) {
+    const cohortId = session.metadata && session.metadata.cohort_id;
+
+    if (subscriberId && cohortId) {
+      // Protocolo 12: enroll en cohorte
+      const cohort = await env.DB.prepare(`SELECT end_date FROM cohorts WHERE id = ?`).bind(cohortId).first();
+      const accessUntil = cohort ? cohort.end_date : null;
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        `UPDATE subscribers SET stripe_customer_id = ?, cohort_id = ?, enrolled_at = ?,
+         access_until = ?, payment_status = 'paid', updated_at = ? WHERE id = ?`
+      ).bind(session.customer, cohortId, now, accessUntil, now, subscriberId).run();
+      await env.DB.prepare(
+        `UPDATE cohorts SET sold = sold + 1, updated_at = ? WHERE id = ?`
+      ).bind(now, cohortId).run();
+      // Registrar transacción income
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO transactions (id, date, type, category, amount, currency, source, notes, subscriber_id, stripe_event_id, created_at, created_by)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(
+        newId('tx'),
+        new Date().toISOString().slice(0, 10),
+        'income', 'cat-app',
+        Math.round((session.amount_total || 0)),
+        (session.currency || 'mxn').toLowerCase(),
+        'stripe', 'Protocolo 12 - cohorte',
+        subscriberId,
+        event.id,
+        new Date().toISOString(),
+        'stripe-webhook',
+      ).run();
+    } else if (subscriberId) {
+      // Fallback (legacy): suscripción mensual antigua
       await env.DB.prepare(
         `UPDATE subscribers SET stripe_customer_id = ?, subscription_status = 'trialing', updated_at = ? WHERE id = ?`
       ).bind(session.customer, new Date().toISOString(), subscriberId).run();
-      // Registrar transacción income
       await env.DB.prepare(
         `INSERT OR IGNORE INTO transactions (id, date, type, category, amount, currency, source, notes, subscriber_id, stripe_event_id, created_at, created_by)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`

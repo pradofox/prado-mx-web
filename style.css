@@ -2327,6 +2327,107 @@ a.line-card:hover { text-decoration: none; }
 
 .app-hero { min-height: 65vh; }
 
+/* Cohort card (Protocolo 12) */
+.cohort-card {
+  border: 1px solid var(--fg);
+  padding: 32px 28px;
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (min-width: 900px) {
+  .cohort-card { grid-template-columns: 1.4fr 1fr; }
+  .cohort-card .cohort-card-head { grid-column: 1; grid-row: 1; }
+  .cohort-card .cohort-price { grid-column: 2; grid-row: 1; border-left: 1px solid var(--divider); padding-left: 28px; }
+  .cohort-card .cohort-seats { grid-column: 1 / -1; grid-row: 2; }
+  .cohort-card .cohort-includes { grid-column: 1 / -1; grid-row: 3; }
+  .cohort-card .cohort-cta { grid-column: 1 / -1; grid-row: 4; }
+}
+.cohort-card-head { display: flex; flex-direction: column; gap: 8px; }
+.cohort-card-head .label { color: var(--gray); }
+.cohort-name {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0;
+}
+.cohort-dates { color: var(--gray); margin: 0; font-size: 13px; }
+.cohort-price { display: flex; flex-direction: column; gap: 4px; }
+.cohort-price .label { color: var(--gray); }
+.cohort-price strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(48px, 8vw, 72px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.cohort-price .kpi-meta { color: var(--gray); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.cohort-seats {
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--divider);
+}
+.cohort-seats .label { color: var(--fg); }
+.cohort-includes p.label { color: var(--gray); margin-bottom: 12px; }
+.cohort-includes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cohort-includes ul li {
+  padding-left: 20px;
+  position: relative;
+}
+.cohort-includes ul li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+.cohort-cta { padding-top: 16px; border-top: 1px solid var(--divider); }
+
+/* Comparativa de costos */
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 16px;
+}
+.cost-table td, .cost-table th {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider);
+  text-align: left;
+  vertical-align: top;
+}
+.cost-table td:last-child, .cost-table th:last-child {
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.cost-table tr:nth-last-child(2) th {
+  border-top: 1px solid var(--fg);
+  padding-top: 16px;
+  font-weight: 700;
+}
+.cost-table tr.cost-table-final th {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 16px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 18px;
+}
+
 /* Pricing */
 .app-pricing {
   display: grid;

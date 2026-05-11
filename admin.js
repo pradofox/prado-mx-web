@@ -298,6 +298,7 @@
     else if (state.activeTab === 'atencion') renderAtencionTab();
     else if (state.activeTab === 'agenda') renderAgendaTab();
     else if (state.activeTab === 'finanzas') loadFinanzas();
+    else if (state.activeTab === 'cohortes') loadCohortes();
   }
 
   // ---------- Pacientes Tab (cards grid) ---------------------------------
@@ -1080,6 +1081,7 @@
     '/pacientes': { view: 'panel', tab: 'pacientes' },
     '/atencion': { view: 'panel', tab: 'atencion' },
     '/agenda': { view: 'panel', tab: 'agenda' },
+    '/cohortes': { view: 'panel', tab: 'cohortes' },
     '/finanzas': { view: 'panel', tab: 'finanzas' },
     '/mensajes': { view: 'panel', tab: 'mensajes' },
     '/recompensas': { view: 'panel', tab: 'recompensas' },
@@ -1397,15 +1399,154 @@
     });
   }
 
+  // ---------- COHORTES (Protocolo 12) -----------------------------------
+
+  let cohortsState = { cohorts: [], editing: null };
+
+  async function loadCohortes() {
+    try {
+      const { cohorts } = await api('/cohorts');
+      cohortsState.cohorts = cohorts || [];
+      const countEl = document.querySelector('[data-tab-count="cohortes"]');
+      if (countEl) countEl.textContent = cohortsState.cohorts.length;
+      renderCohortsList();
+    } catch (e) {
+      const c = document.querySelector('[data-admin-cohorts]');
+      if (c) c.innerHTML = `<p class="smae-empty label">[ Error: ${escapeHTML(e.message)} ]</p>`;
+    }
+  }
+
+  function renderCohortsList() {
+    const c = document.querySelector('[data-admin-cohorts]');
+    if (!c) return;
+    if (cohortsState.cohorts.length === 0) {
+      c.innerHTML = '<p class="smae-empty label">[ Sin cohortes. Crea la primera para empezar a vender Protocolo 12. ]</p>';
+      return;
+    }
+    const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const statusLabels = {
+      planned: 'Planeada',
+      enrollment: 'Inscripción abierta',
+      active: 'En curso',
+      ended: 'Terminada',
+    };
+    c.innerHTML = cohortsState.cohorts.map(co => {
+      const fillPct = co.capacity > 0 ? Math.round((co.sold / co.capacity) * 100) : 0;
+      const revenue = (co.sold * co.price_cents) / 100;
+      return `
+        <article class="patient-card" data-cohort-id="${escapeHTML(co.id)}">
+          <div class="patient-card-head">
+            <div class="patient-avatar" style="font-size: 14px;">${escapeHTML((co.name || '').slice(0, 2).toUpperCase())}</div>
+            <div class="patient-card-id">
+              <h3>${escapeHTML(co.name)}</h3>
+              <p class="label">[ ${statusLabels[co.status] || co.status} ] · ${fmtDate(co.start_date)} → ${fmtDate(co.end_date)}</p>
+            </div>
+          </div>
+          <div class="patient-card-meta">
+            <div><span class="label">Plazas</span><strong>${co.sold} / ${co.capacity}</strong></div>
+            <div><span class="label">Ingresos</span><strong>$${revenue.toLocaleString('es-MX', { maximumFractionDigits: 0 })}</strong></div>
+          </div>
+          <pre class="tier-progress-bar" style="margin: 0;">[${'#'.repeat(Math.round(fillPct/4))}${'.'.repeat(25 - Math.round(fillPct/4))}] ${fillPct}%</pre>
+          <div class="patient-card-actions">
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-cohort-edit="${escapeHTML(co.id)}" onclick="event.stopPropagation()">Editar</button>
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-cohort-members="${escapeHTML(co.id)}" onclick="event.stopPropagation()">Ver miembros</button>
+            <button type="button" class="closing-cta-btn closing-cta-btn--ghost smae-danger" data-cohort-delete="${escapeHTML(co.id)}" onclick="event.stopPropagation()">×</button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    c.querySelectorAll('[data-cohort-edit]').forEach(b => b.addEventListener('click', () => openCohortModal(b.dataset.cohortEdit)));
+    c.querySelectorAll('[data-cohort-members]').forEach(b => b.addEventListener('click', () => showCohortMembers(b.dataset.cohortMembers)));
+    c.querySelectorAll('[data-cohort-delete]').forEach(b => b.addEventListener('click', () => deleteCohort(b.dataset.cohortDelete)));
+  }
+
+  function openCohortModal(id) {
+    const modal = document.querySelector('[data-cohort-modal]');
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    const title = document.querySelector('[data-cohort-modal-title]');
+    if (id) {
+      const co = cohortsState.cohorts.find(c => c.id === id);
+      if (!co) return;
+      cohortsState.editing = id;
+      if (title) title.textContent = 'Editar cohorte';
+      document.querySelector('#cohort-name').value = co.name || '';
+      document.querySelector('#cohort-start').value = co.start_date ? co.start_date.slice(0, 10) : '';
+      document.querySelector('#cohort-end').value = co.end_date ? co.end_date.slice(0, 10) : '';
+      document.querySelector('#cohort-capacity').value = co.capacity;
+      document.querySelector('#cohort-price').value = Math.round(co.price_cents / 100);
+      document.querySelector('#cohort-status').value = co.status;
+      document.querySelector('#cohort-enroll-opens').value = co.enrollment_opens_at ? co.enrollment_opens_at.slice(0, 10) : '';
+      document.querySelector('#cohort-enroll-closes').value = co.enrollment_closes_at ? co.enrollment_closes_at.slice(0, 10) : '';
+      document.querySelector('#cohort-wa').value = co.whatsapp_group_link || '';
+      document.querySelector('#cohort-notes').value = co.notes || '';
+    } else {
+      cohortsState.editing = null;
+      if (title) title.textContent = 'Nueva cohorte';
+      document.querySelector('[data-cohort-form]').reset();
+      document.querySelector('#cohort-capacity').value = 30;
+      document.querySelector('#cohort-price').value = 2999;
+      document.querySelector('#cohort-status').value = 'planned';
+    }
+  }
+  function closeCohortModal() {
+    const m = document.querySelector('[data-cohort-modal]');
+    m.classList.remove('is-open');
+    setTimeout(() => { m.hidden = true; }, 200);
+  }
+  async function submitCohortForm(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = {};
+    fd.forEach((v, k) => { data[k] = v || null; });
+    data.capacity = parseInt(data.capacity, 10);
+    data.price_mxn = parseInt(data.price_mxn, 10);
+    try {
+      if (cohortsState.editing) {
+        await api('/cohorts/' + cohortsState.editing, { method: 'PATCH', body: data });
+      } else {
+        await api('/cohorts', { method: 'POST', body: data });
+      }
+      closeCohortModal();
+      await loadCohortes();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+  async function deleteCohort(id) {
+    if (!confirm('¿Eliminar cohorte? Solo se puede si no tiene miembros.')) return;
+    try {
+      await api('/cohorts/' + id, { method: 'DELETE' });
+      await loadCohortes();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+  async function showCohortMembers(id) {
+    try {
+      const { members } = await api('/cohorts/' + id + '/members');
+      if (!members.length) { alert('No hay miembros en esta cohorte aún.'); return; }
+      const lines = members.map(m => `• ${m.name || m.email} — ${m.enrolled_at ? new Date(m.enrolled_at).toLocaleDateString('es-MX') : 'sin fecha'} — ${m.plan_count || 0} planes`);
+      alert(`Miembros (${members.length}):\n\n` + lines.join('\n'));
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  function initCohortes() {
+    const newBtn = document.querySelector('[data-cohort-new]');
+    if (newBtn) newBtn.addEventListener('click', () => openCohortModal(null));
+    document.querySelectorAll('[data-cohort-modal-close]').forEach(b => b.addEventListener('click', closeCohortModal));
+    const form = document.querySelector('[data-cohort-form]');
+    if (form) form.addEventListener('submit', submitCohortForm);
+  }
+
   // Bootstrap del IIFE: init principal + initFinanzas
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       init();
       initFinanzas();
+      initCohortes();
     });
   } else {
     init();
     initFinanzas();
+    initCohortes();
   }
 
 })();
