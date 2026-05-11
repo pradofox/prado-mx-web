@@ -673,7 +673,7 @@ async function appSignup(request, env) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'PRADO Plan <hola@prado-mx.com>',
+          from: 'PRADO Plan <contacto@prado-mx.com>',
           to: [email],
           subject: 'Tu link para entrar a PRADO Plan',
           html: buildMagicLinkEmail({ name, verifyUrl }),
@@ -996,7 +996,7 @@ async function appCancelSubscription(request, env) {
     return jsonResponse({ ok: true }, 200, request);
   }
   if (!env.STRIPE_SECRET_KEY) {
-    return jsonResponse({ error: 'Stripe no configurado. Escribe a hola@prado-mx.com.' }, 503, request);
+    return jsonResponse({ error: 'Stripe no configurado. Escribe a contacto@prado-mx.com.' }, 503, request);
   }
   // Buscar suscripción activa del cliente y cancelarla al final del periodo
   const r = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${sub.stripe_customer_id}&status=active&limit=1`, {
