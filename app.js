@@ -1028,6 +1028,39 @@
       qForm.addEventListener('submit', handleQSubmit);
       document.querySelector('[data-q-next]').addEventListener('click', qNext);
       document.querySelector('[data-q-prev]').addEventListener('click', qPrev);
+      // Hint dinámico de peso objetivo según altura (rango IMC 20-25)
+      const qHeight = document.getElementById('q-height');
+      const qWeight = document.getElementById('q-weight');
+      const qWeightTarget = document.getElementById('q-weight-target');
+      const qWeightTargetHint = document.getElementById('q-weight-target-hint');
+      const updateWeightTargetHint = () => {
+        if (!qHeight || !qWeightTargetHint) return;
+        const h = parseFloat(qHeight.value);
+        if (!Number.isFinite(h) || h < 120 || h > 220) {
+          qWeightTargetHint.innerHTML = 'Si no lo tienes claro, llena tu altura arriba y te sugerimos un rango.';
+          return;
+        }
+        const m = h / 100;
+        const min = Math.round(20 * m * m);
+        const max = Math.round(25 * m * m);
+        const mid = Math.round(22 * m * m);
+        const curW = parseFloat(qWeight && qWeight.value);
+        // Si peso actual ya está dentro del rango saludable, sugerencia es mantener
+        let suggestion = mid;
+        let suggestionLabel = `Sugerido: ${mid} kg`;
+        if (Number.isFinite(curW) && curW >= min && curW <= max) {
+          suggestion = Math.round(curW);
+          suggestionLabel = `Sugerido: mantener (${suggestion} kg)`;
+        }
+        qWeightTargetHint.innerHTML = `Rango saludable para tu altura: <strong>${min}-${max} kg</strong>. <a href="#" data-fill-target style="color: var(--fg); text-decoration: underline;">${suggestionLabel}</a>`;
+        const link = qWeightTargetHint.querySelector('[data-fill-target]');
+        if (link) link.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (qWeightTarget) { qWeightTarget.value = suggestion; qWeightTarget.focus(); }
+        });
+      };
+      if (qHeight) qHeight.addEventListener('input', updateWeightTargetHint);
+      if (qWeight) qWeight.addEventListener('input', updateWeightTargetHint);
       renderQStep();
     }
 
