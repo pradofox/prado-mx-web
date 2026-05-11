@@ -1497,7 +1497,16 @@ a.line-card:hover { text-decoration: none; }
 
 /* Home view (hero + KPIs + CTA) */
 .admin-home { min-height: 100vh; }
-.admin-nav { position: sticky; top: 0; z-index: 50; background: var(--bg); }
+.admin-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  /* Anula mix-blend-mode heredado de .nav */
+  mix-blend-mode: normal;
+  color: var(--fg);
+  border-bottom: 1px solid var(--divider);
+}
 .admin-hero { min-height: 70vh; }
 .admin-home-quick {
   padding-top: 24px;
@@ -2300,17 +2309,27 @@ a.line-card:hover { text-decoration: none; }
   top: 0;
   z-index: 90;
   border-bottom: 1px solid var(--divider);
-  backdrop-filter: saturate(180%) blur(6px);
-  -webkit-backdrop-filter: saturate(180%) blur(6px);
+  /* Anula mix-blend-mode heredado de .nav (que aplica al sitio público) */
+  mix-blend-mode: normal;
+  color: var(--fg);
+  /* Quitamos backdrop-filter: incompatible con position sticky en muchos
+     browsers + el background sólido es suficiente y predecible. */
 }
 .app-nav .nav-right {
+  display: flex !important;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+.app-nav .app-nav-link,
+.app-nav .app-nav-glossary {
+  white-space: nowrap;
 }
 @media (max-width: 720px) {
-  .app-nav .nav-right { gap: 6px; }
-  .app-nav .app-nav-link { padding: 6px 8px; font-size: 11px; }
+  .app-nav { padding: 12px 16px; }
+  .app-nav .nav-right { display: flex !important; gap: 6px; }
+  .app-nav .app-nav-link { padding: 6px 8px; font-size: 10px; }
+  .app-nav .nav-logo { width: 72px; }
 }
 .app-nav-link {
   font-family: var(--font-mono);
