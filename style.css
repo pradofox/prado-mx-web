@@ -2294,7 +2294,24 @@ a.line-card:hover { text-decoration: none; }
    PRADO Plan (app.prado-mx.com) - B2C product
    ======================================================== */
 .app-body { background: var(--bg); }
-.app-nav { background: var(--bg); position: sticky; top: 0; z-index: 30; }
+.app-nav {
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  border-bottom: 1px solid var(--divider);
+  backdrop-filter: saturate(180%) blur(6px);
+  -webkit-backdrop-filter: saturate(180%) blur(6px);
+}
+.app-nav .nav-right {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 720px) {
+  .app-nav .nav-right { gap: 6px; }
+  .app-nav .app-nav-link { padding: 6px 8px; font-size: 11px; }
+}
 .app-nav-link {
   font-family: var(--font-mono);
   font-size: 12px;
