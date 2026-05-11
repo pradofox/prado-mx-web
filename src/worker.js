@@ -885,7 +885,7 @@ async function appCreateCheckout(request, env) {
   body.append('line_items[0][quantity]', '1');
   body.append('customer_email', sub.email);
   body.append('success_url', `https://app.prado-mx.com/dashboard?enrolled=1`);
-  body.append('cancel_url', `https://app.prado-mx.com/cohorte?cancelled=1`);
+  body.append('cancel_url', `https://app.prado-mx.com/version?cancelled=1`);
   body.append('metadata[subscriber_id]', sub.id);
   body.append('metadata[cohort_id]', cohortId);
 

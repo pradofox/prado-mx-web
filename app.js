@@ -240,7 +240,7 @@
   function resolveView() {
     const path = window.location.pathname;
     if (path === '/' || path === '/inicio') return 'landing';
-    if (path === '/cohorte' || path === '/protocolo' || path === '/inscribirse') return 'cohorte';
+    if (path === '/version' || path === '/v1' || path === '/cohorte' || path === '/protocolo' || path === '/inscribirse') return 'version';
     if (path === '/login' || path === '/signup' || path === '/entrar') return 'signup';
     if (path === '/cuestionario') return 'questionnaire';
     if (path === '/bienvenida' || path === '/onboarding') return 'onboarding';
@@ -271,7 +271,7 @@
     if (view === 'dashboard') await loadDashboard();
     if (view === 'account') await loadAccount();
     if (view === 'onboarding') showOnbStep(1);
-    if (view === 'landing' || view === 'cohorte') await loadCohortInfo();
+    if (view === 'landing' || view === 'version') await loadCohortInfo();
   }
 
   // ---------- Cohorte fetch ----------------------------------------------
@@ -285,7 +285,12 @@
       const fmtDate = iso => new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
       document.querySelectorAll('[data-cohort-name]').forEach(el => el.textContent = cohort.name);
       document.querySelectorAll('[data-cohort-dates]').forEach(el => {
-        el.textContent = `${fmtDate(cohort.start_date)} — ${fmtDate(cohort.end_date)}`;
+        const days = Math.ceil((new Date(cohort.start_date) - new Date()) / 86400000);
+        let prefix;
+        if (days > 0) prefix = `Empieza en ${days} día${days === 1 ? '' : 's'} · `;
+        else if (days === 0) prefix = `Empieza hoy · `;
+        else prefix = `En curso · `;
+        el.textContent = `${prefix}${fmtDate(cohort.start_date)} → ${fmtDate(cohort.end_date)}`;
       });
       document.querySelectorAll('[data-cohort-price]').forEach(el => {
         el.textContent = '$' + (cohort.price_mxn || 2999).toLocaleString('es-MX');
@@ -293,12 +298,13 @@
       document.querySelectorAll('[data-cohort-seats]').forEach(el => {
         const left = cohort.seats_left;
         const total = cohort.capacity;
+        const sold = total - left;
         if (left === 0) {
-          el.innerHTML = '<strong>[ Cohorte llena ]</strong> · Apartamos para la siguiente';
+          el.innerHTML = '<strong>[ Versión cerrada ]</strong> · Apartamos tu acceso para la siguiente';
         } else if (left <= 5) {
-          el.innerHTML = `<strong>[ Solo ${left} de ${total} plazas ]</strong> · Cerrando pronto`;
+          el.innerHTML = `<strong>[ ${sold} / ${total} accesos apartados · solo quedan ${left} ]</strong>`;
         } else {
-          el.textContent = `[ ${left} de ${total} plazas disponibles ]`;
+          el.innerHTML = `<strong>${sold} / ${total} accesos apartados</strong> · ${left} disponibles`;
         }
       });
     } catch (e) { /* silencioso */ }
@@ -634,14 +640,41 @@
     const status = document.querySelector('[data-dash-status]');
     if (greeting) greeting.textContent = sub.name ? `Hola, ${sub.name}` : 'Tu plan';
     if (status) {
-      const map = {
-        none: '[ Sin suscripción activa · 7 días gratis ]',
-        trialing: '[ Trial · expira ' + (sub.trial_ends_at ? new Date(sub.trial_ends_at).toLocaleDateString('es-MX') : 'pronto') + ' ]',
-        active: '[ Membresía activa ]',
-        past_due: '[ Pago pendiente ]',
-        canceled: '[ Cancelada ]',
-      };
-      status.textContent = map[sub.subscription_status] || `[ ${sub.subscription_status} ]`;
+      // Si está enrolled en una versión, mostrar día N de 84
+      if (sub.cohort_id && sub.enrolled_at) {
+        try {
+          const r = await fetch(API_BASE + '/cohorts/current', { credentials: 'omit' });
+          const j = await r.json();
+          if (j.cohort && j.cohort.id === sub.cohort_id) {
+            const start = new Date(j.cohort.start_date);
+            const end = new Date(j.cohort.end_date);
+            const totalDays = Math.ceil((end - start) / 86400000);
+            const today = new Date();
+            const daysIn = Math.floor((today - start) / 86400000) + 1;
+            if (daysIn < 1) {
+              const daysToStart = Math.ceil((start - today) / 86400000);
+              status.textContent = `[ ${j.cohort.name} · empieza en ${daysToStart} día${daysToStart === 1 ? '' : 's'} ]`;
+            } else if (daysIn > totalDays) {
+              status.textContent = `[ ${j.cohort.name} · terminada · acceso de por vida ]`;
+            } else {
+              status.textContent = `[ ${j.cohort.name} · Día ${daysIn} de ${totalDays} ]`;
+            }
+          } else {
+            status.textContent = `[ ${sub.payment_status === 'paid' ? 'Acceso activo' : 'Acceso pendiente'} ]`;
+          }
+        } catch (e) {
+          status.textContent = '[ Acceso activo ]';
+        }
+      } else {
+        const map = {
+          none: '[ Sin acceso activo · aparta tu acceso al V1 ]',
+          trialing: '[ Trial · expira ' + (sub.trial_ends_at ? new Date(sub.trial_ends_at).toLocaleDateString('es-MX') : 'pronto') + ' ]',
+          active: '[ Acceso activo ]',
+          past_due: '[ Pago pendiente ]',
+          canceled: '[ Acceso terminado ]',
+        };
+        status.textContent = map[sub.subscription_status] || `[ ${sub.subscription_status || 'pendiente'} ]`;
+      }
     }
     // KPIs
     document.querySelector('[data-dash-kcal]').textContent = sub.kcal_target || '—';
@@ -649,10 +682,12 @@
     document.querySelector('[data-dash-carb]').textContent = sub.carb_target || '—';
     document.querySelector('[data-dash-fat]').textContent = sub.fat_target || '—';
 
-    // Checkout button visible si no tiene suscripción activa
+    // CTA "Apartar mi acceso" visible si no está enrolled ni pagado
     const checkoutBtn = document.querySelector('[data-dash-checkout]');
     if (checkoutBtn) {
-      checkoutBtn.hidden = sub.subscription_status === 'active' || sub.subscription_status === 'trialing';
+      const isEnrolled = !!sub.cohort_id && sub.payment_status === 'paid';
+      const isActive = sub.subscription_status === 'active' || sub.subscription_status === 'trialing';
+      checkoutBtn.hidden = isEnrolled || isActive;
     }
 
     // Si no hay plan, redirigir a cuestionario
@@ -996,9 +1031,9 @@
       renderQStep();
     }
 
-    // Dashboard buttons
-    const checkoutBtn = document.querySelector('[data-dash-checkout]');
-    if (checkoutBtn) checkoutBtn.addEventListener('click', () => startCheckout('mensual'));
+    // Dashboard buttons — el botón de checkout ahora es un link a /version,
+    // ya no llama startCheckout directo. El checkout real se inicia desde
+    // /version cuando el usuario está logged in.
     const logoutBtn = document.querySelector('[data-dash-logout]');
     if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
     const editBtn = document.querySelector('[data-dash-edit]');
