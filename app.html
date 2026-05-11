@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=15" />
+  <link rel="stylesheet" href="/style.css?v=16" />
 
   <script>
     (function () {
@@ -53,6 +53,8 @@
       </svg>
     </a>
     <div class="nav-right">
+      <a href="/ayuda" class="app-nav-link" data-app-route>Ayuda</a>
+      <button type="button" class="app-nav-link app-nav-glossary" data-open-glossary>[ ? ]</button>
       <a href="/api/app/dev/login" class="app-nav-link app-dev-link" data-dev-only hidden>[ Demo ]</a>
       <a href="/login" class="app-nav-link" data-app-route>Entrar</a>
       <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
@@ -447,7 +449,7 @@
     <section class="section section--tight">
       <div class="section-head">
         <h3 class="section-title" style="font-size: 28px;">Tus tiempos</h3>
-        <span class="label">[ Distribución ]</span>
+        <span class="label" data-tracker-summary>[ Hoy ]</span>
       </div>
       <div class="smae-meals" data-dash-meals></div>
     </section>
@@ -463,6 +465,159 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- ============ VISTA: ONBOARDING (post-cuestionario) ============ -->
+  <div data-view="onboarding" hidden>
+    <section class="onboarding-section">
+      <div class="onboarding-progress">
+        <span class="onboarding-step is-active" data-step-dot="1"></span>
+        <span class="onboarding-step" data-step-dot="2"></span>
+        <span class="onboarding-step" data-step-dot="3"></span>
+      </div>
+
+      <article class="onboarding-card" data-onb-step="1">
+        <span class="label">[ Bienvenido ]</span>
+        <h2>Tu plan está listo</h2>
+        <p>Calculé tus macros diarios (kcal, proteína, carbohidratos, grasa) con la metodología de Hugo Prado: Mifflin-St Jeor para tu metabolismo basal, ajustado a tu actividad y objetivo, con 1.8 g de proteína por kilo y 25 % de tus kcal en grasa.</p>
+        <p class="label" style="color: var(--gray);">[ El plan es un punto de partida. Si en 2-3 semanas no ves cambios reales, ajustamos. ]</p>
+      </article>
+
+      <article class="onboarding-card" data-onb-step="2" hidden>
+        <span class="label">[ Concepto clave ]</span>
+        <h2>Esto es una equivalencia</h2>
+        <p>Cada grupo de alimentos (verdura, fruta, cereal, proteína...) tiene una "equivalencia": una porción medida que aporta cantidades similares de calorías y macros.</p>
+        <p>Si tu plan dice <strong>3 frutas</strong>, puedes intercambiar libremente: 3 manzanas, o 1 plátano + 1 mango + 1 taza de fresa. Da lo mismo.</p>
+        <p class="label" style="color: var(--gray);">[ Las opciones de menú que verás en tu plan son ejemplos concretos. Puedes seguirlas o usar cualquier alimento de la misma "equivalencia". ]</p>
+      </article>
+
+      <article class="onboarding-card" data-onb-step="3" hidden>
+        <span class="label">[ Cómo seguir ]</span>
+        <h2>Lo que sigue ahora</h2>
+        <ul class="onboarding-list">
+          <li><strong>Hoy:</strong> mira tu plan, ubica desayuno-comida-cena, escoge una opción que te late.</li>
+          <li><strong>Esta semana:</strong> sigue el plan 4-5 días. Falla 1-2 días, no pasa nada.</li>
+          <li><strong>En 2 semanas:</strong> regresas, miras tu peso/foto/energía. Si cambia, sigues. Si no, ajustamos.</li>
+        </ul>
+        <p class="label" style="color: var(--gray);">[ La sección <strong>Ayuda</strong> tiene guías visuales de porciones, cómo cocinar, y FAQ. Está siempre disponible arriba. ]</p>
+      </article>
+
+      <div class="onboarding-actions">
+        <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-onb-prev hidden>← Anterior</button>
+        <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-onb-skip>Saltar</button>
+        <button type="button" class="closing-cta-btn" data-onb-next>Siguiente →</button>
+        <button type="button" class="closing-cta-btn" data-onb-finish hidden>Ver mi plan →</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ VISTA: AYUDA ============ -->
+  <div data-view="help" hidden>
+    <section class="section section--tight" style="max-width: 920px; margin: 60px auto;">
+      <div class="section-head">
+        <h2 class="section-title">Ayuda</h2>
+        <span class="label">[ Cómo usar tu plan ]</span>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Cómo se mide una porción?</h3>
+        <p>No necesitas báscula. Tu mano es la referencia:</p>
+        <div class="help-portions">
+          <div class="help-portion"><strong>1/2 taza</strong><span>≈ tu puño cerrado</span></div>
+          <div class="help-portion"><strong>1 taza</strong><span>≈ dos puños cerrados</span></div>
+          <div class="help-portion"><strong>1 cucharadita</strong><span>≈ punta de tu dedo</span></div>
+          <div class="help-portion"><strong>1 cucharada</strong><span>≈ tu dedo pulgar entero</span></div>
+          <div class="help-portion"><strong>30 g de carne</strong><span>≈ tres dedos juntos</span></div>
+          <div class="help-portion"><strong>1 palma</strong><span>≈ 100 g de proteína</span></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Qué hago si no tengo el alimento de la opción?</h3>
+        <p>Cualquier alimento del mismo <strong>grupo</strong> sirve. Si tu plan dice "3 cereales sin grasa", puedes comer 3 tortillas, o 1 taza de arroz, o 1.5 tazas de avena, o cualquier combinación. Las opciones que ves son sugerencias, no reglas.</p>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Cómo cocino sin agregar calorías?</h3>
+        <ul class="help-list">
+          <li><strong>Métodos limpios:</strong> a la plancha, al vapor, hervido, al horno, en caldo, al carbón.</li>
+          <li><strong>Sazonadores libres:</strong> sal, pimienta, especias (orégano, comino, paprika, ajo en polvo, curry), limón, vinagre.</li>
+          <li><strong>Cuidado con:</strong> aceite extra, mantequilla, aderezos, mayonesa. Ya están contemplados en tu plan en la equivalencia de "aceites".</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Qué cuenta como alimento libre?</h3>
+        <p>Estos no afectan tu plan, consume con moderación:</p>
+        <ul class="help-list">
+          <li>Café negro (hasta 2 tazas/día)</li>
+          <li>Té e infusiones naturales (hasta 2 tazas/día)</li>
+          <li>Refresco light (1 taza/día)</li>
+          <li>Edulcorantes: stevia, splenda, monk fruit</li>
+          <li>Especias y hierbas frescas</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Y si fallo un día?</h3>
+        <p>No pasa nada. La nutrición no es perfectionista. Si te saliste un día, regresas al siguiente. Lo que sostiene el cambio es el promedio de 2-3 semanas, no un día específico.</p>
+        <p class="label" style="color: var(--gray);">[ Si llevas más de una semana sintiéndote mal con el plan, agenda consulta con Hugo. El plan puede necesitar calibración real, no que tú aguantes más. ]</p>
+      </div>
+
+      <div class="help-section">
+        <h3 class="help-h3">¿Cuándo agendar consulta con Hugo?</h3>
+        <ul class="help-list">
+          <li>Si tu objetivo es muy específico (competencia, foto profesional, recuperación).</li>
+          <li>Si tienes condición médica activa (diabetes, hipertensión, ED, embarazo).</li>
+          <li>Si llevas 3+ semanas siguiendo el plan y NO ves cambios.</li>
+          <li>Si quieres composición corporal medida y antropométricos reales.</li>
+        </ul>
+        <div style="margin-top: 16px;">
+          <a class="closing-cta-btn" href="https://api.whatsapp.com/send?phone=5218132446886&text=Hola%2C%20soy%20usuario%20de%20PRADO%20Plan%20y%20quiero%20agendar%20consulta%20con%20Hugo." target="_blank" rel="noopener">WhatsApp con Hugo →</a>
+        </div>
+      </div>
+
+      <div style="margin-top: 48px;">
+        <a href="/dashboard" class="closing-cta-btn closing-cta-btn--ghost" data-app-route>← Volver a mi plan</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ MODAL GLOSARIO ============ -->
+  <div class="fin-modal" data-glossary-modal hidden>
+    <div class="fin-modal-backdrop" data-close-glossary></div>
+    <div class="fin-modal-panel">
+      <header class="fin-modal-head">
+        <h3>Glosario</h3>
+        <button type="button" class="patient-drawer-close" data-close-glossary aria-label="Cerrar">×</button>
+      </header>
+      <div style="padding: 24px;">
+        <dl class="glossary">
+          <dt>Kcal (kilocaloría)</dt>
+          <dd>Unidad de energía. Lo que coloquialmente llamamos "calorías" en una etiqueta de alimento. Tu cuerpo necesita un mínimo para funcionar.</dd>
+          <dt>Macros</dt>
+          <dd>Proteína, carbohidratos y grasa. Las tres fuentes de calorías. 1 g proteína = 4 kcal, 1 g carbo = 4 kcal, 1 g grasa = 9 kcal.</dd>
+          <dt>Proteína (PT)</dt>
+          <dd>Construye y mantiene músculo. Sobre todo importante si entrenas. Default del plan: 1.8 g por kilo de peso corporal.</dd>
+          <dt>Carbohidratos (HC)</dt>
+          <dd>Combustible principal del cuerpo y cerebro. Cereales, frutas, leguminosas, azúcares.</dd>
+          <dt>Grasa (LP, "lípidos")</dt>
+          <dd>Necesaria para hormonas, absorción de vitaminas, saciedad. Default del plan: 25 % de las kcal totales.</dd>
+          <dt>TMB</dt>
+          <dd>Tasa metabólica basal. Las calorías que quema tu cuerpo en reposo solo respirando y digiriendo. Es el piso.</dd>
+          <dt>Mantenimiento</dt>
+          <dd>TMB × tu factor de actividad. Lo que realmente quemas al día. Comer arriba de eso = subes peso. Abajo = bajas.</dd>
+          <dt>Equivalencia</dt>
+          <dd>Porción medida de un grupo de alimentos que aporta cantidades similares de macros. Permite intercambiar dentro de un mismo grupo.</dd>
+          <dt>SMAE</dt>
+          <dd>Sistema Mexicano de Alimentos Equivalentes. La base que usan los nutriólogos en México para armar planes. 16 grupos.</dd>
+          <dt>Déficit / Superávit</dt>
+          <dd>Déficit: comes menos de tu mantenimiento (bajas grasa). Superávit: comes más (ganas peso, idealmente músculo si entrenas).</dd>
+          <dt>AOA</dt>
+          <dd>Alimento de Origen Animal. Pollo, res, pescado, huevo, lácteos. Se subdivide por contenido de grasa: muy bajo, bajo, moderado, alto.</dd>
+        </dl>
+      </div>
+    </div>
   </div>
 
   <!-- ============ VISTA: MI CUENTA ============ -->
@@ -593,7 +748,8 @@
     </div>
   </footer>
 
+  <script src="/smae-icons.js?v=1" defer></script>
   <script src="/app-ascii.js?v=1" defer></script>
-  <script src="/app.js?v=4" defer></script>
+  <script src="/app.js?v=5" defer></script>
 </body>
 </html>

@@ -241,9 +241,11 @@
     const path = window.location.pathname;
     if (path === '/' || path === '/inicio') return 'landing';
     if (path === '/login' || path === '/signup' || path === '/entrar') return 'signup';
-    if (path === '/cuestionario' || path === '/onboarding') return 'questionnaire';
+    if (path === '/cuestionario') return 'questionnaire';
+    if (path === '/bienvenida' || path === '/onboarding') return 'onboarding';
     if (path === '/dashboard' || path === '/plan' || path === '/mi-plan') return 'dashboard';
     if (path === '/cuenta' || path === '/mi-cuenta' || path === '/account') return 'account';
+    if (path === '/ayuda' || path === '/help') return 'help';
     return 'landing';
   }
 
@@ -267,6 +269,7 @@
     showView(view);
     if (view === 'dashboard') await loadDashboard();
     if (view === 'account') await loadAccount();
+    if (view === 'onboarding') showOnbStep(1);
   }
 
   // ---------- Toast notifications ----------------------------------------
@@ -542,10 +545,35 @@
         },
       });
       toast('Tu plan está listo', 'success');
-      navigate('/dashboard');
+      // Si es primera vez, mostrar onboarding antes del dashboard
+      const seenOnboarding = (() => { try { return localStorage.getItem('app-onboarded') === '1'; } catch (e) { return false; } })();
+      navigate(seenOnboarding ? '/dashboard' : '/bienvenida');
     } catch (err) {
       toast('Error: ' + err.message, 'error');
     }
+  }
+
+  // ---------- Onboarding (post-cuestionario, 3 cards) -------------------
+
+  let onbStep = 1;
+  function showOnbStep(n) {
+    onbStep = n;
+    document.querySelectorAll('[data-onb-step]').forEach(el => {
+      el.hidden = parseInt(el.dataset.onbStep, 10) !== n;
+    });
+    document.querySelectorAll('[data-step-dot]').forEach(d => {
+      d.classList.toggle('is-active', parseInt(d.dataset.stepDot, 10) === n);
+    });
+    const prev = document.querySelector('[data-onb-prev]');
+    const next = document.querySelector('[data-onb-next]');
+    const finish = document.querySelector('[data-onb-finish]');
+    if (prev) prev.hidden = n === 1;
+    if (next) next.hidden = n === 3;
+    if (finish) finish.hidden = n !== 3;
+  }
+  function finishOnboarding() {
+    try { localStorage.setItem('app-onboarded', '1'); } catch (e) {}
+    navigate('/dashboard');
   }
 
   async function loadFoods() {
@@ -653,15 +681,17 @@
     GROUPS.forEach(g => {
       const val = plan.equivalencias[g.key] || 0;
       if (val === 0) return;
+      const icon = (window.SMAE_ICONS && window.SMAE_ICONS[g.key]) || '';
       const row = document.createElement('div');
-      row.className = 'smae-group';
+      row.className = 'smae-group app-dash-group';
       row.innerHTML = `
+        <div class="app-dash-group-icon">${icon}</div>
         <div class="smae-group-head">
           <span class="smae-group-abbr">[ ${g.abbr} ]</span>
           <span class="smae-group-label">${g.label}</span>
         </div>
-        <div class="smae-group-meta label" style="grid-column: 2;">${g.kcal} kcal · ${g.p}P · ${g.c}C · ${g.g}G</div>
-        <div style="grid-row: 1 / span 2; grid-column: auto; font-family: var(--font-sans); font-weight: 700; font-size: 28px; letter-spacing: -0.02em;">${formatN(val)}</div>
+        <div class="smae-group-meta label">${g.kcal} kcal · ${g.p}P · ${g.c}C · ${g.g}G</div>
+        <div class="app-dash-group-count">${formatN(val)}</div>
       `;
       c.appendChild(row);
     });
@@ -686,6 +716,8 @@
       ? plan.meals_distribution
       : MEAL_PRESETS[(sub && sub.preferences && sub.preferences.meals_preset) || 'estandar-5'];
     const menuOpts = plan.menu_options || {};
+    const today = new Date().toISOString().slice(0, 10);
+    const tracker = getTracker(today);
     c.innerHTML = '';
     mealsArr.forEach(m => {
       const items = GROUPS.filter(g => (plan.meals[m.key] && plan.meals[m.key][g.key] || 0) > 0)
@@ -696,15 +728,19 @@
             ${opts.map((opt, i) => opt && opt.trim() ? `
               <div class="app-meal-option">
                 <span class="label">[ Opción ${i + 1} ]</span>
-                <pre class="app-meal-option-text">${escapeHTML(opt)}</pre>
+                <pre class="app-meal-option-text">${enhanceOptionText(opt)}</pre>
               </div>` : '').join('')}
           </div>`
         : '';
+      const isChecked = tracker[m.key] === true;
       const card = document.createElement('div');
-      card.className = 'smae-meal app-dash-meal';
+      card.className = 'smae-meal app-dash-meal' + (isChecked ? ' is-checked' : '');
       card.innerHTML = `
         <div class="smae-meal-head">
-          <span class="label">[ ${m.label} ]</span>
+          <label class="app-meal-check">
+            <input type="checkbox" data-meal-check="${m.key}" ${isChecked ? 'checked' : ''}>
+            <span class="label">[ ${m.label} ]</span>
+          </label>
           <span class="label smae-meal-pct">${Math.round(m.pct * 100)}%</span>
         </div>
         ${items ? `<ul class="smae-meal-list">${items}</ul>` : '<p class="smae-empty label">[ vacío ]</p>'}
@@ -712,6 +748,121 @@
       `;
       c.appendChild(card);
     });
+
+    // Listeners checkboxes tracker
+    c.querySelectorAll('[data-meal-check]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        toggleMealCheck(today, cb.dataset.mealCheck, cb.checked);
+        cb.closest('.smae-meal').classList.toggle('is-checked', cb.checked);
+        renderTrackerSummary(mealsArr);
+      });
+    });
+    renderTrackerSummary(mealsArr);
+  }
+
+  // Highlight de porciones en texto plano para que sean tooltipeables.
+  // Detecta patrones como "1/2 taza", "30 g", "1 cucharadita", etc.
+  function enhanceOptionText(text) {
+    const escaped = escapeHTML(text);
+    return escaped.replace(/(\d+(?:\.\d+)?\s?\/\s?\d+|\d+(?:\.\d+)?)\s*(taza|tazas|cucharadita|cucharaditas|cucharada|cucharadas|g|gr|gramos|pieza|piezas|rebanada|rebanadas|mitades|mediano|mediana|chica|grande)\b/gi, (m, num, unit) => {
+      const tip = portionTip(num.trim(), unit.toLowerCase());
+      if (!tip) return m;
+      return `<span class="portion-tip" data-tip="${escapeHTML(tip)}">${m}</span>`;
+    });
+  }
+
+  function portionTip(num, unit) {
+    const u = unit.replace(/s$/, ''); // singular
+    if (u === 'taza') {
+      if (num === '1/2' || num === '0.5') return '≈ tu puño cerrado · ~125 ml';
+      if (num === '1') return '≈ dos puños cerrados · ~250 ml';
+      if (num === '1/3') return '≈ algo menos que tu puño · ~80 ml';
+      if (num === '3/4') return '≈ tres cuartos de un puño y medio · ~190 ml';
+      if (num === '2') return '≈ cuatro puños cerrados · ~500 ml';
+      return '≈ medido en taza estándar';
+    }
+    if (u === 'cucharadita') return '≈ punta de tu dedo · ~5 ml';
+    if (u === 'cucharada') return '≈ tu pulgar entero · ~15 ml';
+    if (u === 'g' || u === 'gr' || u === 'gramo') {
+      const n = parseInt(num, 10);
+      if (n <= 35) return '≈ tres dedos juntos · porción individual';
+      if (n <= 50) return '≈ media palma de tu mano';
+      if (n <= 100) return '≈ tu palma completa';
+      return '≈ doble palma';
+    }
+    if (u === 'pieza') return 'Tal como viene la pieza';
+    if (u === 'rebanada') return '≈ una rebanada estándar (1 cm)';
+    if (u === 'mitade') return '≈ media pieza partida';
+    return null;
+  }
+
+  // ---------- Daily meal tracker (localStorage por día) -----------------
+
+  function getTracker(date) {
+    try {
+      const raw = localStorage.getItem('app-tracker-' + date);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function toggleMealCheck(date, mealKey, checked) {
+    try {
+      const t = getTracker(date);
+      t[mealKey] = !!checked;
+      localStorage.setItem('app-tracker-' + date, JSON.stringify(t));
+    } catch (e) {}
+  }
+  function renderTrackerSummary(mealsArr) {
+    const today = new Date().toISOString().slice(0, 10);
+    const t = getTracker(today);
+    const done = mealsArr.filter(m => t[m.key]).length;
+    const total = mealsArr.length;
+    const el = document.querySelector('[data-tracker-summary]');
+    if (el) {
+      el.innerHTML = done === 0
+        ? `<span class="label">[ Hoy ] · Toca tu primer tiempo cuando lo completes ↓</span>`
+        : `<span class="label">[ Hoy ] · ${done} de ${total} tiempos completados ${done === total ? '· ¡Día completo! 🎯' : ''}</span>`;
+    }
+  }
+
+  // ---------- Glosario modal ---------------------------------------------
+
+  function openGlossary() {
+    const m = document.querySelector('[data-glossary-modal]');
+    if (!m) return;
+    m.hidden = false;
+    requestAnimationFrame(() => m.classList.add('is-open'));
+  }
+  function closeGlossary() {
+    const m = document.querySelector('[data-glossary-modal]');
+    if (!m) return;
+    m.classList.remove('is-open');
+    setTimeout(() => { m.hidden = true; }, 200);
+  }
+
+  // ---------- Tooltip global (delegación) -------------------------------
+
+  let activeTip = null;
+  function showTip(target) {
+    hideTip();
+    const text = target.getAttribute('data-tip');
+    if (!text) return;
+    const tip = document.createElement('div');
+    tip.className = 'tip-popover';
+    tip.textContent = text;
+    document.body.appendChild(tip);
+    const rect = target.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let top = rect.top - tipRect.height - 8 + window.scrollY;
+    let left = rect.left + (rect.width - tipRect.width) / 2 + window.scrollX;
+    if (top < window.scrollY + 8) top = rect.bottom + 8 + window.scrollY;
+    left = Math.max(8, Math.min(window.innerWidth - tipRect.width - 8, left));
+    tip.style.top = top + 'px';
+    tip.style.left = left + 'px';
+    requestAnimationFrame(() => tip.classList.add('is-visible'));
+    activeTip = tip;
+  }
+  function hideTip() {
+    if (activeTip) { activeTip.remove(); activeTip = null; }
   }
 
   async function startCheckout(plan) {
@@ -758,11 +909,39 @@
       if (href === '/terminos' || href === '/privacidad' || href === '/terms' || href === '/privacy') return;
       // Endpoints API (dev login redirect, etc): no interceptar
       if (href.startsWith('/api/')) return;
-      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta'].includes(href)) {
+      if (a.hasAttribute('data-app-route') || ['/', '/login', '/signup', '/cuestionario', '/dashboard', '/cuenta', '/mi-cuenta', '/ayuda', '/help', '/bienvenida'].includes(href)) {
         e.preventDefault();
         navigate(href);
       }
     });
+
+    // Onboarding
+    const onbNext = document.querySelector('[data-onb-next]');
+    const onbPrev = document.querySelector('[data-onb-prev]');
+    const onbSkip = document.querySelector('[data-onb-skip]');
+    const onbFinish = document.querySelector('[data-onb-finish]');
+    if (onbNext) onbNext.addEventListener('click', () => showOnbStep(Math.min(3, onbStep + 1)));
+    if (onbPrev) onbPrev.addEventListener('click', () => showOnbStep(Math.max(1, onbStep - 1)));
+    if (onbSkip) onbSkip.addEventListener('click', finishOnboarding);
+    if (onbFinish) onbFinish.addEventListener('click', finishOnboarding);
+
+    // Glossary
+    document.querySelectorAll('[data-open-glossary]').forEach(b => b.addEventListener('click', openGlossary));
+    document.querySelectorAll('[data-close-glossary]').forEach(b => b.addEventListener('click', closeGlossary));
+
+    // Tooltip global (delegación de eventos)
+    document.addEventListener('mouseover', e => {
+      const t = e.target.closest('[data-tip]');
+      if (t) showTip(t);
+    });
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest('[data-tip]')) hideTip();
+    });
+    document.addEventListener('click', e => {
+      const t = e.target.closest('[data-tip]');
+      if (t) { e.preventDefault(); showTip(t); setTimeout(hideTip, 2500); }
+    }, true);
+    document.addEventListener('scroll', hideTip, true);
 
     // Account form
     const accForm = document.querySelector('[data-account-form]');
