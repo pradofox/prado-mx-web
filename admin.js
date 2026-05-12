@@ -298,7 +298,7 @@
     else if (state.activeTab === 'atencion') renderAtencionTab();
     else if (state.activeTab === 'agenda') renderAgendaTab();
     else if (state.activeTab === 'finanzas') loadFinanzas();
-    else if (state.activeTab === 'cohortes') loadCohortes();
+    else if (state.activeTab === 'versiones') loadCohortes();
     else if (state.activeTab === 'roadmap') loadRoadmap();
     else if (state.activeTab === 'qa') loadQASessions();
   }
@@ -1083,7 +1083,8 @@
     '/pacientes': { view: 'panel', tab: 'pacientes' },
     '/atencion': { view: 'panel', tab: 'atencion' },
     '/agenda': { view: 'panel', tab: 'agenda' },
-    '/cohortes': { view: 'panel', tab: 'cohortes' },
+    '/versiones': { view: 'panel', tab: 'versiones' },
+    '/cohortes': { view: 'panel', tab: 'versiones' },  // alias legacy
     '/finanzas': { view: 'panel', tab: 'finanzas' },
     '/mensajes': { view: 'panel', tab: 'mensajes' },
     '/recompensas': { view: 'panel', tab: 'recompensas' },
@@ -1409,7 +1410,7 @@
     try {
       const { cohorts } = await api('/cohorts');
       cohortsState.cohorts = cohorts || [];
-      const countEl = document.querySelector('[data-tab-count="cohortes"]');
+      const countEl = document.querySelector('[data-tab-count="versiones"]');
       if (countEl) countEl.textContent = cohortsState.cohorts.length;
       renderCohortsList();
     } catch (e) {
@@ -1422,7 +1423,7 @@
     const c = document.querySelector('[data-admin-cohorts]');
     if (!c) return;
     if (cohortsState.cohorts.length === 0) {
-      c.innerHTML = '<p class="smae-empty label">[ Sin cohortes. Crea la primera para empezar a vender Protocolo 12. ]</p>';
+      c.innerHTML = '<p class="smae-empty label">[ Sin versiones. Crea la primera para empezar a vender Protocolo 12. ]</p>';
       return;
     }
     const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -1472,7 +1473,7 @@
       const co = cohortsState.cohorts.find(c => c.id === id);
       if (!co) return;
       cohortsState.editing = id;
-      if (title) title.textContent = 'Editar cohorte';
+      if (title) title.textContent = 'Editar versión';
       document.querySelector('#cohort-name').value = co.name || '';
       document.querySelector('#cohort-start').value = co.start_date ? co.start_date.slice(0, 10) : '';
       document.querySelector('#cohort-end').value = co.end_date ? co.end_date.slice(0, 10) : '';
@@ -1485,7 +1486,7 @@
       document.querySelector('#cohort-notes').value = co.notes || '';
     } else {
       cohortsState.editing = null;
-      if (title) title.textContent = 'Nueva cohorte';
+      if (title) title.textContent = 'Nueva versión';
       document.querySelector('[data-cohort-form]').reset();
       document.querySelector('#cohort-capacity').value = 30;
       document.querySelector('#cohort-price').value = 2999;
@@ -1515,7 +1516,7 @@
     } catch (e) { alert('Error: ' + e.message); }
   }
   async function deleteCohort(id) {
-    if (!confirm('¿Eliminar cohorte? Solo se puede si no tiene miembros.')) return;
+    if (!confirm('¿Eliminar versión? Solo se puede si no tiene miembros.')) return;
     try {
       await api('/cohorts/' + id, { method: 'DELETE' });
       await loadCohortes();
@@ -1524,7 +1525,7 @@
   async function showCohortMembers(id) {
     try {
       const { members } = await api('/cohorts/' + id + '/members');
-      if (!members.length) { alert('No hay miembros en esta cohorte aún.'); return; }
+      if (!members.length) { alert('No hay miembros en esta versión aún.'); return; }
       const lines = members.map(m => `• ${m.name || m.email} — ${m.enrolled_at ? new Date(m.enrolled_at).toLocaleDateString('es-MX') : 'sin fecha'} — ${m.plan_count || 0} planes`);
       alert(`Miembros (${members.length}):\n\n` + lines.join('\n'));
     } catch (e) { alert('Error: ' + e.message); }
@@ -1652,7 +1653,7 @@
           <div class="patient-card-id">
             <h3>${escapeHTML(s.topic || 'Q&A en vivo')}</h3>
             <p class="label">[ ${statusLabels[s.status] || s.status} ] · ${fmtQADate(s.scheduled_at)} · ${s.duration_min || 60} min</p>
-            ${s.cohort_name ? `<p class="label label--muted">${escapeHTML(s.cohort_name)}</p>` : '<p class="label label--muted">Global (todas las cohortes)</p>'}
+            ${s.cohort_name ? `<p class="label label--muted">${escapeHTML(s.cohort_name)}</p>` : '<p class="label label--muted">Global (todas las versiones)</p>'}
           </div>
         </div>
         ${s.meeting_link ? `<p class="label"><a href="${escapeHTML(s.meeting_link)}" target="_blank" rel="noopener" class="inline-link">→ Link de la sesión</a></p>` : ''}
@@ -1672,7 +1673,7 @@
     if (!modal) return;
     modal.hidden = false;
     requestAnimationFrame(() => modal.classList.add('is-open'));
-    // Popula select de cohortes
+    // Popula select de versiones
     const sel = document.querySelector('#qa-cohort');
     if (sel) {
       sel.innerHTML = '<option value="">Todas (global)</option>' +
@@ -1745,7 +1746,7 @@
   function initQA() {
     const newBtn = document.querySelector('[data-qa-new]');
     if (newBtn) newBtn.addEventListener('click', async () => {
-      // Asegura que cohortes estén cargadas para el select
+      // Asegura que versiones estén cargadas para el select
       if (!cohortsState.cohorts.length) await loadCohortes();
       openQAModal(null);
     });

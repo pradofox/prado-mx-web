@@ -215,7 +215,7 @@ async function adminCreateCohort(request, env) {
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(
     id,
-    data.slug || ('cohorte-' + id.slice(-8)),
+    data.slug || ('v-' + id.slice(-8)),
     data.name,
     data.start_date,
     data.end_date,
@@ -255,7 +255,7 @@ async function adminDeleteCohort(env, id, request) {
   // Solo si no tiene miembros
   const members = await env.DB.prepare(`SELECT COUNT(*) as n FROM subscribers WHERE cohort_id = ?`).bind(id).first();
   if (members && members.n > 0) {
-    return jsonResponse({ error: 'cohorte tiene miembros, no se puede borrar' }, 409, request);
+    return jsonResponse({ error: 'versión tiene miembros, no se puede borrar' }, 409, request);
   }
   await env.DB.prepare(`DELETE FROM cohorts WHERE id = ?`).bind(id).run();
   return jsonResponse({ ok: true }, 200, request);
@@ -1009,8 +1009,8 @@ async function appCreateCheckout(request, env) {
   if (!cohortId) return jsonResponse({ error: 'cohort_id requerido' }, 400, request);
 
   const cohort = await env.DB.prepare(`SELECT * FROM cohorts WHERE id = ?`).bind(cohortId).first();
-  if (!cohort) return jsonResponse({ error: 'cohorte no existe' }, 404, request);
-  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'cohorte llena' }, 409, request);
+  if (!cohort) return jsonResponse({ error: 'versión no existe' }, 404, request);
+  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'versión llena' }, 409, request);
 
   const body = new URLSearchParams();
   body.append('mode', 'payment');
@@ -1038,7 +1038,7 @@ async function appCreateCheckout(request, env) {
   return jsonResponse({ url: session.url }, 200, request);
 }
 
-// Cohorte activa (la próxima a empezar o la que está en enrollment)
+// Versión activa (la próxima a empezar o la que está en enrollment)
 async function appCurrentCohort(request, env) {
   const cohort = await env.DB.prepare(
     `SELECT * FROM cohorts
@@ -1055,7 +1055,7 @@ async function appCurrentCohort(request, env) {
   }, 200, request);
 }
 
-// Enroll en cohorte (modo dev: sin pago, asocia al subscriber directamente)
+// Enroll en versión (modo dev: sin pago, asocia al subscriber directamente)
 async function appEnrollCohort(request, env) {
   const sub = await getSubscriberFromSession(request, env);
   if (!sub) return jsonResponse({ error: 'unauthorized' }, 401, request);
@@ -1070,8 +1070,8 @@ async function appEnrollCohort(request, env) {
   }
 
   const cohort = await env.DB.prepare(`SELECT * FROM cohorts WHERE id = ?`).bind(cohortId).first();
-  if (!cohort) return jsonResponse({ error: 'cohorte no existe' }, 404, request);
-  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'cohorte llena' }, 409, request);
+  if (!cohort) return jsonResponse({ error: 'versión no existe' }, 404, request);
+  if (cohort.sold >= cohort.capacity) return jsonResponse({ error: 'versión llena' }, 409, request);
 
   const now = new Date().toISOString();
   await env.DB.prepare(
@@ -1270,7 +1270,7 @@ async function appStripeWebhook(request, env) {
     const cohortId = session.metadata && session.metadata.cohort_id;
 
     if (subscriberId && cohortId) {
-      // Protocolo 12: enroll en cohorte
+      // Protocolo 12: enroll en versión
       const cohort = await env.DB.prepare(`SELECT end_date FROM cohorts WHERE id = ?`).bind(cohortId).first();
       const accessUntil = cohort ? cohort.end_date : null;
       const now = new Date().toISOString();

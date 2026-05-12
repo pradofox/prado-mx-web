@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=26" />
+  <link rel="stylesheet" href="/style.css?v=27" />
 
   <script>
     (function () {
@@ -71,7 +71,7 @@
         <span>[ Programa 12 semanas ]</span><br/>
         Por Hugo Prado · Monterrey
       </div>
-      <h1 class="hero-wordmark app-hero-wordmark">Protocolo<br/>12</h1>
+      <h1 class="hero-wordmark" style="font-size: 14vw;">Protocolo<br/>12</h1>
     </header>
 
     <section class="section">
@@ -275,7 +275,7 @@
     </section>
   </div>
 
-  <!-- ============ VISTA: COHORTE (apartar lugar / pre-venta) ============ -->
+  <!-- ============ VISTA: VERSIÓN (apartar lugar / pre-venta) ============ -->
   <div data-view="version" hidden>
     <section class="section section--tight section--medium">
       <div class="section-head">
@@ -860,6 +860,28 @@
 
   <script src="/smae-icons.js?v=1" defer></script>
   <script src="/app-ascii.js?v=1" defer></script>
-  <script src="/app.js?v=12" defer></script>
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script>
+    // Smooth scroll en app (mismo lerp que el sitio público)
+    (function () {
+      if (typeof Lenis === 'undefined') return;
+      var lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+      function raf(t) { lenis.raf(t); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+      // Anchor links via Lenis
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href^="#"]');
+        if (!a) return;
+        var id = a.getAttribute('href');
+        if (id.length <= 1) return;
+        var t = document.querySelector(id);
+        if (!t) return;
+        e.preventDefault();
+        lenis.scrollTo(t, { offset: -40 });
+      });
+      window.__lenis = lenis;
+    })();
+  </script>
+  <script src="/app.js?v=13" defer></script>
 </body>
 </html>

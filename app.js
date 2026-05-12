@@ -293,7 +293,7 @@
     // Solo enrolled + cohort_id válido
     if (!sub.cohort_id) { card.hidden = true; return; }
 
-    // Trae cohort actual para calcular semana
+    // Trae versión actual para calcular semana
     let cohort = null;
     try {
       const r = await fetch(API_BASE + '/cohorts/current', { credentials: 'omit' });
@@ -377,7 +377,7 @@
     }
   }
 
-  // ---------- Cohorte fetch ----------------------------------------------
+  // ---------- Versión actual (fetch) -------------------------------------
 
   async function loadCohortInfo() {
     try {
@@ -796,7 +796,7 @@
     document.querySelector('[data-dash-carb]').textContent = sub.carb_target || '—';
     document.querySelector('[data-dash-fat]').textContent = sub.fat_target || '—';
 
-    // Weekly focus card (roadmap P12). Solo si user está enrolled en una cohorte.
+    // Weekly focus card (roadmap P12). Solo si user está enrolled en una versión.
     renderWeeklyFocus(sub).catch(() => { /* silencioso, no rompe dashboard */ });
     // Próximos Q&As. Solo si user está enrolled.
     renderUpcomingQA(sub).catch(() => { /* silencioso */ });

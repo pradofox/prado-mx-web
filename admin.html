@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=26" />
+  <link rel="stylesheet" href="/style.css?v=27" />
 
   <script>
     (function () {
@@ -151,10 +151,10 @@
           <span>Agenda</span>
           <span class="admin-tab-count" data-tab-count="agenda">0</span>
         </button>
-        <button type="button" class="admin-tab" data-tab="cohortes">
+        <button type="button" class="admin-tab" data-tab="versiones">
           <span class="label">[ 04 ]</span>
-          <span>Cohortes</span>
-          <span class="admin-tab-count" data-tab-count="cohortes">0</span>
+          <span>Versiones</span>
+          <span class="admin-tab-count" data-tab-count="versiones">0</span>
         </button>
         <button type="button" class="admin-tab" data-tab="finanzas">
           <span class="label">[ 05 ]</span>
@@ -239,14 +239,14 @@
         </div>
       </section>
 
-      <!-- TAB: COHORTES -->
-      <section class="admin-tab-content" data-tab-content="cohortes" hidden>
+      <!-- TAB: VERSIONES -->
+      <section class="admin-tab-content" data-tab-content="versiones" hidden>
         <div class="admin-content-head">
           <div>
-            <h1 class="admin-content-title">Cohortes Protocolo 12</h1>
-            <p class="label admin-content-sub">Programas de 12 semanas. Cada cohorte tiene fechas, capacidad, precio y miembros.</p>
+            <h1 class="admin-content-title">Versiones de Protocolo 12</h1>
+            <p class="label admin-content-sub">Programas de 12 semanas. Cada versión tiene fechas, capacidad, precio y miembros.</p>
           </div>
-          <button type="button" class="closing-cta-btn" data-cohort-new>+ Nueva cohorte</button>
+          <button type="button" class="closing-cta-btn" data-cohort-new>+ Nueva versión</button>
         </div>
         <div class="admin-cards" data-admin-cohorts>
           <p class="smae-empty label">[ Cargando... ]</p>
@@ -432,7 +432,7 @@
           <form class="smae-form" data-qa-form>
             <div class="field-row">
               <div class="field">
-                <label class="label" for="qa-cohort">Cohorte</label>
+                <label class="label" for="qa-cohort">Versión</label>
                 <select id="qa-cohort" name="cohort_id">
                   <option value="">Todas (global)</option>
                 </select>
@@ -725,18 +725,18 @@
     </div>
   </div>
 
-  <!-- ============ MODAL NUEVA COHORTE ============ -->
+  <!-- ============ MODAL NUEVA VERSIÓN ============ -->
   <div class="fin-modal" data-cohort-modal hidden>
     <div class="fin-modal-backdrop" data-cohort-modal-close></div>
     <div class="fin-modal-panel">
       <header class="fin-modal-head">
-        <h3 data-cohort-modal-title>Nueva cohorte</h3>
+        <h3 data-cohort-modal-title>Nueva versión</h3>
         <button type="button" class="patient-drawer-close" data-cohort-modal-close aria-label="Cerrar">×</button>
       </header>
       <form class="smae-form" data-cohort-form>
         <div class="field field--wide">
           <label class="label" for="cohort-name">Nombre</label>
-          <input type="text" id="cohort-name" name="name" placeholder="Cohorte Junio 2026" required>
+          <input type="text" id="cohort-name" name="name" placeholder="Versión 1 · Protocolo 12" required>
         </div>
         <div class="field-row">
           <div class="field">
@@ -793,6 +793,16 @@
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=9" defer></script>
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script>
+    (function () {
+      if (typeof Lenis === 'undefined') return;
+      var lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+      function raf(t) { lenis.raf(t); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+      window.__lenis = lenis;
+    })();
+  </script>
+  <script src="/admin.js?v=10" defer></script>
 </body>
 </html>
