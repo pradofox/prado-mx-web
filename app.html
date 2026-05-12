@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=24" />
+  <link rel="stylesheet" href="/style.css?v=25" />
 
   <script>
     (function () {
@@ -154,7 +154,7 @@
         Pago único. Sin renovaciones automáticas. Máximo 30 personas por versión. Si se llena, te apartamos para la siguiente.
       </p>
       <p class="label app-dev-banner" data-dev-only hidden style="text-align: center; margin-top: 24px;">
-        [ Modo demo activo ] · <a href="/api/app/dev/login" style="color: var(--fg); text-decoration: underline;">Entrar sin pagar →</a>
+        [ Modo demo activo ] · <a href="/api/app/dev/login" class="inline-link">Entrar sin pagar →</a>
       </p>
     </section>
 
@@ -242,7 +242,7 @@
             <li>Necesitas seguimiento clínico semanal</li>
             <li>Buscas el plan de "perder 10 kg en una semana"</li>
           </ul>
-          <p class="label" style="margin-top: 12px; color: var(--gray);">→ En esos casos: <a href="https://api.whatsapp.com/send?phone=5218132446886" target="_blank" rel="noopener" style="color: var(--fg); text-decoration: underline;">consulta directa con Hugo</a>.</p>
+          <p class="label" style="margin-top: 12px; color: var(--gray);">→ En esos casos: <a href="https://api.whatsapp.com/send?phone=5218132446886" target="_blank" rel="noopener" class="inline-link">consulta directa con Hugo</a>.</p>
         </article>
       </div>
     </section>
@@ -257,7 +257,7 @@
           <span class="label">[ Credenciales ]</span>
           <h3>Hugo Prado</h3>
           <p>Nutriólogo licenciado, Universidad Autónoma de Nuevo León. Diplomado en Nutrición Deportiva. +7 años entrenando y dando consulta en estudios boutique de Monterrey. Coach en <strong>Energee</strong> (único estudio de Lagree en MTY) e <strong>Impulse</strong>.</p>
-          <p>Collabs activas con marcas: <strong>Champs · Lululemon · New Balance · GNC · Habits · Birkenstock</strong>. Audiencia en IG: <a href="https://instagram.com/hugopradoo" target="_blank" rel="noopener" style="color: var(--fg); text-decoration: underline;">@hugopradoo</a>.</p>
+          <p>Collabs activas con marcas: <strong>Champs · Lululemon · New Balance · GNC · Habits · Birkenstock</strong>. Audiencia en IG: <a href="https://instagram.com/hugopradoo" target="_blank" rel="noopener" class="inline-link">@hugopradoo</a>.</p>
           <p>Toda la metodología y los planes del SMAE están calibrados con su criterio clínico. La app aplica esa metodología; la consulta personal con Hugo agrega seguimiento clínico, composición corporal y antropométricos.</p>
         </div>
       </article>
@@ -266,7 +266,7 @@
     <section class="section section--tight">
       <div class="legal" id="aviso">
         <p>
-          <strong>Protocolo 12</strong> es una herramienta educativa basada en la metodología de Hugo Prado, nutriólogo licenciado. No constituye consulta médica ni nutricional personalizada. No sustituye valoración profesional. Lee los <a href="/terminos" style="color: var(--fg); text-decoration: underline;">Términos</a> y la <a href="/privacidad" style="color: var(--fg); text-decoration: underline;">Política de Privacidad</a>.
+          <strong>Protocolo 12</strong> es una herramienta educativa basada en la metodología de Hugo Prado, nutriólogo licenciado. No constituye consulta médica ni nutricional personalizada. No sustituye valoración profesional. Lee los <a href="/terminos" class="inline-link">Términos</a> y la <a href="/privacidad" class="inline-link">Política de Privacidad</a>.
         </p>
         <p>
           No está diseñado para menores de 18 años, embarazo, lactancia, ni condiciones médicas activas. El uso es bajo tu responsabilidad. Para plan supervisado, agenda consulta con Hugo Prado.
@@ -277,7 +277,7 @@
 
   <!-- ============ VISTA: COHORTE (apartar lugar / pre-venta) ============ -->
   <div data-view="version" hidden>
-    <section class="section section--tight" style="max-width: 760px; margin: 60px auto;">
+    <section class="section section--tight section--medium">
       <div class="section-head">
         <h2 class="section-title">Apartar mi lugar</h2>
         <span class="label">[ Pre-venta ]</span>
@@ -297,8 +297,8 @@
         <div class="cohort-seats">
           <span class="label" data-cohort-seats>Cargando accesos...</span>
         </div>
-        <div style="border-top: 1px solid var(--divider); padding-top: 16px; margin-top: 16px;">
-          <p class="label" style="color: var(--gray);">[ Cómo funciona la inscripción ]</p>
+        <div class="divider-top">
+          <p class="label label--muted">[ Cómo funciona la inscripción ]</p>
           <ol style="padding-left: 20px; margin: 12px 0; font-size: 14px; line-height: 1.6;">
             <li>Capturas tu correo + nombre abajo</li>
             <li>Te mandamos un link por correo para entrar a tu cuenta</li>
@@ -315,14 +315,14 @@
       </div>
 
       <p class="app-dev-banner label" data-dev-only hidden style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--divider);">
-        [ Modo demo ] · <a href="/api/app/dev/login" style="color: var(--fg); text-decoration: underline;">Entrar sin pagar y probar el flow →</a>
+        [ Modo demo ] · <a href="/api/app/dev/login" class="inline-link">Entrar sin pagar y probar el flow →</a>
       </p>
     </section>
   </div>
 
   <!-- ============ VISTA: SIGNUP / LOGIN (magic link) ============ -->
   <div data-view="signup" hidden>
-    <section class="section section--tight" style="max-width: 480px; margin: 80px auto;">
+    <section class="section section--tight section--narrower">
       <div class="section-head">
         <h2 class="section-title">Entrar</h2>
         <span class="label" data-signup-label>[ Magic link ]</span>
@@ -360,7 +360,7 @@
 
   <!-- ============ VISTA: CUESTIONARIO ============ -->
   <div data-view="questionnaire" hidden>
-    <section class="section section--tight" style="max-width: 720px; margin: 60px auto;">
+    <section class="section section--tight section--narrow">
       <div class="section-head">
         <h2 class="section-title">Cuestionario</h2>
         <span class="label" data-step-label>[ 1 de 6 ]</span>
@@ -482,7 +482,7 @@
           <div class="field field--wide">
             <label style="display: flex; gap: 12px; align-items: flex-start;">
               <input type="checkbox" name="consent" required style="margin-top: 4px;">
-              <span class="label" style="color: var(--gray);">
+              <span class="label label--muted">
                 He leído el aviso legal y entiendo que esto es información educativa, no consulta médica. Soy mayor de 18 años.
               </span>
             </label>
@@ -536,7 +536,7 @@
 
     <section class="section section--tight">
       <div class="section-head">
-        <h3 class="section-title" style="font-size: 28px;">Tu plan de equivalencias</h3>
+        <h3 class="section-title section-title--sm">Tu plan de equivalencias</h3>
         <span class="label">[ SMAE ]</span>
       </div>
       <div class="smae-plan">
@@ -550,7 +550,7 @@
 
     <section class="section section--tight">
       <div class="section-head">
-        <h3 class="section-title" style="font-size: 28px;">Tus tiempos</h3>
+        <h3 class="section-title section-title--sm">Tus tiempos</h3>
         <span class="label" data-tracker-summary>[ Hoy ]</span>
       </div>
       <div class="smae-meals" data-dash-meals></div>
@@ -582,7 +582,7 @@
         <span class="label">[ Bienvenido ]</span>
         <h2>Tu plan está listo</h2>
         <p>Calculé tus macros diarios (kcal, proteína, carbohidratos, grasa) con la metodología de Hugo Prado: Mifflin-St Jeor para tu metabolismo basal, ajustado a tu actividad y objetivo, con 1.8 g de proteína por kilo y 25 % de tus kcal en grasa.</p>
-        <p class="label" style="color: var(--gray);">[ El plan es un punto de partida. Si en 2-3 semanas no ves cambios reales, ajustamos. ]</p>
+        <p class="label label--muted">[ El plan es un punto de partida. Si en 2-3 semanas no ves cambios reales, ajustamos. ]</p>
       </article>
 
       <article class="onboarding-card" data-onb-step="2" hidden>
@@ -590,7 +590,7 @@
         <h2>Esto es una equivalencia</h2>
         <p>Cada grupo de alimentos (verdura, fruta, cereal, proteína...) tiene una "equivalencia": una porción medida que aporta cantidades similares de calorías y macros.</p>
         <p>Si tu plan dice <strong>3 frutas</strong>, puedes intercambiar libremente: 3 manzanas, o 1 plátano + 1 mango + 1 taza de fresa. Da lo mismo.</p>
-        <p class="label" style="color: var(--gray);">[ Las opciones de menú que verás en tu plan son ejemplos concretos. Puedes seguirlas o usar cualquier alimento de la misma "equivalencia". ]</p>
+        <p class="label label--muted">[ Las opciones de menú que verás en tu plan son ejemplos concretos. Puedes seguirlas o usar cualquier alimento de la misma "equivalencia". ]</p>
       </article>
 
       <article class="onboarding-card" data-onb-step="3" hidden>
@@ -601,7 +601,7 @@
           <li><strong>Esta semana:</strong> sigue el plan 4-5 días. Falla 1-2 días, no pasa nada.</li>
           <li><strong>En 2 semanas:</strong> regresas, miras tu peso/foto/energía. Si cambia, sigues. Si no, ajustamos.</li>
         </ul>
-        <p class="label" style="color: var(--gray);">[ La sección <strong>Ayuda</strong> tiene guías visuales de porciones, cómo cocinar, y FAQ. Está siempre disponible arriba. ]</p>
+        <p class="label label--muted">[ La sección <strong>Ayuda</strong> tiene guías visuales de porciones, cómo cocinar, y FAQ. Está siempre disponible arriba. ]</p>
       </article>
 
       <div class="onboarding-actions">
@@ -615,7 +615,7 @@
 
   <!-- ============ VISTA: AYUDA ============ -->
   <div data-view="help" hidden>
-    <section class="section section--tight" style="max-width: 920px; margin: 60px auto;">
+    <section class="section section--tight section--wider">
       <div class="section-head">
         <h2 class="section-title">Ayuda</h2>
         <span class="label">[ Cómo usar tu plan ]</span>
@@ -663,7 +663,7 @@
       <div class="help-section">
         <h3 class="help-h3">¿Y si fallo un día?</h3>
         <p>No pasa nada. La nutrición no es perfectionista. Si te saliste un día, regresas al siguiente. Lo que sostiene el cambio es el promedio de 2-3 semanas, no un día específico.</p>
-        <p class="label" style="color: var(--gray);">[ Si llevas más de una semana sintiéndote mal con el plan, agenda consulta con Hugo. El plan puede necesitar calibración real, no que tú aguantes más. ]</p>
+        <p class="label label--muted">[ Si llevas más de una semana sintiéndote mal con el plan, agenda consulta con Hugo. El plan puede necesitar calibración real, no que tú aguantes más. ]</p>
       </div>
 
       <div class="help-section">
@@ -724,7 +724,7 @@
 
   <!-- ============ VISTA: MI CUENTA ============ -->
   <div data-view="account" hidden>
-    <section class="section section--tight" style="max-width: 720px; margin: 60px auto;">
+    <section class="section section--tight section--narrow">
       <div class="section-head">
         <div>
           <h2 class="section-title">Mi cuenta</h2>
@@ -746,7 +746,7 @@
           <div class="field field--wide">
             <label class="label" for="acc-email">Correo</label>
             <input type="email" id="acc-email" name="email" disabled style="opacity: 0.6;">
-            <small class="label" style="color: var(--gray);">El correo no se puede cambiar. Para mover tu cuenta a otro correo, escribe a contacto@prado-mx.com.</small>
+            <small class="label label--muted">El correo no se puede cambiar. Para mover tu cuenta a otro correo, escribe a contacto@prado-mx.com.</small>
           </div>
           <div class="field-row">
             <div class="field">
@@ -758,12 +758,13 @@
               <input type="number" id="acc-weight" name="weight" step="0.1">
             </div>
             <div class="field">
-              <label class="label" for="acc-weight-target">Peso objetivo</label>
-              <input type="number" id="acc-weight-target" name="weight_target" step="0.1">
-            </div>
-            <div class="field">
               <label class="label" for="acc-height">Altura (cm)</label>
               <input type="number" id="acc-height" name="height">
+            </div>
+            <div class="field">
+              <label class="label" for="acc-weight-target">Peso objetivo</label>
+              <input type="number" id="acc-weight-target" name="weight_target" step="0.1">
+              <small class="label acc-hint" id="acc-weight-target-hint" style="color: var(--gray); display: block; margin-top: 4px;">Llena altura para sugerencia.</small>
             </div>
             <div class="field">
               <label class="label" for="acc-activity">Actividad</label>
@@ -852,6 +853,6 @@
 
   <script src="/smae-icons.js?v=1" defer></script>
   <script src="/app-ascii.js?v=1" defer></script>
-  <script src="/app.js?v=10" defer></script>
+  <script src="/app.js?v=11" defer></script>
 </body>
 </html>

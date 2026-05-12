@@ -2372,6 +2372,18 @@ a.line-card:hover { text-decoration: none; }
 /* Eyebrow tipo manifesto (label arriba de un statement grande) */
 .section-eyebrow { margin-bottom: 48px; }
 
+/* Utilities reutilizables */
+.label--muted { color: var(--gray); }
+.inline-link { color: var(--fg); text-decoration: underline; }
+.inline-link:hover { color: var(--fg); }
+.section--narrow { max-width: 720px; margin: 60px auto; }
+.section--narrower { max-width: 480px; margin: 80px auto; }
+.section--medium { max-width: 760px; margin: 60px auto; }
+.section--wider { max-width: 920px; margin: 60px auto; }
+.section-title--sm { font-size: 28px; }
+.divider-top { border-top: 1px solid var(--divider); padding-top: 16px; margin-top: 16px; }
+.divider-top-dashed { border-top: 1px dashed var(--divider); padding-top: 24px; margin-top: 32px; }
+
 /* Statements destacados en flujo editorial */
 .app-statement {
   font-family: var(--font-sans);

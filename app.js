@@ -393,6 +393,7 @@
       const { subscriber } = await api('/me');
       populateAccountForm(subscriber);
       renderAccountSubscription(subscriber);
+      document.dispatchEvent(new CustomEvent('account-loaded'));
     } catch (e) {
       // unauth ya redirige
     }
@@ -585,10 +586,20 @@
     if (qState.step < qState.total) {
       qState.step++;
       renderQStep();
+      persistQStep();
     }
   }
   function qPrev() {
-    if (qState.step > 1) { qState.step--; renderQStep(); }
+    if (qState.step > 1) { qState.step--; renderQStep(); persistQStep(); }
+  }
+  function persistQStep() {
+    try {
+      const raw = localStorage.getItem('prado-q-draft');
+      const draft = raw ? JSON.parse(raw) : { fields: {} };
+      draft.step = qState.step;
+      draft.ts = Date.now();
+      localStorage.setItem('prado-q-draft', JSON.stringify(draft));
+    } catch (e) {}
   }
 
   async function handleQSubmit(e) {
@@ -1083,6 +1094,41 @@
     const accLogout = document.querySelector('[data-account-logout]');
     if (accLogout) accLogout.addEventListener('click', doLogout);
 
+    // Hint dinámico IMC en /cuenta (idéntico al cuestionario)
+    const accHeight = document.getElementById('acc-height');
+    const accWeight = document.getElementById('acc-weight');
+    const accWT = document.getElementById('acc-weight-target');
+    const accHint = document.getElementById('acc-weight-target-hint');
+    const updateAccWTHint = () => {
+      if (!accHint) return;
+      const h = parseFloat(accHeight && accHeight.value);
+      if (!Number.isFinite(h) || h < 120 || h > 220) {
+        accHint.textContent = 'Llena altura para sugerencia.';
+        return;
+      }
+      const m = h / 100;
+      const min = Math.round(20 * m * m);
+      const max = Math.round(25 * m * m);
+      const mid = Math.round(22 * m * m);
+      const curW = parseFloat(accWeight && accWeight.value);
+      let suggestion = mid;
+      let label = `Sugerido: ${mid} kg`;
+      if (Number.isFinite(curW) && curW >= min && curW <= max) {
+        suggestion = Math.round(curW);
+        label = `Sugerido: mantener (${suggestion} kg)`;
+      }
+      accHint.innerHTML = `Rango saludable: <strong>${min}-${max} kg</strong>. <a href="#" data-acc-fill style="color: var(--fg); text-decoration: underline;">${label}</a>`;
+      const link = accHint.querySelector('[data-acc-fill]');
+      if (link) link.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (accWT) { accWT.value = suggestion; accWT.focus(); }
+      });
+    };
+    if (accHeight) accHeight.addEventListener('input', updateAccWTHint);
+    if (accWeight) accWeight.addEventListener('input', updateAccWTHint);
+    // Y dispara al cargar el view (cuando /cuenta se popule)
+    document.addEventListener('account-loaded', updateAccWTHint);
+
     // Forms
     const signupForm = document.querySelector('[data-signup-form]');
     if (signupForm) signupForm.addEventListener('submit', handleSignup);
@@ -1124,6 +1170,55 @@
       };
       if (qHeight) qHeight.addEventListener('input', updateWeightTargetHint);
       if (qWeight) qWeight.addEventListener('input', updateWeightTargetHint);
+
+      // Auto-save draft del cuestionario en localStorage
+      const Q_DRAFT_KEY = 'prado-q-draft';
+      const restoreDraft = () => {
+        try {
+          const raw = localStorage.getItem(Q_DRAFT_KEY);
+          if (!raw) return;
+          const draft = JSON.parse(raw);
+          Object.entries(draft.fields || {}).forEach(([name, value]) => {
+            const els = qForm.querySelectorAll(`[name="${name}"]`);
+            els.forEach(el => {
+              if (el.type === 'radio' || el.type === 'checkbox') {
+                if (Array.isArray(value) ? value.includes(el.value) : el.value === value) el.checked = true;
+              } else {
+                el.value = value;
+              }
+            });
+          });
+          if (draft.step && draft.step >= 1 && draft.step <= qState.total) {
+            qState.step = draft.step;
+          }
+          updateWeightTargetHint();
+        } catch (e) { /* ignore */ }
+      };
+      const saveDraft = () => {
+        try {
+          const fd = new FormData(qForm);
+          const fields = {};
+          for (const [k, v] of fd.entries()) {
+            if (fields[k] !== undefined) {
+              fields[k] = Array.isArray(fields[k]) ? [...fields[k], v] : [fields[k], v];
+            } else {
+              fields[k] = v;
+            }
+          }
+          localStorage.setItem(Q_DRAFT_KEY, JSON.stringify({ fields, step: qState.step, ts: Date.now() }));
+        } catch (e) { /* ignore quota */ }
+      };
+      qForm.addEventListener('input', saveDraft);
+      qForm.addEventListener('change', saveDraft);
+      // Limpia draft al submit exitoso (handleQSubmit ya navega a /bienvenida)
+      qForm.addEventListener('submit', () => {
+        // Esperamos al async submit; si éxito, limpiamos en el próximo tick
+        setTimeout(() => {
+          try { if (document.querySelector('[data-view="dashboard"]:not([hidden])') || document.querySelector('[data-view="onboarding"]:not([hidden])')) localStorage.removeItem(Q_DRAFT_KEY); } catch (e) {}
+        }, 1500);
+      });
+      restoreDraft();
+
       renderQStep();
     }
 
