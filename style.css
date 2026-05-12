@@ -2402,7 +2402,7 @@ a.line-card:hover { text-decoration: none; }
 @media (min-width: 900px) {
   .cohort-card { grid-template-columns: 1.4fr 1fr; }
   .cohort-card .cohort-card-head { grid-column: 1; grid-row: 1; }
-  .cohort-card .cohort-price { grid-column: 2; grid-row: 1; border-left: 1px solid var(--divider); padding-left: 28px; }
+  .cohort-card .cohort-price { grid-column: 2; grid-row: 1; padding-left: 28px; }
   .cohort-card .cohort-seats { grid-column: 1 / -1; grid-row: 2; }
   .cohort-card .cohort-includes { grid-column: 1 / -1; grid-row: 3; }
   .cohort-card .cohort-cta { grid-column: 1 / -1; grid-row: 4; }
@@ -2429,9 +2429,9 @@ a.line-card:hover { text-decoration: none; }
 }
 .cohort-price .kpi-meta { color: var(--gray); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
 .cohort-seats {
-  padding: 14px 18px;
-  background: var(--surface);
-  border: 1px solid var(--divider);
+  padding: 8px 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
 }
 .cohort-seats .label { color: var(--fg); }
 .cohort-includes p.label { color: var(--gray); margin-bottom: 12px; }
@@ -2450,13 +2450,117 @@ a.line-card:hover { text-decoration: none; }
   position: relative;
 }
 .cohort-includes ul li::before {
-  content: '✓';
+  content: '·';
   position: absolute;
   left: 0;
   color: var(--fg);
   font-family: var(--font-mono);
 }
 .cohort-cta { display: flex; justify-content: center; padding-top: 8px; }
+
+/* Weekly focus card (roadmap P12) en dashboard del usuario */
+.weekly-focus-card {
+  margin-top: 32px;
+  border: 1px solid var(--divider);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.weekly-focus-head { display: flex; flex-direction: column; gap: 6px; }
+.weekly-focus-head .label { color: var(--gray); }
+.weekly-focus-head h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(22px, 3vw, 28px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+.weekly-focus-desc {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--gray);
+  max-width: 64ch;
+  margin: 0;
+}
+.weekly-focus-habit {
+  border-top: 1px solid var(--divider);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.weekly-focus-habit .label { color: var(--gray); }
+.weekly-focus-habit p {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Admin: roadmap edit grid */
+.admin-roadmap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (min-width: 900px) {
+  .admin-roadmap { grid-template-columns: repeat(2, 1fr); }
+}
+.roadmap-week {
+  border: 1px solid var(--divider);
+  padding: 20px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.roadmap-week-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.roadmap-week-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.roadmap-week-fields .field { display: flex; flex-direction: column; gap: 6px; }
+.roadmap-week-fields .label { color: var(--gray); }
+.roadmap-week-fields input,
+.roadmap-week-fields textarea {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--fg);
+  border-radius: 0;
+  resize: vertical;
+  width: 100%;
+}
+.roadmap-week-fields input:focus,
+.roadmap-week-fields textarea:focus { outline: none; border-color: var(--fg); }
+
+/* Admin: secciones agrupadas dentro de tab Mensajes */
+.admin-templates-section { margin-bottom: 48px; }
+.admin-templates-section:last-child { margin-bottom: 0; }
+.admin-templates-section-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.admin-templates-section-sub {
+  color: var(--gray);
+  margin-bottom: 20px;
+  display: block;
+}
 
 /* Comparativa de costos */
 .cost-table {

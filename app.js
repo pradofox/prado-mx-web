@@ -274,6 +274,66 @@
     if (view === 'landing' || view === 'version') await loadCohortInfo();
   }
 
+  // ---------- Weekly focus (roadmap P12) ---------------------------------
+
+  let WEEKLY_FOCUS_CACHE = null;
+
+  async function fetchWeeklyFocus() {
+    if (WEEKLY_FOCUS_CACHE) return WEEKLY_FOCUS_CACHE;
+    const r = await fetch(API_BASE + '/weekly-focus', { credentials: 'omit' });
+    if (!r.ok) return null;
+    const j = await r.json();
+    WEEKLY_FOCUS_CACHE = j.weeks || [];
+    return WEEKLY_FOCUS_CACHE;
+  }
+
+  async function renderWeeklyFocus(sub) {
+    const card = document.querySelector('[data-weekly-focus]');
+    if (!card) return;
+    // Solo enrolled + cohort_id válido
+    if (!sub.cohort_id) { card.hidden = true; return; }
+
+    // Trae cohort actual para calcular semana
+    let cohort = null;
+    try {
+      const r = await fetch(API_BASE + '/cohorts/current', { credentials: 'omit' });
+      const j = await r.json();
+      if (j.cohort && j.cohort.id === sub.cohort_id) cohort = j.cohort;
+    } catch (e) { /* noop */ }
+    if (!cohort) { card.hidden = true; return; }
+
+    const start = new Date(cohort.start_date);
+    const end = new Date(cohort.end_date);
+    const today = new Date();
+    const totalWeeks = 12;
+
+    let weekNumber;
+    let stateLabel;
+    if (today < start) {
+      weekNumber = 1;
+      const days = Math.ceil((start - today) / 86400000);
+      stateLabel = `[ Semana 1 arranca en ${days} día${days === 1 ? '' : 's'} ]`;
+    } else if (today > end) {
+      weekNumber = 12;
+      stateLabel = '[ V1 cerrada · descarga tu PDF final ]';
+    } else {
+      const daysIn = Math.floor((today - start) / 86400000);
+      weekNumber = Math.min(totalWeeks, Math.max(1, Math.floor(daysIn / 7) + 1));
+      stateLabel = `[ Semana ${weekNumber} de ${totalWeeks} ]`;
+    }
+
+    const weeks = await fetchWeeklyFocus();
+    if (!weeks) { card.hidden = true; return; }
+    const w = weeks.find(x => x.week_number === weekNumber);
+    if (!w) { card.hidden = true; return; }
+
+    document.querySelector('[data-wf-eyebrow]').textContent = stateLabel;
+    document.querySelector('[data-wf-title]').textContent = w.title || '';
+    document.querySelector('[data-wf-desc]').textContent = w.description || '';
+    document.querySelector('[data-wf-habit]').textContent = w.habit || '';
+    card.hidden = false;
+  }
+
   // ---------- Cohorte fetch ----------------------------------------------
 
   async function loadCohortInfo() {
@@ -681,6 +741,9 @@
     document.querySelector('[data-dash-protein]').textContent = sub.protein_target || '—';
     document.querySelector('[data-dash-carb]').textContent = sub.carb_target || '—';
     document.querySelector('[data-dash-fat]').textContent = sub.fat_target || '—';
+
+    // Weekly focus card (roadmap P12). Solo si user está enrolled en una cohorte.
+    renderWeeklyFocus(sub).catch(() => { /* silencioso, no rompe dashboard */ });
 
     // CTA "Apartar mi acceso" visible si no está enrolled ni pagado
     const checkoutBtn = document.querySelector('[data-dash-checkout]');

@@ -299,6 +299,7 @@
     else if (state.activeTab === 'agenda') renderAgendaTab();
     else if (state.activeTab === 'finanzas') loadFinanzas();
     else if (state.activeTab === 'cohortes') loadCohortes();
+    else if (state.activeTab === 'roadmap') loadRoadmap();
   }
 
   // ---------- Pacientes Tab (cards grid) ---------------------------------
@@ -1536,17 +1537,97 @@
     if (form) form.addEventListener('submit', submitCohortForm);
   }
 
+  // ---------- ROADMAP P12 (weekly focus) --------------------------------
+
+  let roadmapState = { weeks: [] };
+
+  async function loadRoadmap() {
+    const container = document.querySelector('[data-admin-roadmap]');
+    if (!container) return;
+    try {
+      const { weeks } = await api('/weekly-focus');
+      roadmapState.weeks = weeks || [];
+      renderRoadmap();
+    } catch (e) {
+      container.innerHTML = `<p class="smae-empty label">[ Error: ${escapeHTML(e.message)} ]</p>`;
+    }
+  }
+
+  function renderRoadmap() {
+    const c = document.querySelector('[data-admin-roadmap]');
+    if (!c) return;
+    if (!roadmapState.weeks.length) {
+      c.innerHTML = '<p class="smae-empty label">[ Sin semanas configuradas ]</p>';
+      return;
+    }
+    c.innerHTML = roadmapState.weeks.map(w => `
+      <article class="roadmap-week" data-week="${w.week_number}">
+        <div class="roadmap-week-head">
+          <span class="label">[ Semana ${w.week_number} ]</span>
+          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-roadmap-save="${w.week_number}">Guardar</button>
+        </div>
+        <div class="roadmap-week-fields">
+          <div class="field">
+            <label class="label" for="rm-title-${w.week_number}">Título</label>
+            <input type="text" id="rm-title-${w.week_number}" data-rm-field="title" value="${escapeHTML(w.title || '')}" maxlength="80">
+          </div>
+          <div class="field">
+            <label class="label" for="rm-desc-${w.week_number}">Descripción</label>
+            <textarea id="rm-desc-${w.week_number}" data-rm-field="description" rows="3">${escapeHTML(w.description || '')}</textarea>
+          </div>
+          <div class="field">
+            <label class="label" for="rm-habit-${w.week_number}">Hábito de la semana</label>
+            <input type="text" id="rm-habit-${w.week_number}" data-rm-field="habit" value="${escapeHTML(w.habit || '')}" maxlength="140">
+          </div>
+        </div>
+      </article>
+    `).join('');
+    c.querySelectorAll('[data-roadmap-save]').forEach(btn => {
+      btn.addEventListener('click', () => saveWeek(parseInt(btn.dataset.roadmapSave, 10)));
+    });
+  }
+
+  async function saveWeek(weekNumber) {
+    const card = document.querySelector(`.roadmap-week[data-week="${weekNumber}"]`);
+    if (!card) return;
+    const data = {};
+    card.querySelectorAll('[data-rm-field]').forEach(el => {
+      data[el.dataset.rmField] = el.value.trim();
+    });
+    const btn = card.querySelector('[data-roadmap-save]');
+    const orig = btn.textContent;
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    try {
+      await api('/weekly-focus/' + weekNumber, { method: 'PATCH', body: data });
+      btn.textContent = '✓ Guardado';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+      const idx = roadmapState.weeks.findIndex(w => w.week_number === weekNumber);
+      if (idx >= 0) Object.assign(roadmapState.weeks[idx], data);
+    } catch (e) {
+      btn.textContent = 'Error';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+    }
+  }
+
+  function initRoadmap() {
+    const reload = document.querySelector('[data-roadmap-reload]');
+    if (reload) reload.addEventListener('click', loadRoadmap);
+  }
+
   // Bootstrap del IIFE: init principal + initFinanzas
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       init();
       initFinanzas();
       initCohortes();
+      initRoadmap();
     });
   } else {
     init();
     initFinanzas();
     initCohortes();
+    initRoadmap();
   }
 
 })();

@@ -168,6 +168,14 @@ async function handleApi(request, env, url) {
     if (request.method === 'GET') return adminListCohortMembers(env, id, request);
   }
 
+  // ----- Weekly focus (roadmap Protocolo 12) ---
+  if (path === '/weekly-focus' && request.method === 'GET') return adminListWeeklyFocus(env, request);
+  const wfMatch = path.match(/^\/weekly-focus\/(\d+)$/);
+  if (wfMatch) {
+    const weekNumber = parseInt(wfMatch[1], 10);
+    if (request.method === 'PATCH') return adminUpdateWeeklyFocus(request, env, weekNumber);
+  }
+
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
@@ -250,6 +258,35 @@ async function adminListCohortMembers(env, id, request) {
      FROM subscribers WHERE cohort_id = ? ORDER BY enrolled_at DESC`
   ).bind(id).all();
   return jsonResponse({ members: results || [] }, 200, request);
+}
+
+// ----- Admin: Weekly focus (roadmap Protocolo 12) ---------------------
+
+async function adminListWeeklyFocus(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM weekly_focus ORDER BY week_number ASC`
+  ).all();
+  return jsonResponse({ weeks: results || [] }, 200, request);
+}
+
+async function adminUpdateWeeklyFocus(request, env, weekNumber) {
+  if (weekNumber < 1 || weekNumber > 12) {
+    return jsonResponse({ error: 'week_number must be 1..12' }, 400, request);
+  }
+  const data = await request.json();
+  const now = new Date().toISOString();
+  const sets = [];
+  const args = [];
+  ['title', 'description', 'habit'].forEach(f => {
+    if (data[f] !== undefined) { sets.push(`${f} = ?`); args.push(data[f] || null); }
+  });
+  if (sets.length === 0) return jsonResponse({ ok: true }, 200, request);
+  sets.push('updated_at = ?'); args.push(now);
+  args.push(weekNumber);
+  await env.DB.prepare(
+    `UPDATE weekly_focus SET ${sets.join(', ')} WHERE week_number = ?`
+  ).bind(...args).run();
+  return jsonResponse({ ok: true }, 200, request);
 }
 
 // ----- Transactions (ingresos / egresos del negocio) -------------------
@@ -634,7 +671,18 @@ async function handleAppApi(request, env, url) {
   if (path === '/cohorts/current' && request.method === 'GET') return appCurrentCohort(request, env);
   if (path === '/cohorts/enroll' && request.method === 'POST') return appEnrollCohort(request, env);
 
+  // Weekly focus (roadmap Protocolo 12)
+  if (path === '/weekly-focus' && request.method === 'GET') return appListWeeklyFocus(request, env);
+
   return jsonResponse({ error: 'not found', path }, 404, request);
+}
+
+// Lista las 12 semanas del roadmap. Público (no necesita auth).
+async function appListWeeklyFocus(request, env) {
+  const { results } = await env.DB.prepare(
+    `SELECT week_number, title, description, habit FROM weekly_focus ORDER BY week_number ASC`
+  ).all();
+  return jsonResponse({ weeks: results || [] }, 200, request);
 }
 
 async function appSignup(request, env) {

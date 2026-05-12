@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=23" />
+  <link rel="stylesheet" href="/style.css?v=24" />
 
   <script>
     (function () {
@@ -164,8 +164,12 @@
           <span class="label">[ 06 ]</span>
           <span>Mensajes</span>
         </button>
-        <button type="button" class="admin-tab" data-tab="recompensas">
+        <button type="button" class="admin-tab" data-tab="roadmap">
           <span class="label">[ 07 ]</span>
+          <span>Roadmap P12</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="recompensas">
+          <span class="label">[ 08 ]</span>
           <span>Recompensas</span>
         </button>
       </nav>
@@ -299,35 +303,103 @@
             <p class="label admin-content-sub">Templates pre-armados. Click "Copiar" y pega en WhatsApp.</p>
           </div>
         </div>
-        <div class="admin-templates" data-admin-templates>
-          <div class="admin-template">
-            <div class="admin-template-head">
-              <span class="label">[ Recordatorio amistoso ]</span>
-              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="reminder">Copiar</button>
+
+        <div class="admin-templates-section">
+          <h2 class="admin-templates-section-title">Protocolo 12 · Grupo WhatsApp</h2>
+          <p class="label admin-templates-section-sub">Mensajes recurrentes del grupo cerrado. Reemplaza {tema}, {dia} y {hora} antes de mandar.</p>
+          <div class="admin-templates">
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Foco semanal · lunes ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-foco">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-foco" rows="4">Hola equipo. Arrancamos nueva semana del Protocolo. El foco de esta semana es {tema}. En su dashboard ya está actualizado con el hábito que les pido ejecutar esta semana. Cualquier duda, aquí estoy.</textarea>
             </div>
-            <textarea data-tpl="reminder" rows="4">Hola {nombre}! Soy Hugo. ¿Cómo te ha ido? Veo que tiene rato que no te veo, ¿quieres agendar una consulta para ver cómo vas? Te mando link para que escojas día y hora.</textarea>
-          </div>
-          <div class="admin-template">
-            <div class="admin-template-head">
-              <span class="label">[ Próxima cita confirmada ]</span>
-              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="upcoming">Copiar</button>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Check-in · miércoles ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-checkin">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-checkin" rows="4">Mitad de semana. ¿Cómo van con el foco de esta semana? Si algo no cuadra o necesitan ajustar, dígamelo por aquí o esperamos al Q&A. No avancen con duda guardada.</textarea>
             </div>
-            <textarea data-tpl="upcoming" rows="4">Hola {nombre}! Te recuerdo que tenemos consulta el {fecha}. Si necesitas mover o confirmar, avísame por aquí. ¡Nos vemos!</textarea>
-          </div>
-          <div class="admin-template">
-            <div class="admin-template-head">
-              <span class="label">[ Cumpleaños ]</span>
-              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="bday">Copiar</button>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Tip · viernes ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-tip">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-tip" rows="4">Tip rápido para el fin de semana: {tip_corto}. Acuérdense que el fin de semana es el 30% de la semana. Lunes nos vemos con el siguiente foco.</textarea>
             </div>
-            <textarea data-tpl="bday" rows="3">¡Felicidades {nombre}! Espero que tengas un día increíble. Aquí seguimos cuando quieras retomar consulta.</textarea>
-          </div>
-          <div class="admin-template">
-            <div class="admin-template-head">
-              <span class="label">[ Motivación ]</span>
-              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="motivation">Copiar</button>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Q&A próximo ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-qa">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-qa" rows="4">Recordatorio: nuestro Q&A en vivo es el {dia} a las {hora}. Una hora completa para preguntar lo que sea y ajustar su plan en tiempo real. Si no pueden, queda grabado. Link va una hora antes.</textarea>
             </div>
-            <textarea data-tpl="motivation" rows="3">Hola {nombre}! Solo paso a saludar y a recordarte que vas avanzando paso a paso. Si necesitas ajustar algo del plan, avísame.</textarea>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Bienvenida arranque V1 ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-welcome">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-welcome" rows="5">Bienvenidos. Somos 30. Doce semanas. Un sistema. Reglas básicas del grupo: 1) Aquí se pregunta sin pena. 2) No se compara, cada uno arranca de donde está. 3) Lo que se aprende aquí se queda aquí. Empezamos.</textarea>
+            </div>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Cierre V1 ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="p12-close">Copiar</button>
+              </div>
+              <textarea data-tpl="p12-close" rows="5">Cerramos. Llegamos a 12 semanas juntos. En su dashboard ya pueden descargar "Tu sistema PRADO" en PDF con todo consolidado. Si quieren seguir con consulta personal o entrar a la siguiente V, escríbanme directo. Felicidades a quienes hicieron el trabajo.</textarea>
+            </div>
           </div>
+        </div>
+
+        <div class="admin-templates-section">
+          <h2 class="admin-templates-section-title">Consulta nutricional · 1 a 1</h2>
+          <p class="label admin-templates-section-sub">Mensajes para tus pacientes de consulta directa.</p>
+          <div class="admin-templates">
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Recordatorio amistoso ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="reminder">Copiar</button>
+              </div>
+              <textarea data-tpl="reminder" rows="4">Hola {nombre}! Soy Hugo. ¿Cómo te ha ido? Veo que tiene rato que no te veo, ¿quieres agendar una consulta para ver cómo vas? Te mando link para que escojas día y hora.</textarea>
+            </div>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Próxima cita confirmada ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="upcoming">Copiar</button>
+              </div>
+              <textarea data-tpl="upcoming" rows="4">Hola {nombre}! Te recuerdo que tenemos consulta el {fecha}. Si necesitas mover o confirmar, avísame por aquí. ¡Nos vemos!</textarea>
+            </div>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Cumpleaños ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="bday">Copiar</button>
+              </div>
+              <textarea data-tpl="bday" rows="3">¡Felicidades {nombre}! Espero que tengas un día increíble. Aquí seguimos cuando quieras retomar consulta.</textarea>
+            </div>
+            <div class="admin-template">
+              <div class="admin-template-head">
+                <span class="label">[ Motivación ]</span>
+                <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-copy-tpl="motivation">Copiar</button>
+              </div>
+              <textarea data-tpl="motivation" rows="3">Hola {nombre}! Solo paso a saludar y a recordarte que vas avanzando paso a paso. Si necesitas ajustar algo del plan, avísame.</textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: ROADMAP P12 -->
+      <section class="admin-tab-content" data-tab-content="roadmap" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Roadmap Protocolo 12</h1>
+            <p class="label admin-content-sub">12 semanas que ven los usuarios en su dashboard. Edita el copy aquí y se actualiza en producto.</p>
+          </div>
+          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-roadmap-reload>Recargar</button>
+        </div>
+        <div class="admin-roadmap" data-admin-roadmap>
+          <p class="smae-empty label">[ Cargando... ]</p>
         </div>
       </section>
 
@@ -645,6 +717,6 @@
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=7" defer></script>
+  <script src="/admin.js?v=8" defer></script>
 </body>
 </html>
