@@ -300,6 +300,7 @@
     else if (state.activeTab === 'finanzas') loadFinanzas();
     else if (state.activeTab === 'cohortes') loadCohortes();
     else if (state.activeTab === 'roadmap') loadRoadmap();
+    else if (state.activeTab === 'qa') loadQASessions();
   }
 
   // ---------- Pacientes Tab (cards grid) ---------------------------------
@@ -1615,6 +1616,144 @@
     if (reload) reload.addEventListener('click', loadRoadmap);
   }
 
+  // ---------- Q&A EN VIVO -----------------------------------------------
+
+  let qaState = { sessions: [], editing: null };
+
+  async function loadQASessions() {
+    try {
+      const { sessions } = await api('/qa-sessions');
+      qaState.sessions = sessions || [];
+      renderQAList();
+    } catch (e) {
+      const c = document.querySelector('[data-admin-qa]');
+      if (c) c.innerHTML = `<p class="smae-empty label">[ Error: ${escapeHTML(e.message)} ]</p>`;
+    }
+  }
+
+  function fmtQADate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderQAList() {
+    const c = document.querySelector('[data-admin-qa]');
+    if (!c) return;
+    if (!qaState.sessions.length) {
+      c.innerHTML = '<p class="smae-empty label">[ Sin sesiones programadas. Crea la primera con + Nueva sesión. ]</p>';
+      return;
+    }
+    const statusLabels = { scheduled: 'Programada', live: 'En vivo', done: 'Terminada', canceled: 'Cancelada' };
+    c.innerHTML = qaState.sessions.map(s => `
+      <article class="patient-card" data-qa-id="${escapeHTML(s.id)}">
+        <div class="patient-card-head">
+          <div class="patient-avatar" style="font-size: 14px;">QA</div>
+          <div class="patient-card-id">
+            <h3>${escapeHTML(s.topic || 'Q&A en vivo')}</h3>
+            <p class="label">[ ${statusLabels[s.status] || s.status} ] · ${fmtQADate(s.scheduled_at)} · ${s.duration_min || 60} min</p>
+            ${s.cohort_name ? `<p class="label label--muted">${escapeHTML(s.cohort_name)}</p>` : '<p class="label label--muted">Global (todas las cohortes)</p>'}
+          </div>
+        </div>
+        ${s.meeting_link ? `<p class="label"><a href="${escapeHTML(s.meeting_link)}" target="_blank" rel="noopener" class="inline-link">→ Link de la sesión</a></p>` : ''}
+        ${s.recording_link ? `<p class="label"><a href="${escapeHTML(s.recording_link)}" target="_blank" rel="noopener" class="inline-link">→ Grabación</a></p>` : ''}
+        <div class="patient-card-actions">
+          <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-qa-edit="${escapeHTML(s.id)}">Editar</button>
+          <button type="button" class="closing-cta-btn closing-cta-btn--ghost smae-danger" data-qa-delete="${escapeHTML(s.id)}">×</button>
+        </div>
+      </article>
+    `).join('');
+    c.querySelectorAll('[data-qa-edit]').forEach(b => b.addEventListener('click', () => openQAModal(b.dataset.qaEdit)));
+    c.querySelectorAll('[data-qa-delete]').forEach(b => b.addEventListener('click', () => deleteQA(b.dataset.qaDelete)));
+  }
+
+  function openQAModal(id) {
+    const modal = document.querySelector('[data-qa-modal]');
+    if (!modal) return;
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+    // Popula select de cohortes
+    const sel = document.querySelector('#qa-cohort');
+    if (sel) {
+      sel.innerHTML = '<option value="">Todas (global)</option>' +
+        (cohortsState.cohorts || []).map(c => `<option value="${escapeHTML(c.id)}">${escapeHTML(c.name)}</option>`).join('');
+    }
+    const title = document.querySelector('[data-qa-modal-title]');
+    if (id) {
+      const s = qaState.sessions.find(x => x.id === id);
+      if (!s) return;
+      qaState.editing = id;
+      if (title) title.textContent = 'Editar sesión';
+      document.querySelector('#qa-cohort').value = s.cohort_id || '';
+      // datetime-local quiere "YYYY-MM-DDTHH:mm" sin zona
+      if (s.scheduled_at) {
+        const d = new Date(s.scheduled_at);
+        const pad = n => String(n).padStart(2, '0');
+        document.querySelector('#qa-when').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      } else {
+        document.querySelector('#qa-when').value = '';
+      }
+      document.querySelector('#qa-duration').value = s.duration_min || 60;
+      document.querySelector('#qa-topic').value = s.topic || '';
+      document.querySelector('#qa-link').value = s.meeting_link || '';
+      document.querySelector('#qa-recording').value = s.recording_link || '';
+      document.querySelector('#qa-status').value = s.status || 'scheduled';
+      document.querySelector('#qa-notes').value = s.notes || '';
+    } else {
+      qaState.editing = null;
+      if (title) title.textContent = 'Nueva sesión';
+      document.querySelector('[data-qa-form]').reset();
+      document.querySelector('#qa-duration').value = 60;
+      document.querySelector('#qa-status').value = 'scheduled';
+    }
+  }
+
+  function closeQAModal() {
+    const m = document.querySelector('[data-qa-modal]');
+    if (!m) return;
+    m.classList.remove('is-open');
+    setTimeout(() => { m.hidden = true; }, 200);
+  }
+
+  async function submitQAForm(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = {};
+    fd.forEach((v, k) => { data[k] = v || null; });
+    if (data.duration_min) data.duration_min = parseInt(data.duration_min, 10);
+    // Convierte datetime-local a ISO
+    if (data.scheduled_at) data.scheduled_at = new Date(data.scheduled_at).toISOString();
+    try {
+      if (qaState.editing) {
+        await api('/qa-sessions/' + qaState.editing, { method: 'PATCH', body: data });
+      } else {
+        await api('/qa-sessions', { method: 'POST', body: data });
+      }
+      closeQAModal();
+      await loadQASessions();
+    } catch (err) { alert('Error: ' + err.message); }
+  }
+
+  async function deleteQA(id) {
+    if (!confirm('¿Eliminar esta sesión Q&A?')) return;
+    try {
+      await api('/qa-sessions/' + id, { method: 'DELETE' });
+      await loadQASessions();
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  function initQA() {
+    const newBtn = document.querySelector('[data-qa-new]');
+    if (newBtn) newBtn.addEventListener('click', async () => {
+      // Asegura que cohortes estén cargadas para el select
+      if (!cohortsState.cohorts.length) await loadCohortes();
+      openQAModal(null);
+    });
+    document.querySelectorAll('[data-qa-modal-close]').forEach(b => b.addEventListener('click', closeQAModal));
+    const form = document.querySelector('[data-qa-form]');
+    if (form) form.addEventListener('submit', submitQAForm);
+  }
+
   // Bootstrap del IIFE: init principal + initFinanzas
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -1622,12 +1761,14 @@
       initFinanzas();
       initCohortes();
       initRoadmap();
+      initQA();
     });
   } else {
     init();
     initFinanzas();
     initCohortes();
     initRoadmap();
+    initQA();
   }
 
 })();

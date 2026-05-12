@@ -334,6 +334,49 @@
     card.hidden = false;
   }
 
+  // ---------- Próximos Q&A en dashboard ---------------------------------
+
+  async function renderUpcomingQA(sub) {
+    const card = document.querySelector('[data-qa-card]');
+    const list = document.querySelector('[data-qa-list]');
+    if (!card || !list) return;
+    if (!sub.cohort_id) { card.hidden = true; return; }
+    try {
+      const r = await api('/qa-sessions');
+      const sessions = (r && r.sessions) || [];
+      if (!sessions.length) { card.hidden = true; return; }
+      const fmt = iso => new Date(iso).toLocaleString('es-MX', {
+        weekday: 'short', day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit',
+      });
+      const now = Date.now();
+      list.innerHTML = sessions.slice(0, 3).map(s => {
+        const isUpcoming = new Date(s.scheduled_at).getTime() > now;
+        const days = Math.ceil((new Date(s.scheduled_at).getTime() - now) / 86400000);
+        let badge;
+        if (s.status === 'live') badge = '<span class="qa-badge qa-badge--live">EN VIVO</span>';
+        else if (s.status === 'done' && s.recording_link) badge = '<span class="qa-badge">Grabación</span>';
+        else if (isUpcoming && days <= 1) badge = '<span class="qa-badge qa-badge--soon">Pronto</span>';
+        else badge = '';
+        const link = s.status === 'done' ? s.recording_link : s.meeting_link;
+        const linkLabel = s.status === 'done' ? 'Ver grabación' : 'Entrar al Q&A';
+        return `
+          <li class="qa-list-item">
+            <div class="qa-list-head">
+              <span class="label">${fmt(s.scheduled_at)}</span>
+              ${badge}
+            </div>
+            ${s.topic ? `<p class="qa-list-topic">${escapeHTML(s.topic)}</p>` : ''}
+            ${link ? `<a href="${escapeHTML(link)}" target="_blank" rel="noopener" class="inline-link">${linkLabel} →</a>` : '<span class="label label--muted">Link próximamente</span>'}
+          </li>
+        `;
+      }).join('');
+      card.hidden = false;
+    } catch (e) {
+      card.hidden = true;
+    }
+  }
+
   // ---------- Cohorte fetch ----------------------------------------------
 
   async function loadCohortInfo() {
@@ -755,6 +798,8 @@
 
     // Weekly focus card (roadmap P12). Solo si user está enrolled en una cohorte.
     renderWeeklyFocus(sub).catch(() => { /* silencioso, no rompe dashboard */ });
+    // Próximos Q&As. Solo si user está enrolled.
+    renderUpcomingQA(sub).catch(() => { /* silencioso */ });
 
     // CTA "Apartar mi acceso" visible si no está enrolled ni pagado
     const checkoutBtn = document.querySelector('[data-dash-checkout]');

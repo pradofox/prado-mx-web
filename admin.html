@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=25" />
+  <link rel="stylesheet" href="/style.css?v=26" />
 
   <script>
     (function () {
@@ -168,8 +168,12 @@
           <span class="label">[ 07 ]</span>
           <span>Roadmap P12</span>
         </button>
-        <button type="button" class="admin-tab" data-tab="recompensas">
+        <button type="button" class="admin-tab" data-tab="qa">
           <span class="label">[ 08 ]</span>
+          <span>Q&A en vivo</span>
+        </button>
+        <button type="button" class="admin-tab" data-tab="recompensas">
+          <span class="label">[ 09 ]</span>
           <span>Recompensas</span>
         </button>
       </nav>
@@ -402,6 +406,78 @@
           <p class="smae-empty label">[ Cargando... ]</p>
         </div>
       </section>
+
+      <!-- TAB: Q&A EN VIVO -->
+      <section class="admin-tab-content" data-tab-content="qa" hidden>
+        <div class="admin-content-head">
+          <div>
+            <h1 class="admin-content-title">Q&A en vivo</h1>
+            <p class="label admin-content-sub">Sesiones programadas. Los usuarios inscritos las ven en su dashboard.</p>
+          </div>
+          <button type="button" class="closing-cta-btn" data-qa-new>+ Nueva sesión</button>
+        </div>
+        <div class="admin-cards" data-admin-qa>
+          <p class="smae-empty label">[ Cargando... ]</p>
+        </div>
+      </section>
+
+      <!-- Modal Q&A -->
+      <div class="cohort-modal" data-qa-modal hidden>
+        <div class="cohort-modal-backdrop" data-qa-modal-close></div>
+        <div class="cohort-modal-content">
+          <div class="cohort-modal-head">
+            <h3 data-qa-modal-title>Nueva sesión</h3>
+            <button type="button" class="cohort-modal-close" data-qa-modal-close aria-label="Cerrar">×</button>
+          </div>
+          <form class="smae-form" data-qa-form>
+            <div class="field-row">
+              <div class="field">
+                <label class="label" for="qa-cohort">Cohorte</label>
+                <select id="qa-cohort" name="cohort_id">
+                  <option value="">Todas (global)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="qa-when">Fecha y hora</label>
+                <input type="datetime-local" id="qa-when" name="scheduled_at" required>
+              </div>
+              <div class="field">
+                <label class="label" for="qa-duration">Duración (min)</label>
+                <input type="number" id="qa-duration" name="duration_min" value="60" min="15" max="180">
+              </div>
+              <div class="field">
+                <label class="label" for="qa-topic">Tema (opcional)</label>
+                <input type="text" id="qa-topic" name="topic" maxlength="120" placeholder="Ej. Ajuste de macros · Mes 1">
+              </div>
+              <div class="field field--wide">
+                <label class="label" for="qa-link">Link de la sesión</label>
+                <input type="url" id="qa-link" name="meeting_link" placeholder="https://zoom.us/j/...">
+              </div>
+              <div class="field field--wide">
+                <label class="label" for="qa-recording">Link de la grabación (post)</label>
+                <input type="url" id="qa-recording" name="recording_link" placeholder="Pega aquí cuando termine">
+              </div>
+              <div class="field">
+                <label class="label" for="qa-status">Estado</label>
+                <select id="qa-status" name="status">
+                  <option value="scheduled">Programada</option>
+                  <option value="live">En vivo</option>
+                  <option value="done">Terminada</option>
+                  <option value="canceled">Cancelada</option>
+                </select>
+              </div>
+              <div class="field field--wide">
+                <label class="label" for="qa-notes">Notas (interno)</label>
+                <textarea id="qa-notes" name="notes" rows="3"></textarea>
+              </div>
+            </div>
+            <div class="smae-form-actions">
+              <button type="submit" class="closing-cta-btn">Guardar</button>
+              <button type="button" class="closing-cta-btn closing-cta-btn--ghost" data-qa-modal-close>Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <!-- TAB: RECOMPENSAS -->
       <section class="admin-tab-content" data-tab-content="recompensas" hidden>
@@ -717,6 +793,6 @@
   <div class="print-only" data-smae-print-area aria-hidden="true"></div>
 
   <script src="/admin-ascii.js?v=1" defer></script>
-  <script src="/admin.js?v=8" defer></script>
+  <script src="/admin.js?v=9" defer></script>
 </body>
 </html>

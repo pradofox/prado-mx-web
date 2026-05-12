@@ -176,6 +176,16 @@ async function handleApi(request, env, url) {
     if (request.method === 'PATCH') return adminUpdateWeeklyFocus(request, env, weekNumber);
   }
 
+  // ----- Q&A sessions ---
+  if (path === '/qa-sessions' && request.method === 'GET') return adminListQA(env, request);
+  if (path === '/qa-sessions' && request.method === 'POST') return adminCreateQA(request, env);
+  const qaMatch = path.match(/^\/qa-sessions\/([^/]+)$/);
+  if (qaMatch) {
+    const id = qaMatch[1];
+    if (request.method === 'PATCH') return adminUpdateQA(request, env, id);
+    if (request.method === 'DELETE') return adminDeleteQA(env, id, request);
+  }
+
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
@@ -286,6 +296,62 @@ async function adminUpdateWeeklyFocus(request, env, weekNumber) {
   await env.DB.prepare(
     `UPDATE weekly_focus SET ${sets.join(', ')} WHERE week_number = ?`
   ).bind(...args).run();
+  return jsonResponse({ ok: true }, 200, request);
+}
+
+// ----- Admin: Q&A sessions -------------------------------------------
+
+async function adminListQA(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT q.*, c.name AS cohort_name
+     FROM qa_sessions q LEFT JOIN cohorts c ON c.id = q.cohort_id
+     ORDER BY q.scheduled_at DESC`
+  ).all();
+  return jsonResponse({ sessions: results || [] }, 200, request);
+}
+
+async function adminCreateQA(request, env) {
+  const data = await request.json();
+  const id = newId('qa');
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO qa_sessions (id, cohort_id, scheduled_at, duration_min, topic,
+       meeting_link, recording_link, notes, status, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(
+    id,
+    data.cohort_id || null,
+    data.scheduled_at,
+    parseInt(data.duration_min || 60, 10),
+    data.topic || null,
+    data.meeting_link || null,
+    data.recording_link || null,
+    data.notes || null,
+    data.status || 'scheduled',
+    now, now,
+  ).run();
+  return jsonResponse({ id }, 200, request);
+}
+
+async function adminUpdateQA(request, env, id) {
+  const data = await request.json();
+  const now = new Date().toISOString();
+  const fields = ['cohort_id', 'scheduled_at', 'duration_min', 'topic',
+    'meeting_link', 'recording_link', 'notes', 'status'];
+  const sets = [];
+  const args = [];
+  fields.forEach(f => {
+    if (data[f] !== undefined) { sets.push(`${f} = ?`); args.push(data[f] || null); }
+  });
+  if (sets.length === 0) return jsonResponse({ ok: true }, 200, request);
+  sets.push('updated_at = ?'); args.push(now);
+  args.push(id);
+  await env.DB.prepare(`UPDATE qa_sessions SET ${sets.join(', ')} WHERE id = ?`).bind(...args).run();
+  return jsonResponse({ ok: true }, 200, request);
+}
+
+async function adminDeleteQA(env, id, request) {
+  await env.DB.prepare(`DELETE FROM qa_sessions WHERE id = ?`).bind(id).run();
   return jsonResponse({ ok: true }, 200, request);
 }
 
@@ -674,6 +740,9 @@ async function handleAppApi(request, env, url) {
   // Weekly focus (roadmap Protocolo 12)
   if (path === '/weekly-focus' && request.method === 'GET') return appListWeeklyFocus(request, env);
 
+  // Q&A sessions próximos (filtra por cohort_id del subscriber autenticado)
+  if (path === '/qa-sessions' && request.method === 'GET') return appListQA(request, env);
+
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
@@ -683,6 +752,25 @@ async function appListWeeklyFocus(request, env) {
     `SELECT week_number, title, description, habit FROM weekly_focus ORDER BY week_number ASC`
   ).all();
   return jsonResponse({ weeks: results || [] }, 200, request);
+}
+
+// Lista próximos Q&As del usuario. Requiere auth (cookie de sesión app).
+async function appListQA(request, env) {
+  const sub = await getSubscriberFromSession(request, env);
+  if (!sub) return jsonResponse({ error: 'unauthorized' }, 401, request);
+  // Sesiones de su cohorte O globales (cohort_id NULL), futuras y de los últimos 7 días
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const { results } = await env.DB.prepare(
+    `SELECT id, cohort_id, scheduled_at, duration_min, topic, meeting_link,
+            recording_link, status
+     FROM qa_sessions
+     WHERE (cohort_id = ? OR cohort_id IS NULL)
+       AND scheduled_at >= ?
+       AND status != 'canceled'
+     ORDER BY scheduled_at ASC
+     LIMIT 6`
+  ).bind(sub.cohort_id || '', sevenDaysAgo).all();
+  return jsonResponse({ sessions: results || [] }, 200, request);
 }
 
 async function appSignup(request, env) {

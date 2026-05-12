@@ -2512,6 +2512,53 @@ a.line-card:hover { text-decoration: none; }
   margin: 0;
 }
 
+/* Próximos Q&A en dashboard */
+.qa-card {
+  margin-top: 24px;
+  border: 1px solid var(--divider);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.qa-card-head .label { color: var(--gray); }
+.qa-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.qa-list-item {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.qa-list-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.qa-list-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qa-list-head .label { color: var(--fg); }
+.qa-list-topic {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.4;
+}
+.qa-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid var(--divider);
+  color: var(--gray);
+}
+.qa-badge--live {
+  border-color: var(--fg);
+  color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+}
+.qa-badge--soon {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
 /* Admin: roadmap edit grid */
 .admin-roadmap {
   display: grid;
