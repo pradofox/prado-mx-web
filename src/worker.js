@@ -34,7 +34,7 @@ export default {
 
     // Subdominio admin: cualquier path "lindo" sirve admin.html del bundle.
     if (url.hostname === 'admin.prado-mx.com') {
-      const publicPaths = ['/hugo', '/consulting', '/macros'];
+      const publicPaths = ['/hugo', '/consulting', '/macros', '/consulta'];
       if (publicPaths.includes(url.pathname)) {
         return Response.redirect('https://prado-mx.com' + url.pathname, 302);
       }
@@ -68,6 +68,8 @@ export default {
           '/hugo': '/hugo.html',
           '/consulting': '/consulting.html',
           '/macros': '/macros.html',
+          '/consulta': '/consulta.html',
+          '/nutricion': '/consulta.html',
           '/smae': '/smae.html',
         };
         const htmlFile = pathToHtml[url.pathname];

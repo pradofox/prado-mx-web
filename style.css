@@ -2559,6 +2559,145 @@ a.line-card:hover { text-decoration: none; }
   color: var(--fg);
 }
 
+/* ============================================================
+   /consulta — Landing de Consulta Nutricional
+   ============================================================ */
+.consulta-lead {
+  font-family: var(--font-sans);
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.5;
+  max-width: 60ch;
+  color: var(--gray);
+  margin: 0;
+}
+
+/* Pricing tiers */
+.consulta-pricing {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+@media (min-width: 720px) {
+  .consulta-pricing { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+.consulta-tier {
+  border: 1px solid var(--divider);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--bg);
+}
+.consulta-tier--featured { border-color: var(--fg); }
+.consulta-tier-head { display: flex; flex-direction: column; gap: 8px; }
+.consulta-tier-head .label { color: var(--gray); }
+.consulta-tier-head h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+.consulta-tier-sub {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--gray);
+  margin: 0;
+}
+.consulta-tier-price {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+}
+.consulta-tier-price strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(44px, 6vw, 56px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.consulta-tier-price .kpi-meta {
+  color: var(--gray);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.consulta-tier-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+.consulta-tier-list li {
+  padding-left: 20px;
+  position: relative;
+}
+.consulta-tier-list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+.consulta-tier .closing-cta-btn { align-self: flex-start; }
+.consulta-pricing-note { margin-top: 16px; text-align: center; }
+
+/* Location + Map */
+.consulta-location {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (min-width: 900px) {
+  .consulta-location { grid-template-columns: 1fr 1.2fr; gap: 40px; }
+}
+.consulta-location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.consulta-location-block { display: flex; flex-direction: column; gap: 6px; }
+.consulta-location-block .label { color: var(--gray); }
+.consulta-location-block p {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+.consulta-location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.consulta-location-map {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--divider);
+  overflow: hidden;
+  background: var(--surface);
+}
+.consulta-location-map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  filter: grayscale(1) contrast(1.05);
+}
+:root.dark .consulta-location-map iframe { filter: grayscale(1) invert(0.92) contrast(0.95) hue-rotate(180deg); }
+
 /* Admin: roadmap edit grid */
 .admin-roadmap {
   display: grid;
