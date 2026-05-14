@@ -2698,6 +2698,147 @@ a.line-card:hover { text-decoration: none; }
 }
 :root.dark .consulta-location-map iframe { filter: grayscale(1) invert(0.92) contrast(0.95) hue-rotate(180deg); }
 
+/* Bento "Qué incluye" - blueprint feel
+   Una sola lámina dividida con borders. Card 01 es el hero (SECA),
+   con un patrón de pulso ASCII sutil al fondo. Cards menores alrededor
+   con números diagrammáticos y datums opcionales en mono. */
+.consulta-bento-wrap { margin-top: 32px; }
+
+.consulta-bento-ticks {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--gray);
+  margin: 0 0 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.consulta-bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 1px solid var(--divider);
+  background: var(--bg);
+}
+.consulta-bento-card {
+  position: relative;
+  padding: 28px;
+  border-bottom: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 200px;
+  overflow: hidden;
+  transition: background 160ms ease;
+}
+.consulta-bento-card:last-child { border-bottom: 0; }
+
+@media (min-width: 720px) {
+  .consulta-bento {
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  .consulta-bento-card { border-bottom: 0; border-right: 1px solid var(--divider); }
+  .consulta-bento-card[data-pos="hero"]    { grid-column: 1 / 3; grid-row: 1 / 3; min-height: 360px; }
+  .consulta-bento-card[data-pos="tall"]    { grid-column: 3;     grid-row: 1 / 3; border-right: 0; }
+  .consulta-bento-card[data-pos="small-1"] { grid-column: 1;     grid-row: 3; border-bottom: 1px solid var(--divider); }
+  .consulta-bento-card[data-pos="wide-1"]  { grid-column: 2 / 4; grid-row: 3; border-right: 0; border-bottom: 1px solid var(--divider); }
+  .consulta-bento-card[data-pos="small-2"] { grid-column: 1;     grid-row: 4; }
+  .consulta-bento-card[data-pos="wide-2"]  { grid-column: 2 / 4; grid-row: 4; border-right: 0; }
+}
+
+.consulta-bento-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  position: relative;
+  z-index: 2;
+}
+.consulta-bento-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+.consulta-bento-card[data-pos="hero"] .consulta-bento-title {
+  font-size: clamp(32px, 4.5vw, 52px);
+  letter-spacing: -0.03em;
+}
+.consulta-bento-desc {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gray);
+  margin: 0;
+  max-width: 50ch;
+  position: relative;
+  z-index: 2;
+}
+.consulta-bento-card[data-pos="hero"] .consulta-bento-desc {
+  font-size: 16px;
+  max-width: 56ch;
+}
+.consulta-bento-datum {
+  margin-top: auto;
+  padding-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  position: relative;
+  z-index: 2;
+}
+
+/* Pulse pattern decorativo en card hero */
+.consulta-bento-pulse {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 24px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--fg);
+  opacity: 0.10;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  text-align: center;
+}
+
+/* Flecha decorativa en card de WhatsApp */
+.consulta-bento-arrow {
+  position: absolute;
+  right: 24px;
+  bottom: 18px;
+  font-family: var(--font-mono);
+  font-size: clamp(48px, 8vw, 96px);
+  line-height: 1;
+  color: var(--fg);
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+.consulta-bento-card:hover {
+  background: var(--surface);
+}
+:root.dark .consulta-bento-card:hover { background: rgba(255,255,255,0.03); }
+
 /* Admin: roadmap edit grid */
 .admin-roadmap {
   display: grid;
