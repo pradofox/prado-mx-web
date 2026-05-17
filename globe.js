@@ -139,6 +139,13 @@
     rafId = requestAnimationFrame(tick);
   }
 
+  // Re-mide el grid y re-dibuja. Se usa cuando la fuente mono carga DESPUÉS
+  // del primer render (ver nota en start()).
+  function reflow() {
+    sizeGrid();
+    if (R) render();
+  }
+
   function start() {
     sizeGrid();
     if (!R) return;
@@ -149,6 +156,17 @@
       rafId = requestAnimationFrame(tick);
     }
     attachDrag();
+
+    // Geist Mono puede cargar DESPUÉS de este punto. document.fonts.ready
+    // resuelve antes de tiempo si el CSS de Google Fonts todavía no registró
+    // el @font-face: medimos con la fuente de respaldo (más angosta), y al
+    // hacer swap a Geist Mono el globo queda más ancho que su contenedor y
+    // se ve cortado. Re-medimos en cada font load + timeouts de seguridad.
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', reflow);
+    }
+    setTimeout(reflow, 600);
+    setTimeout(reflow, 1800);
   }
 
   function attachDrag() {
