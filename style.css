@@ -21,6 +21,10 @@
 
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
+  /* Para ASCII art (globo, heroes ASCII): monospace ESTRICTO del sistema.
+     NO usa Geist Mono porque una versión local mal instalada / con kerning
+     en el punto rompe el ancho fijo y deforma el ASCII. */
+  --font-ascii: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 }
 :root.dark {
   --bg: var(--black);
@@ -282,10 +286,13 @@ body.menu-open .menu-overlay {
   width: min(78vw, 52vh);
   height: min(78vw, 52vh);
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-ascii);
   font-size: clamp(6px, 1.4vmin, 12px);
   line-height: 1;
   letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0, "dlig" 0;
+  font-kerning: none;
   color: var(--fg);
   white-space: pre;
   overflow: hidden;
@@ -317,10 +324,13 @@ body.menu-open .menu-overlay {
   inset: 0;
   margin: 0;
   padding: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-ascii);
   font-size: clamp(10px, 1.6vmin, 14px);
   line-height: 1;
   letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0, "dlig" 0;
+  font-kerning: none;
   color: var(--fg);
   white-space: pre;
   overflow: hidden;
