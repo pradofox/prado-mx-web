@@ -76,6 +76,8 @@ export default {
         if (htmlFile) {
           return serveHtmlFromAssets(env, request, htmlFile);
         }
+        // Path "lindo" sin match → 404 on-brand con status correcto.
+        return serveHtmlFromAssets(env, request, '/404.html', 404);
       }
     }
 
@@ -85,7 +87,7 @@ export default {
 
 // Sirve un HTML del bundle de assets con headers anti-cache. Usa un internal
 // fetch con cache-bust query string para forzar miss en el edge cache.
-async function serveHtmlFromAssets(env, request, filename) {
+async function serveHtmlFromAssets(env, request, filename, overrideStatus) {
   try { await caches.default.delete(request); } catch (e) {}
   const internal = new URL(filename, 'https://internal.prado-mx.com');
   internal.searchParams.set('_wkr', Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
@@ -97,7 +99,8 @@ async function serveHtmlFromAssets(env, request, filename) {
   headers.delete('etag');
   headers.delete('last-modified');
   headers.delete('expires');
-  return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
+  const status = overrideStatus || r.status;
+  return new Response(r.body, { status, statusText: r.statusText, headers });
 }
 
 // ----- API ---------------------------------------------------------------

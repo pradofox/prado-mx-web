@@ -2708,6 +2708,39 @@ a.line-card:hover { text-decoration: none; }
 }
 :root.dark .consulta-location-map iframe { filter: grayscale(1) invert(0.92) contrast(0.95) hue-rotate(180deg); }
 
+/* Página 404 */
+.error-404 {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+}
+.error-404 .label { color: var(--gray); }
+.error-404-code {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(96px, 22vw, 240px);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+.error-404-msg {
+  font-family: var(--font-sans);
+  font-size: clamp(18px, 2.4vw, 24px);
+  line-height: 1.4;
+  color: var(--gray);
+  max-width: 40ch;
+  margin: 0;
+}
+.error-404-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 /* Bento "Qué incluye" - blueprint feel
    Una sola lámina dividida con borders. Card 01 es el hero (SECA),
    con un patrón de pulso ASCII sutil al fondo. Cards menores alrededor
