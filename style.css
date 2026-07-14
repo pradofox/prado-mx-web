@@ -2708,6 +2708,82 @@ a.line-card:hover { text-decoration: none; }
 }
 :root.dark .consulta-location-map iframe { filter: grayscale(1) invert(0.92) contrast(0.95) hue-rotate(180deg); }
 
+/* Lista de espera (P12 pre-Stripe) */
+.waitlist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+.waitlist-copy {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--gray);
+  max-width: 52ch;
+  margin: 0;
+}
+.waitlist-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+}
+.waitlist-form input[type="email"] {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 14px 16px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.waitlist-form input[type="email"]:focus { outline: none; border-color: var(--fg); }
+.waitlist-hp {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.waitlist-done { color: var(--fg); }
+
+/* /marcas - media kit */
+.marcas-kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 720px) {
+  .marcas-kpis { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+}
+.marcas-kpis .kpi {
+  border: 1px solid var(--divider);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.marcas-kpis .kpi .label { color: var(--gray); }
+.marcas-kpis .kpi strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 64px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.marcas-kpis .kpi .kpi-meta {
+  color: var(--gray);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* Página 404 */
 .error-404 {
   min-height: 70vh;

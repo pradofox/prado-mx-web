@@ -70,6 +70,8 @@ export default {
           '/macros': '/macros.html',
           '/consulta': '/consulta.html',
           '/nutricion': '/consulta.html',
+          '/marcas': '/marcas.html',
+          '/collabs': '/marcas.html',
           '/smae': '/smae.html',
         };
         const htmlFile = pathToHtml[url.pathname];
@@ -180,6 +182,9 @@ async function handleApi(request, env, url) {
     const weekNumber = parseInt(wfMatch[1], 10);
     if (request.method === 'PATCH') return adminUpdateWeeklyFocus(request, env, weekNumber);
   }
+
+  // ----- Leads (lista de espera / campañas) ---
+  if (path === '/leads' && request.method === 'GET') return adminListLeads(env, request);
 
   // ----- Q&A sessions ---
   if (path === '/qa-sessions' && request.method === 'GET') return adminListQA(env, request);
@@ -302,6 +307,16 @@ async function adminUpdateWeeklyFocus(request, env, weekNumber) {
     `UPDATE weekly_focus SET ${sets.join(', ')} WHERE week_number = ?`
   ).bind(...args).run();
   return jsonResponse({ ok: true }, 200, request);
+}
+
+// ----- Admin: Leads ----------------------------------------------------
+
+async function adminListLeads(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT id, email, name, source, campaign, created_at, notified_at
+     FROM leads ORDER BY created_at DESC LIMIT 500`
+  ).all();
+  return jsonResponse({ leads: results || [], count: (results || []).length }, 200, request);
 }
 
 // ----- Admin: Q&A sessions -------------------------------------------
@@ -745,10 +760,34 @@ async function handleAppApi(request, env, url) {
   // Weekly focus (roadmap Protocolo 12)
   if (path === '/weekly-focus' && request.method === 'GET') return appListWeeklyFocus(request, env);
 
+  // Lista de espera / captura de leads (público, pre-Stripe)
+  if (path === '/waitlist' && request.method === 'POST') return appJoinWaitlist(request, env);
+
   // Q&A sessions próximos (filtra por cohort_id del subscriber autenticado)
   if (path === '/qa-sessions' && request.method === 'GET') return appListQA(request, env);
 
   return jsonResponse({ error: 'not found', path }, 404, request);
+}
+
+// Alta en lista de espera. Público. Honeypot: si el campo `website`
+// viene lleno (solo bots lo llenan), respondemos ok sin guardar.
+async function appJoinWaitlist(request, env) {
+  const data = await request.json();
+  if ((data.website || '').toString().trim() !== '') {
+    return jsonResponse({ ok: true }, 200, request);
+  }
+  const email = (data.email || '').toString().trim().toLowerCase();
+  if (!email || !email.includes('@') || email.length > 254) {
+    return jsonResponse({ error: 'correo inválido' }, 400, request);
+  }
+  const name = (data.name || '').toString().trim().slice(0, 120) || null;
+  const source = (data.source || 'p12-v1').toString().trim().slice(0, 40);
+  const campaign = (data.campaign || '').toString().trim().slice(0, 60) || null;
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO leads (id, email, name, source, campaign, created_at)
+     VALUES (?,?,?,?,?,?)`
+  ).bind(newId('lead'), email, name, source, campaign, new Date().toISOString()).run();
+  return jsonResponse({ ok: true }, 200, request);
 }
 
 // Lista las 12 semanas del roadmap. Público (no necesita auth).
@@ -1056,6 +1095,9 @@ async function appCurrentCohort(request, env) {
       ...cohort,
       seats_left: Math.max(0, cohort.capacity - cohort.sold),
       price_mxn: Math.round(cohort.price_cents / 100),
+      // El front decide entre CTA de checkout y waitlist según este flag:
+      // cuando Hugo configure Stripe, el sitio cambia solo, sin deploy.
+      checkout_ready: !!env.STRIPE_SECRET_KEY,
     },
   }, 200, request);
 }

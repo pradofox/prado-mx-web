@@ -410,7 +410,46 @@
           el.innerHTML = `<strong>${sold} / ${total} accesos apartados</strong> · ${left} disponibles`;
         }
       });
+      // Checkout listo (Stripe configurado) → CTA de compra.
+      // Checkout pendiente → lista de espera. Cambia solo, sin deploy.
+      const ready = !!cohort.checkout_ready;
+      document.querySelectorAll('[data-checkout-cta]').forEach(el => { el.hidden = !ready; });
+      document.querySelectorAll('[data-waitlist]').forEach(el => { el.hidden = ready; });
     } catch (e) { /* silencioso */ }
+  }
+
+  // ---------- Lista de espera --------------------------------------------
+
+  async function handleWaitlistSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const email = (form.email.value || '').trim();
+    if (!email) return;
+    const btn = form.querySelector('button[type="submit"]');
+    const orig = btn.textContent;
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    try {
+      const campaign = new URLSearchParams(window.location.search).get('c') || null;
+      const r = await fetch(API_BASE + '/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          website: form.website ? form.website.value : '',
+          source: 'p12-v1',
+          campaign,
+        }),
+      });
+      if (!r.ok) throw new Error('error');
+      form.hidden = true;
+      const done = form.parentElement.querySelector('[data-waitlist-done]');
+      if (done) done.hidden = false;
+    } catch (err) {
+      btn.textContent = orig;
+      btn.disabled = false;
+      toast('No se pudo guardar. Intenta de nuevo.', 'error');
+    }
   }
 
   // ---------- Toast notifications ----------------------------------------
@@ -1177,6 +1216,7 @@
     // Forms
     const signupForm = document.querySelector('[data-signup-form]');
     if (signupForm) signupForm.addEventListener('submit', handleSignup);
+    document.querySelectorAll('[data-waitlist-form]').forEach(f => f.addEventListener('submit', handleWaitlistSubmit));
     const qForm = document.querySelector('[data-q-form]');
     if (qForm) {
       qForm.addEventListener('submit', handleQSubmit);

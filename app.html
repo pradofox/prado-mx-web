@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=30" />
+  <link rel="stylesheet" href="/style.css?v=31" />
 
   <script>
     (function () {
@@ -121,6 +121,9 @@
         <h2 class="section-title">Precio</h2>
         <span class="label">[ Pago único ]</span>
       </div>
+      <p class="app-lead">
+        Doce semanas que terminan antes de diciembre. Llegas a las fiestas con el sistema construido, no con el propósito pendiente.
+      </p>
       <article class="cohort-card" data-cohort-card>
         <div class="cohort-card-head">
           <span class="label">[ Próxima versión ]</span>
@@ -146,8 +149,18 @@
             <li>Recetas + guías visuales de porciones</li>
           </ul>
         </div>
-        <div class="cohort-cta">
+        <div class="cohort-cta" data-checkout-cta>
           <a href="/version" class="closing-cta-btn app-enter-btn" data-app-route>Apartar mi acceso →</a>
+        </div>
+        <div class="waitlist" data-waitlist hidden>
+          <p class="label label--muted">[ Lista de espera · V1 ]</p>
+          <p class="waitlist-copy">La inscripción abre pronto. Deja tu correo y te avisamos primero, antes de anunciarlo en redes.</p>
+          <form class="waitlist-form" data-waitlist-form>
+            <input type="email" name="email" required placeholder="tu@correo.com" autocomplete="email" aria-label="Tu correo">
+            <input type="text" name="website" tabindex="-1" autocomplete="off" class="waitlist-hp" aria-hidden="true">
+            <button type="submit" class="closing-cta-btn">Avisarme →</button>
+          </form>
+          <p class="label waitlist-done" data-waitlist-done hidden>[ Listo. Te avisamos antes que a nadie. ]</p>
         </div>
       </article>
       <p class="app-trial-note label" style="margin-top: 24px;">
@@ -882,6 +895,6 @@
       window.__lenis = lenis;
     })();
   </script>
-  <script src="/app.js?v=13" defer></script>
+  <script src="/app.js?v=14" defer></script>
 </body>
 </html>
