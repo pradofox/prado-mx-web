@@ -36,12 +36,12 @@
   const open = () => {
     document.body.classList.add('menu-open');
     overlay.setAttribute('aria-hidden', 'false');
-    if (typeof lenis !== 'undefined') lenis.stop();
+    if (lenis) lenis.stop();
   };
   const close = () => {
     document.body.classList.remove('menu-open');
     overlay.setAttribute('aria-hidden', 'true');
-    if (typeof lenis !== 'undefined') lenis.start();
+    if (lenis) lenis.start();
   };
   document.querySelectorAll('[data-menu-open]').forEach((b) => b.addEventListener('click', open));
   document.querySelectorAll('[data-menu-close]').forEach((b) => b.addEventListener('click', close));
@@ -52,20 +52,21 @@
 })();
 
 // -- Lenis smooth scroll -----------------------------------
-const lenis = new Lenis({
-  lerp: 0.1,
-  smoothWheel: true,
-});
+// Opcional: hay páginas sin scroll (ej. /super, que es un plano fijo) que
+// cargan este archivo por el theme toggle y el menú, pero no Lenis. Sin
+// esta guarda, `new Lenis` reventaba y se llevaba todo lo de abajo.
+const lenis = (typeof Lenis !== 'undefined')
+  ? new Lenis({ lerp: 0.1, smoothWheel: true })
+  : null;
 
-function raf(time) {
-  lenis.raf(time);
+if (lenis) {
+  const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf); };
   requestAnimationFrame(raf);
 }
-requestAnimationFrame(raf);
 
 // -- Parallax hero ------------------------------------------
 const heroImgs = document.querySelectorAll('[data-parallax]');
-if (heroImgs.length) {
+if (heroImgs.length && lenis) {
   const hero = document.querySelector('.hero');
   const heroH = hero ? hero.offsetHeight : window.innerHeight;
   lenis.on('scroll', (e) => {
@@ -134,6 +135,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     const target = document.querySelector(id);
     if (!target) return;
     e.preventDefault();
-    lenis.scrollTo(target, { offset: -40 });
+    if (lenis) lenis.scrollTo(target, { offset: -40 });
+    else target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });

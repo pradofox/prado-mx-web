@@ -2787,7 +2787,22 @@ a.line-card:hover { text-decoration: none; }
 /* ============================================================
    /super — El súper de PRADO (plano explorable)
    ============================================================ */
-.super-body { overflow: hidden; height: 100dvh; }
+/* /super es light-only por ahora: los packshots vienen de JPEG y su recorte
+   deja un halo de compresión que sobre fondo oscuro se nota feo. Sobre
+   blanco desaparece. Forzamos los tokens claros pase lo que pase con el
+   tema y escondemos el toggle (no tendría efecto y confunde). */
+.super-body {
+  overflow: hidden;
+  height: 100dvh;
+  --bg: var(--white);
+  --fg: var(--black);
+  --surface: var(--white);
+  --surface-hover: #e6e6e6;
+  --divider: #d9d9d9;
+  background: var(--bg);
+  color: var(--fg);
+}
+.super-body .theme-toggle { display: none; }
 .super-nav {
   position: fixed;
   top: 0; left: 0; right: 0;
