@@ -328,7 +328,10 @@
   stage.addEventListener('wheel', (e) => {
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
-      zoomAt(e.clientX, e.clientY, scale * Math.exp(-e.deltaY * 0.01));
+      // el trackpad manda deltas chicos (pellizco suave); la rueda de mouse
+      // manda ~100 de golpe y saltaría de 1x al tope en un solo notch.
+      const dy = Math.max(-40, Math.min(40, e.deltaY));
+      zoomAt(e.clientX, e.clientY, scale * Math.exp(-dy * 0.01));
     } else {
       px -= e.deltaX; py -= e.deltaY;
       clamp(); apply();
@@ -338,7 +341,9 @@
 
   // Teclado: +/- para zoom, 0 para reencuadrar.
   document.addEventListener('keydown', (e) => {
-    if (e.target.matches('input, textarea')) return;
+    // ojo: e.target puede ser `document`, que no tiene .matches()
+    const t = e.target;
+    if (t && typeof t.matches === 'function' && t.matches('input, textarea')) return;
     const cx = vw() / 2, cy = vh() / 2;
     if (e.key === '+' || e.key === '=') { zoomAt(cx, cy, scale * 1.2); hideHint(); }
     else if (e.key === '-' || e.key === '_') { zoomAt(cx, cy, scale / 1.2); hideHint(); }
