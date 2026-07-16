@@ -289,12 +289,13 @@
     note.hidden = !p.note;
     const buy = modal.querySelector('[data-modal-buy]');
     const disc = modal.querySelector('[data-modal-disclosure]');
-    if (p.amazon_url) {
-      buy.href = '/api/out/' + encodeURIComponent(p.id);
-      buy.hidden = false; disc.hidden = false;
-    } else {
-      buy.hidden = true; disc.hidden = true;
-    }
+    buy.hidden = !p.amazon_url;
+    if (p.amazon_url) buy.href = '/api/out/' + encodeURIComponent(p.id);
+    // El label de afiliado solo aparece cuando el link REALMENTE lleva tag:
+    // hoy no hay ninguno (le quitamos el tag ajeno y Hugo aún no tiene el
+    // suyo), así que declararlo sería falso. Cuando cargue su tag desde
+    // admin, el label sale solo.
+    disc.hidden = !(p.amazon_url && /[?&]tag=/.test(p.amazon_url));
     modal.hidden = false;
     requestAnimationFrame(() => modal.classList.add('is-open'));
   }
