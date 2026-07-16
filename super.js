@@ -159,16 +159,16 @@
   let vx = 0, vy = 0;            // velocidad suavizada px/s
   const DECAY = 2.6;            // 1/s
 
-  function bounds() {
-    const vw = stage.clientWidth, vh = stage.clientHeight;
-    const padX = Math.max(0, (PLANE_W - vw) / 2) + 120;
-    const padY = Math.max(0, (PLANE_H - vh) / 2) + 120;
-    return { padX, padY };
-  }
+  // El plano tiene su esquina superior-izquierda en (0,0) del stage; px/py
+  // lo trasladan. Para ver el borde izquierdo px = 0; para ver el derecho
+  // px = vw - PLANE_W. Dejamos PAD de overscroll a cada lado.
+  const PAD = 180;
   function clamp() {
-    const b = bounds();
-    px = Math.max(-b.padX, Math.min(b.padX, px));
-    py = Math.max(-b.padY, Math.min(b.padY, py));
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const minX = Math.min(0, vw - PLANE_W) - PAD, maxX = PAD;
+    const minY = Math.min(0, vh - PLANE_H) - PAD, maxY = PAD;
+    px = Math.max(minX, Math.min(maxX, px));
+    py = Math.max(minY, Math.min(maxY, py));
   }
   function apply() {
     plane.style.transform = `translate3d(${px}px, ${py}px, 0)`;
@@ -298,8 +298,12 @@
   }
 
   // ---------- Init ------------------------------------------------------
+  // Arranca con el centro del plano (el bloque de título) en el centro
+  // de la pantalla.
   function centerPlane() {
-    px = 0; py = 0; apply();
+    px = (stage.clientWidth - PLANE_W) / 2;
+    py = (stage.clientHeight - PLANE_H) / 2;
+    apply();
   }
 
   async function init() {

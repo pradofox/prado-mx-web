@@ -2812,12 +2812,8 @@ a.line-card:hover { text-decoration: none; }
 
 .super-plane {
   position: absolute;
-  top: 50%; left: 50%;
-  margin-left: -50%; margin-top: -50%;
+  top: 0; left: 0;
   will-change: transform;
-}
-@media (min-width: 900px) {
-  .super-plane { margin-left: 0; margin-top: 0; transform-origin: center; }
 }
 
 .super-center {
