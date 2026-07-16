@@ -113,6 +113,14 @@
     }).join(''));
   }
 
+  // Cards esperando a que la pestaña sea visible (rAF no corre en background).
+  const pending = new Set();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    pending.forEach(fn => fn());
+    pending.clear();
+  });
+
   function revealCard(card) {
     if (card.dataset.revealed) return;
     card.dataset.revealed = '1';
@@ -123,6 +131,12 @@
     const run = () => {
       const base = asciiFrom(img);
       if (!base || reduced) { card.classList.add('is-resolved'); return; }
+      // rAF no dispara si la pestaña está en background: sin esta red la
+      // card se quedaría vacía para siempre (el IO ya la desobservó).
+      // Si está oculta, esperamos a que vuelva; si aun así no corre,
+      // resolvemos sin animación para nunca dejar producto invisible.
+      if (document.hidden) { pending.add(run); return; }
+      const safety = setTimeout(() => { card.classList.add('is-resolved'); }, 1600);
       const start = performance.now();
       const DUR = 560;
       // 3 slices que se van asentando
@@ -143,7 +157,7 @@
         });
         pre.textContent = rows.join('\n');
         if (t < 1) { requestAnimationFrame(frame); }
-        else { card.classList.add('is-resolved'); }
+        else { clearTimeout(safety); card.classList.add('is-resolved'); }
       }
       requestAnimationFrame(frame);
     };
@@ -163,10 +177,14 @@
   // lo trasladan. Para ver el borde izquierdo px = 0; para ver el derecho
   // px = vw - PLANE_W. Dejamos PAD de overscroll a cada lado.
   const PAD = 180;
+  // El stage es fixed inset:0, así que el viewport ES su tamaño. Usamos
+  // innerWidth/Height porque clientWidth puede ser 0 si medimos antes de
+  // que el layout exista (y un 0 aquí manda el plano fuera de pantalla).
+  function vw() { return stage.clientWidth || window.innerWidth || 1280; }
+  function vh() { return stage.clientHeight || window.innerHeight || 720; }
   function clamp() {
-    const vw = stage.clientWidth, vh = stage.clientHeight;
-    const minX = Math.min(0, vw - PLANE_W) - PAD, maxX = PAD;
-    const minY = Math.min(0, vh - PLANE_H) - PAD, maxY = PAD;
+    const minX = Math.min(0, vw() - PLANE_W) - PAD, maxX = PAD;
+    const minY = Math.min(0, vh() - PLANE_H) - PAD, maxY = PAD;
     px = Math.max(minX, Math.min(maxX, px));
     py = Math.max(minY, Math.min(maxY, py));
   }
@@ -301,8 +319,8 @@
   // Arranca con el centro del plano (el bloque de título) en el centro
   // de la pantalla.
   function centerPlane() {
-    px = (stage.clientWidth - PLANE_W) / 2;
-    py = (stage.clientHeight - PLANE_H) / 2;
+    px = (vw() - PLANE_W) / 2;
+    py = (vh() - PLANE_H) / 2;
     apply();
   }
 
@@ -355,6 +373,9 @@
 
     renderFilters(counts);
     centerPlane();
+    // Re-centra cuando el layout ya asentó (por si medimos en seco).
+    requestAnimationFrame(centerPlane);
+    window.addEventListener('load', centerPlane, { once: true });
 
     // Reveal al entrar al viewport
     const io = new IntersectionObserver(entries => {
