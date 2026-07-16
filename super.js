@@ -210,14 +210,14 @@
   }
 
   function onDown(e) {
-    if (e.target.closest('[data-super-card]') && e.pointerType !== 'touch') {
-      // permitimos drag desde una card, pero si no se mueve cuenta como click
-    }
     dragging = true; moved = false;
     lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
     vx = vy = 0;
     stage.classList.add('is-dragging');
-    stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+    // NO usamos setPointerCapture: capturar el puntero en el stage
+    // reasigna el pointerup y mata el evento `click` de los hijos (pills y
+    // cards dejaban de responder). El drag ya funciona con los listeners
+    // de pointermove/pointerup en window.
   }
   function onMove(e) {
     if (!dragging) return;
@@ -235,8 +235,7 @@
     if (!dragging) return;
     dragging = false;
     stage.classList.remove('is-dragging');
-    try { stage.releasePointerCapture && stage.releasePointerCapture(e.pointerId); } catch (_) {}
-    if (!reduced) glide();
+    if (!reduced && moved) glide();
   }
   let gliding = 0;
   function glide() {

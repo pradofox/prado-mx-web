@@ -2837,14 +2837,7 @@ a.line-card:hover { text-decoration: none; }
   line-height: 0.95;
   margin: 0;
 }
-.super-sub {
-  font-family: var(--font-sans);
-  font-size: clamp(15px, 1.8vw, 19px);
-  line-height: 1.5;
-  color: var(--gray);
-  max-width: 44ch;
-  margin: 0;
-}
+.super-eyebrow { line-height: 1.6; margin: 0; }
 .super-hint { margin-top: 8px; transition: opacity 400ms ease; }
 .super-hint.is-gone { opacity: 0; }
 

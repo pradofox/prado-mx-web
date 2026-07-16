@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=33" />
+  <link rel="stylesheet" href="/style.css?v=34" />
 
   <script>
     (function () {
@@ -68,6 +68,7 @@
       <div class="nav-links">
         <a href="/hugo">Hugo</a>
         <a href="/consulta">Nutrición</a>
+        <a href="/super" aria-current="page">Súper</a>
         <a href="/consulting">Consulting</a>
         <a href="/macros">Macros</a>
         <a href="/marcas">Collabs</a>
@@ -88,6 +89,7 @@
       <a href="/" data-menu-link>Home</a>
       <a href="/hugo" data-menu-link>Hugo</a>
       <a href="/consulta" data-menu-link>Nutrición</a>
+      <a href="/super" data-menu-link aria-current="page">Súper</a>
       <a href="/consulting" data-menu-link>Consulting</a>
       <a href="/macros" data-menu-link>Macros</a>
       <a href="/marcas" data-menu-link>Collabs</a>
@@ -105,9 +107,11 @@
     <div class="super-plane" data-super-plane>
       <!-- Bloque central (posicionado por JS al centro del plano) -->
       <section class="super-center" data-super-center>
-        <p class="label label--muted">[ El súper ]</p>
+        <p class="label label--muted super-eyebrow">
+          <span>[ El súper ]</span><br/>
+          Por Hugo Prado · Monterrey
+        </p>
         <h1 class="super-title">El súper,<br/>ya filtrado.</h1>
-        <p class="super-sub">Lo que Hugo Prado sí recomienda: lo que compra, lo que receta, lo que sirve. Nada más.</p>
         <div class="super-filters" data-super-filters></div>
         <p class="label label--muted super-hint" data-super-hint>[ Arrastra para explorar ]</p>
       </section>
@@ -141,6 +145,6 @@
     </div>
   </noscript>
 
-  <script src="/super.js?v=5" defer></script>
+  <script src="/super.js?v=6" defer></script>
 </body>
 </html>
