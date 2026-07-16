@@ -1,0 +1,364 @@
+/* El súper de PRADO — plano explorable.
+   No hay scroll: el catálogo vive en un plano grande que se panea
+   arrastrando, con la misma física de inercia del globo del home
+   (velocidad muestreada + decay exponencial).
+
+   Cada card se materializa con un reveal ASCII-datamosh: la foto se
+   convierte en glifos mono (@ # + .), con slices horizontales corridas
+   que se van asentando hasta resolver en la imagen real. Mismo alfabeto
+   que el globo, la lluvia de /macros y el pulso de /consulta. */
+(function () {
+  const stage = document.querySelector('[data-super-stage]');
+  const plane = document.querySelector('[data-super-plane]');
+  if (!stage || !plane) return;
+
+  const API = '/api/app/super';
+  const CELL_W = 230, CELL_H = 270;
+  const CARD_W = 170, CARD_H = 200;
+  const COLS = 12, ROWS = 10;
+  const PLANE_W = COLS * CELL_W, PLANE_H = ROWS * CELL_H;
+  // Hueco central reservado para el bloque de título.
+  const HOLE_W = 780, HOLE_H = 460;
+
+  const CATS = [
+    ['todos', 'Todo'],
+    ['cereales', 'Cereales'],
+    ['proteinas', 'Proteínas'],
+    ['grasas', 'Aceites y grasas'],
+    ['lacteos', 'Lácteos'],
+    ['libres', 'Libres'],
+    ['suplementos', 'Suplementos'],
+    ['oxxo', 'Oxxo y 7-Eleven'],
+    ['material', 'Material'],
+  ];
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Hash determinista → jitter estable entre filtros y recargas.
+  function hash(n) {
+    let x = Math.sin(n * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  // ---------- Layout: grid con hueco al centro -------------------------
+  function buildSlots() {
+    const slots = [];
+    const cx = PLANE_W / 2, cy = PLANE_H / 2;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const x = c * CELL_W + (CELL_W - CARD_W) / 2;
+        const y = r * CELL_H + (CELL_H - CARD_H) / 2;
+        // ¿la celda pisa el hueco central?
+        const overlapsHole =
+          x + CARD_W > cx - HOLE_W / 2 && x < cx + HOLE_W / 2 &&
+          y + CARD_H > cy - HOLE_H / 2 && y < cy + HOLE_H / 2;
+        if (overlapsHole) continue;
+        const i = r * COLS + c;
+        slots.push({
+          x: x + (hash(i) - 0.5) * 46,
+          y: y + (hash(i + 99) - 0.5) * 52,
+          d: Math.hypot(x - cx, y - cy),
+        });
+      }
+    }
+    // Los primeros productos caen cerca del centro: lo primero que ves.
+    slots.sort((a, b) => a.d - b.d);
+    return slots;
+  }
+
+  // ---------- Reveal ASCII-datamosh ------------------------------------
+  const RAMP = ' .+#@';
+  const AW = 15, AH = 18;   // resolución del mosaico en caracteres
+
+  function asciiFrom(img) {
+    const cv = document.createElement('canvas');
+    cv.width = AW; cv.height = AH;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, AW, AH);
+    try { ctx.drawImage(img, 0, 0, AW, AH); } catch (e) { return null; }
+    let data;
+    try { data = ctx.getImageData(0, 0, AW, AH).data; } catch (e) { return null; }
+    const rows = [];
+    for (let y = 0; y < AH; y++) {
+      let line = '';
+      for (let x = 0; x < AW; x++) {
+        const i = (y * AW + x) * 4;
+        const a = data[i + 3] / 255;
+        // luminancia invertida: producto oscuro = glifo denso
+        const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+        const v = a < 0.35 ? 0 : (1 - lum) * a;
+        line += RAMP[Math.min(RAMP.length - 1, Math.max(0, Math.round(v * (RAMP.length - 1))))];
+      }
+      rows.push(line);
+    }
+    return rows;
+  }
+
+  function shiftRow(s, n) {
+    if (!n) return s;
+    const k = ((n % s.length) + s.length) % s.length;
+    return s.slice(k) + s.slice(0, k);
+  }
+
+  function coarsen(rows, t) {
+    // t 0→1: al inicio solo 2 niveles (bloques), al final la rampa completa.
+    const levels = Math.max(2, Math.round(2 + t * (RAMP.length - 2)));
+    if (levels >= RAMP.length) return rows;
+    return rows.map(line => line.split('').map(ch => {
+      const idx = RAMP.indexOf(ch);
+      if (idx <= 0) return ch;
+      const q = Math.round((idx / (RAMP.length - 1)) * (levels - 1)) / (levels - 1);
+      return RAMP[Math.round(q * (RAMP.length - 1))];
+    }).join(''));
+  }
+
+  function revealCard(card) {
+    if (card.dataset.revealed) return;
+    card.dataset.revealed = '1';
+    const img = card.querySelector('img');
+    const pre = card.querySelector('pre');
+    if (!img || !pre) return;
+
+    const run = () => {
+      const base = asciiFrom(img);
+      if (!base || reduced) { card.classList.add('is-resolved'); return; }
+      const start = performance.now();
+      const DUR = 560;
+      // 3 slices que se van asentando
+      const slices = [0, 1, 2].map(i => ({
+        row: Math.floor(hash(i * 7 + base.length) * AH),
+        amp: 3 + Math.floor(hash(i * 13) * 5),
+      }));
+      function frame(now) {
+        const t = Math.min(1, (now - start) / DUR);
+        const rows = coarsen(base, t).slice();
+        // mosh: desplaza slices, la amplitud decae con t
+        slices.forEach(s => {
+          const amp = Math.round(s.amp * (1 - t));
+          if (!amp) return;
+          for (let r = s.row; r < Math.min(AH, s.row + 2); r++) {
+            rows[r] = shiftRow(rows[r], amp);
+          }
+        });
+        pre.textContent = rows.join('\n');
+        if (t < 1) { requestAnimationFrame(frame); }
+        else { card.classList.add('is-resolved'); }
+      }
+      requestAnimationFrame(frame);
+    };
+
+    if (img.complete && img.naturalWidth) run();
+    else img.addEventListener('load', run, { once: true });
+  }
+
+  // ---------- Pan con inercia (misma física del globo) ------------------
+  let px = 0, py = 0;            // traslación del plano
+  let dragging = false, moved = false;
+  let lastX = 0, lastY = 0, lastT = 0;
+  let vx = 0, vy = 0;            // velocidad suavizada px/s
+  const DECAY = 2.6;            // 1/s
+
+  function bounds() {
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const padX = Math.max(0, (PLANE_W - vw) / 2) + 120;
+    const padY = Math.max(0, (PLANE_H - vh) / 2) + 120;
+    return { padX, padY };
+  }
+  function clamp() {
+    const b = bounds();
+    px = Math.max(-b.padX, Math.min(b.padX, px));
+    py = Math.max(-b.padY, Math.min(b.padY, py));
+  }
+  function apply() {
+    plane.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+  }
+
+  function onDown(e) {
+    if (e.target.closest('[data-super-card]') && e.pointerType !== 'touch') {
+      // permitimos drag desde una card, pero si no se mueve cuenta como click
+    }
+    dragging = true; moved = false;
+    lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+    vx = vy = 0;
+    stage.classList.add('is-dragging');
+    stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const now = performance.now();
+    const dt = Math.max(0.006, (now - lastT) / 1000);
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) { moved = true; hideHint(); }
+    px += dx; py += dy;
+    clamp(); apply();
+    vx = vx * 0.6 + (dx / dt) * 0.4;
+    vy = vy * 0.6 + (dy / dt) * 0.4;
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
+  }
+  function onUp(e) {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+    try { stage.releasePointerCapture && stage.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (!reduced) glide();
+  }
+  let gliding = 0;
+  function glide() {
+    cancelAnimationFrame(gliding);
+    let last = performance.now();
+    function step(now) {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const k = Math.exp(-DECAY * dt);
+      vx *= k; vy *= k;
+      px += vx * dt; py += vy * dt;
+      clamp(); apply();
+      if (Math.hypot(vx, vy) > 12) gliding = requestAnimationFrame(step);
+    }
+    gliding = requestAnimationFrame(step);
+  }
+
+  function hideHint() {
+    const h = document.querySelector('[data-super-hint]');
+    if (h) h.classList.add('is-gone');
+  }
+
+  // Rueda / trackpad también panean (no hay scroll de página).
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    px -= e.deltaX; py -= e.deltaY;
+    clamp(); apply(); hideHint();
+  }, { passive: false });
+
+  stage.addEventListener('pointerdown', onDown);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
+  window.addEventListener('resize', () => { clamp(); apply(); });
+
+  // ---------- Modal -----------------------------------------------------
+  const modal = document.querySelector('[data-super-modal]');
+  function openModal(p) {
+    if (!modal) return;
+    modal.querySelector('[data-modal-img]').src = p.image;
+    modal.querySelector('[data-modal-img]').alt = p.name;
+    const catLabel = (CATS.find(c => c[0] === p.category) || [null, p.category])[1];
+    modal.querySelector('[data-modal-cat]').textContent = `[ ${catLabel} ]`;
+    modal.querySelector('[data-modal-name]').textContent = p.name;
+    const brand = modal.querySelector('[data-modal-brand]');
+    brand.textContent = p.brand || '';
+    brand.hidden = !p.brand;
+    const note = modal.querySelector('[data-modal-note]');
+    note.textContent = p.note || '';
+    note.hidden = !p.note;
+    const buy = modal.querySelector('[data-modal-buy]');
+    const disc = modal.querySelector('[data-modal-disclosure]');
+    if (p.amazon_url) {
+      buy.href = '/api/out/' + encodeURIComponent(p.id);
+      buy.hidden = false; disc.hidden = false;
+    } else {
+      buy.hidden = true; disc.hidden = true;
+    }
+    modal.hidden = false;
+    requestAnimationFrame(() => modal.classList.add('is-open'));
+  }
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    setTimeout(() => { modal.hidden = true; }, 200);
+  }
+  document.querySelectorAll('[data-super-close]').forEach(b => b.addEventListener('click', closeModal));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ---------- Filtros ---------------------------------------------------
+  let active = 'todos';
+  function renderFilters(counts) {
+    const box = document.querySelector('[data-super-filters]');
+    if (!box) return;
+    box.innerHTML = CATS
+      .filter(([id]) => id === 'todos' || counts[id])
+      .map(([id, label]) => {
+        const n = id === 'todos' ? Object.values(counts).reduce((a, b) => a + b, 0) : counts[id];
+        return `<button type="button" class="super-pill${id === active ? ' is-active' : ''}" data-cat="${id}">${label} <span class="super-pill-n">${n}</span></button>`;
+      }).join('');
+    box.querySelectorAll('[data-cat]').forEach(b => {
+      b.addEventListener('click', () => {
+        active = b.dataset.cat;
+        box.querySelectorAll('[data-cat]').forEach(x => x.classList.toggle('is-active', x.dataset.cat === active));
+        applyFilter();
+      });
+    });
+  }
+  function applyFilter() {
+    plane.querySelectorAll('[data-super-card]').forEach(card => {
+      const on = active === 'todos' || card.dataset.cat === active;
+      card.classList.toggle('is-hidden', !on);
+    });
+  }
+
+  // ---------- Init ------------------------------------------------------
+  function centerPlane() {
+    px = 0; py = 0; apply();
+  }
+
+  async function init() {
+    let products = [];
+    try {
+      const r = await fetch(API);
+      products = (await r.json()).products || [];
+    } catch (e) { /* noop */ }
+
+    const loading = document.querySelector('[data-super-loading]');
+    if (!products.length) {
+      if (loading) loading.textContent = '[ No se pudo cargar el súper. Recarga la página. ]';
+      return;
+    }
+    if (loading) loading.remove();
+
+    plane.style.width = PLANE_W + 'px';
+    plane.style.height = PLANE_H + 'px';
+
+    // Centro
+    const center = document.querySelector('[data-super-center]');
+    if (center) {
+      center.style.left = (PLANE_W / 2) + 'px';
+      center.style.top = (PLANE_H / 2) + 'px';
+    }
+
+    const slots = buildSlots();
+    const counts = {};
+    const frag = document.createDocumentFragment();
+
+    products.forEach((p, i) => {
+      counts[p.category] = (counts[p.category] || 0) + 1;
+      const slot = slots[i % slots.length];
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'super-card';
+      el.setAttribute('data-super-card', '');
+      el.dataset.cat = p.category;
+      el.style.left = slot.x + 'px';
+      el.style.top = slot.y + 'px';
+      el.innerHTML =
+        '<pre class="super-card-ascii" aria-hidden="true"></pre>' +
+        `<img src="${p.image}" alt="${p.name}" loading="lazy" draggable="false">` +
+        `<span class="super-card-name">${p.name}</span>`;
+      el.addEventListener('click', () => { if (!moved) openModal(p); });
+      frag.appendChild(el);
+    });
+    plane.appendChild(frag);
+
+    renderFilters(counts);
+    centerPlane();
+
+    // Reveal al entrar al viewport
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => { if (en.isIntersecting) { revealCard(en.target); io.unobserve(en.target); } });
+    }, { root: stage, rootMargin: '80px' });
+    plane.querySelectorAll('[data-super-card]').forEach(c => io.observe(c));
+  }
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(init);
+  else init();
+})();

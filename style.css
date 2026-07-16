@@ -2784,6 +2784,253 @@ a.line-card:hover { text-decoration: none; }
   text-transform: uppercase;
 }
 
+/* ============================================================
+   /super — El súper de PRADO (plano explorable)
+   ============================================================ */
+.super-body { overflow: hidden; height: 100dvh; }
+.super-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 90;
+  background: transparent;
+  mix-blend-mode: normal;
+  color: var(--fg);
+}
+
+.super-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: grab;
+  touch-action: none;
+  /* grid de puntos: panear se siente como moverse sobre papel de medición */
+  background-image: radial-gradient(var(--divider) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.super-stage.is-dragging { cursor: grabbing; }
+
+.super-plane {
+  position: absolute;
+  top: 50%; left: 50%;
+  margin-left: -50%; margin-top: -50%;
+  will-change: transform;
+}
+@media (min-width: 900px) {
+  .super-plane { margin-left: 0; margin-top: 0; transform-origin: center; }
+}
+
+.super-center {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 620px;
+  max-width: 88vw;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+}
+.super-center .label { pointer-events: none; }
+.super-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(40px, 7vw, 88px);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  margin: 0;
+}
+.super-sub {
+  font-family: var(--font-sans);
+  font-size: clamp(15px, 1.8vw, 19px);
+  line-height: 1.5;
+  color: var(--gray);
+  max-width: 44ch;
+  margin: 0;
+}
+.super-hint { margin-top: 8px; transition: opacity 400ms ease; }
+.super-hint.is-gone { opacity: 0; }
+
+.super-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  pointer-events: auto;
+  max-width: 560px;
+}
+.super-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  padding: 7px 12px;
+  border: 1px solid var(--divider);
+  background: var(--bg);
+  color: var(--gray);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+  white-space: nowrap;
+}
+.super-pill:hover { color: var(--fg); border-color: var(--fg); }
+.super-pill.is-active { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+.super-pill-n { opacity: 0.6; }
+.super-pill.is-active .super-pill-n { opacity: 0.7; }
+
+.super-card {
+  position: absolute;
+  width: 170px;
+  height: 200px;
+  padding: 0;
+  border: 1px solid var(--divider);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 140ms ease, transform 140ms ease, opacity 260ms ease;
+  overflow: hidden;
+}
+.super-card:hover { border-color: var(--fg); transform: scale(1.03); z-index: 5; }
+.super-card.is-hidden { opacity: 0.12; pointer-events: none; filter: grayscale(1); }
+.super-card img {
+  max-width: 78%;
+  max-height: 74%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.super-card.is-resolved img { opacity: 1; }
+.super-card-ascii {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ascii);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--fg);
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 200ms ease;
+}
+.super-card.is-resolved .super-card-ascii { opacity: 0; }
+.super-card-name {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: var(--fg);
+  background: linear-gradient(transparent, var(--bg) 60%);
+  text-align: left;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.super-card.is-resolved .super-card-name { opacity: 1; }
+
+.super-loading {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--gray);
+}
+
+/* Modal de producto */
+.super-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.super-modal[hidden] { display: none; }
+.super-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.super-modal.is-open .super-modal-backdrop { opacity: 1; }
+.super-modal-card {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  width: 100%;
+  max-width: 640px;
+  display: grid;
+  grid-template-columns: 1fr;
+  transform: translateY(12px);
+  opacity: 0;
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+@media (min-width: 640px) {
+  .super-modal-card { grid-template-columns: 240px 1fr; }
+}
+.super-modal.is-open .super-modal-card { transform: translateY(0); opacity: 1; }
+.super-modal-close {
+  position: absolute;
+  top: 8px; right: 12px;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--gray);
+  cursor: pointer;
+  z-index: 2;
+}
+.super-modal-close:hover { color: var(--fg); }
+.super-modal-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  border-bottom: 1px solid var(--divider);
+}
+@media (min-width: 640px) {
+  .super-modal-img { border-bottom: 0; border-right: 1px solid var(--divider); }
+}
+.super-modal-img img { max-width: 100%; max-height: 200px; object-fit: contain; }
+.super-modal-info {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.super-modal-info .label--muted { color: var(--gray); }
+.super-modal-info h2 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(22px, 3vw, 28px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+.super-modal-info > .label { color: var(--gray); }
+.super-modal-note {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg);
+  margin: 8px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+}
+.super-modal-actions { margin-top: 16px; }
+.super-modal-disclosure { margin-top: 12px; font-size: 11px; }
+
 /* Página 404 */
 .error-404 {
   min-height: 70vh;

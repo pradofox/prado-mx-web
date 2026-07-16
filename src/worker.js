@@ -29,6 +29,15 @@ export default {
         return jsonResponse({ error: e.message || 'internal' }, 500, request);
       }
     }
+    // Click-out de /super: registra el click y redirige al link del
+    // producto. Así Hugo ve qué recomendación jala (y el afiliado se mide).
+    if (url.pathname.startsWith('/api/out/')) {
+      try {
+        return await handleSuperOut(request, env, url);
+      } catch (e) {
+        return Response.redirect(url.origin + '/super', 302);
+      }
+    }
 
     const isAssetPath = /\.[a-z0-9]{2,5}$/i.test(url.pathname);
 
@@ -72,6 +81,7 @@ export default {
           '/nutricion': '/consulta.html',
           '/marcas': '/marcas.html',
           '/collabs': '/marcas.html',
+          '/super': '/super.html',
           '/smae': '/smae.html',
         };
         const htmlFile = pathToHtml[url.pathname];
@@ -185,6 +195,11 @@ async function handleApi(request, env, url) {
 
   // ----- Leads (lista de espera / campañas) ---
   if (path === '/leads' && request.method === 'GET') return adminListLeads(env, request);
+
+  // ----- Súper (catálogo de recomendaciones) ---
+  if (path === '/super' && request.method === 'GET') return adminListSuper(env, request);
+  const superMatch = path.match(/^\/super\/([^/]+)$/);
+  if (superMatch && request.method === 'PATCH') return adminUpdateSuper(request, env, superMatch[1]);
 
   // ----- Q&A sessions ---
   if (path === '/qa-sessions' && request.method === 'GET') return adminListQA(env, request);
@@ -317,6 +332,29 @@ async function adminListLeads(env, request) {
      FROM leads ORDER BY created_at DESC LIMIT 500`
   ).all();
   return jsonResponse({ leads: results || [], count: (results || []).length }, 200, request);
+}
+
+// ----- Admin: Súper -----------------------------------------------------
+
+async function adminListSuper(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM super_products ORDER BY category, sort`
+  ).all();
+  return jsonResponse({ products: results || [] }, 200, request);
+}
+
+async function adminUpdateSuper(request, env, id) {
+  const data = await request.json();
+  const sets = [];
+  const args = [];
+  ['name', 'brand', 'note', 'amazon_url', 'status', 'category'].forEach(f => {
+    if (data[f] !== undefined) { sets.push(`${f} = ?`); args.push(data[f] || null); }
+  });
+  if (!sets.length) return jsonResponse({ ok: true }, 200, request);
+  sets.push(`updated_at = datetime('now')`);
+  args.push(id);
+  await env.DB.prepare(`UPDATE super_products SET ${sets.join(', ')} WHERE id = ?`).bind(...args).run();
+  return jsonResponse({ ok: true }, 200, request);
 }
 
 // ----- Admin: Q&A sessions -------------------------------------------
@@ -766,6 +804,9 @@ async function handleAppApi(request, env, url) {
   // Q&A sessions próximos (filtra por cohort_id del subscriber autenticado)
   if (path === '/qa-sessions' && request.method === 'GET') return appListQA(request, env);
 
+  // Catálogo /super (público)
+  if (path === '/super' && request.method === 'GET') return appListSuper(request, env);
+
   return jsonResponse({ error: 'not found', path }, 404, request);
 }
 
@@ -788,6 +829,30 @@ async function appJoinWaitlist(request, env) {
      VALUES (?,?,?,?,?,?)`
   ).bind(newId('lead'), email, name, source, campaign, new Date().toISOString()).run();
   return jsonResponse({ ok: true }, 200, request);
+}
+
+// Catálogo de /super: productos activos, ordenados. Público.
+async function appListSuper(request, env) {
+  const { results } = await env.DB.prepare(
+    `SELECT id, name, brand, category, image, note, amazon_url
+     FROM super_products WHERE status = 'active' ORDER BY sort ASC`
+  ).all();
+  return jsonResponse({ products: results || [] }, 200, request);
+}
+
+// Redirect medible: /api/out/<id> suma un click y manda al link del producto.
+async function handleSuperOut(request, env, url) {
+  const id = url.pathname.replace('/api/out/', '').split('/')[0];
+  const row = await env.DB.prepare(
+    `SELECT amazon_url FROM super_products WHERE id = ? AND status = 'active'`
+  ).bind(id).first();
+  if (!row || !row.amazon_url) {
+    return Response.redirect(url.origin + '/super', 302);
+  }
+  await env.DB.prepare(
+    `UPDATE super_products SET clicks = clicks + 1, updated_at = datetime('now') WHERE id = ?`
+  ).bind(id).run();
+  return Response.redirect(row.amazon_url, 302);
 }
 
 // Lista las 12 semanas del roadmap. Público (no necesita auth).
