@@ -186,7 +186,9 @@
   // ---------- Pan con inercia (misma física del globo) ------------------
   let px = 0, py = 0;            // traslación del plano
   let dragging = false, moved = false;
+  let startX = 0, startY = 0;    // origen del gesto (para distinguir click de drag)
   let lastX = 0, lastY = 0, lastT = 0;
+  const DRAG_PX = 7;             // umbral: nadie hace click sin moverse 1-2px
   let vx = 0, vy = 0;            // velocidad suavizada px/s
   const DECAY = 2.6;            // 1/s
 
@@ -211,6 +213,7 @@
 
   function onDown(e) {
     dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
     lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
     vx = vy = 0;
     stage.classList.add('is-dragging');
@@ -224,7 +227,12 @@
     const now = performance.now();
     const dt = Math.max(0.006, (now - lastT) / 1000);
     const dx = e.clientX - lastX, dy = e.clientY - lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 3) { moved = true; hideHint(); }
+    // Drag vs click: distancia TOTAL desde el origen del gesto, no el delta
+    // entre frames. Con el delta, un click normal (que siempre mueve 1-2px)
+    // se marcaba como arrastre y se cancelaba la apertura del producto.
+    if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) > DRAG_PX) {
+      moved = true; hideHint();
+    }
     px += dx; py += dy;
     clamp(); apply();
     vx = vx * 0.6 + (dx / dt) * 0.4;
