@@ -70,6 +70,11 @@
   const RAMP = ' .+#@';
   const AW = 15, AH = 18;   // resolución del mosaico en caracteres
 
+  // Los packshots son producto sobre blanco (o con alfa). Mapear luminancia
+  // directo deja el ASCII casi vacío: un producto claro sobre blanco casi no
+  // genera glifos. Por eso separamos fondo (alfa baja o casi-blanco = espacio)
+  // y dentro del producto normalizamos el contraste, de modo que su silueta
+  // siempre se lee como mosaico denso.
   function asciiFrom(img) {
     const cv = document.createElement('canvas');
     cv.width = AW; cv.height = AH;
@@ -79,16 +84,28 @@
     try { ctx.drawImage(img, 0, 0, AW, AH); } catch (e) { return null; }
     let data;
     try { data = ctx.getImageData(0, 0, AW, AH).data; } catch (e) { return null; }
+
+    const lum = new Array(AW * AH);
+    const isBg = new Array(AW * AH);
+    let lo = 1, hi = 0;
+    for (let i = 0; i < AW * AH; i++) {
+      const p = i * 4;
+      const a = data[p + 3] / 255;
+      const L = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
+      const bg = a < 0.35 || L > 0.93;
+      lum[i] = L; isBg[i] = bg;
+      if (!bg) { if (L < lo) lo = L; if (L > hi) hi = L; }
+    }
+    const span = Math.max(0.08, hi - lo);
+
     const rows = [];
     for (let y = 0; y < AH; y++) {
       let line = '';
       for (let x = 0; x < AW; x++) {
-        const i = (y * AW + x) * 4;
-        const a = data[i + 3] / 255;
-        // luminancia invertida: producto oscuro = glifo denso
-        const lum = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
-        const v = a < 0.35 ? 0 : (1 - lum) * a;
-        line += RAMP[Math.min(RAMP.length - 1, Math.max(0, Math.round(v * (RAMP.length - 1))))];
+        const i = y * AW + x;
+        if (isBg[i]) { line += ' '; continue; }
+        const n = 1 - (lum[i] - lo) / span;   // 0..1 dentro del producto
+        line += RAMP[1 + Math.round(n * (RAMP.length - 2))];  // nunca espacio
       }
       rows.push(line);
     }
