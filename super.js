@@ -185,10 +185,16 @@
 
   // ---------- Pan con inercia (misma física del globo) ------------------
   let px = 0, py = 0;            // traslación del plano
+  let scale = 1;                 // zoom
   let dragging = false, moved = false;
   let startX = 0, startY = 0;    // origen del gesto (para distinguir click de drag)
   let lastX = 0, lastY = 0, lastT = 0;
   const DRAG_PX = 7;             // umbral: nadie hace click sin moverse 1-2px
+  const MIN_S = 0.35, MAX_S = 2.5;
+
+  // Punteros activos: con 2 dedos es pellizco, con 1 es arrastre.
+  const punteros = new Map();
+  let pinchDist = 0, pinchScale = 1;
   let vx = 0, vy = 0;            // velocidad suavizada px/s
   const DECAY = 2.6;            // 1/s
 
@@ -202,16 +208,43 @@
   function vw() { return stage.clientWidth || window.innerWidth || 1280; }
   function vh() { return stage.clientHeight || window.innerHeight || 720; }
   function clamp() {
-    const minX = Math.min(0, vw() - PLANE_W) - PAD, maxX = PAD;
-    const minY = Math.min(0, vh() - PLANE_H) - PAD, maxY = PAD;
+    // el plano mide PLANE_* × scale en pantalla
+    const W = PLANE_W * scale, H = PLANE_H * scale;
+    const minX = Math.min(0, vw() - W) - PAD, maxX = Math.max(0, vw() - W) + PAD;
+    const minY = Math.min(0, vh() - H) - PAD, maxY = Math.max(0, vh() - H) + PAD;
     px = Math.max(minX, Math.min(maxX, px));
     py = Math.max(minY, Math.min(maxY, py));
   }
   function apply() {
-    plane.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+    plane.style.transform = `translate3d(${px}px, ${py}px, 0) scale(${scale})`;
+  }
+
+  // Zoom anclado a un punto: lo que está bajo tus dedos (o el cursor) se
+  // queda ahí. Con transform-origin 0 0, un punto X del plano cae en
+  // pantalla en px + X*scale; despejando para que no se mueva sale esto.
+  function zoomAt(cx, cy, objetivo) {
+    const s = Math.max(MIN_S, Math.min(MAX_S, objetivo));
+    if (Math.abs(s - scale) < 0.0005) return;
+    const r = s / scale;
+    px = cx - (cx - px) * r;
+    py = cy - (cy - py) * r;
+    scale = s;
+    clamp(); apply();
   }
 
   function onDown(e) {
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (punteros.size === 2) {
+      // arranca pellizco: se cancela el arrastre y la inercia
+      dragging = false; moved = true;
+      vx = vy = 0;
+      const [a, b] = [...punteros.values()];
+      pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+      pinchScale = scale;
+      hideHint();
+      return;
+    }
+    if (punteros.size > 2) return;
     dragging = true; moved = false;
     startX = e.clientX; startY = e.clientY;
     lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
@@ -223,6 +256,16 @@
     // de pointermove/pointerup en window.
   }
   function onMove(e) {
+    if (punteros.has(e.pointerId)) punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // Dos dedos: pellizco. El ancla es el punto medio entre ellos.
+    if (punteros.size === 2 && pinchDist > 0) {
+      const [a, b] = [...punteros.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > 0) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, pinchScale * (d / pinchDist));
+      return;
+    }
+
     if (!dragging) return;
     const now = performance.now();
     const dt = Math.max(0.006, (now - lastT) / 1000);
@@ -240,6 +283,20 @@
     lastX = e.clientX; lastY = e.clientY; lastT = now;
   }
   function onUp(e) {
+    punteros.delete(e.pointerId);
+    // Al soltar un dedo del pellizco queda uno: hay que re-anclar el
+    // arrastre ahí, o el plano pega un brinco por el delta acumulado.
+    if (punteros.size === 1) {
+      pinchDist = 0;
+      const [p] = [...punteros.values()];
+      lastX = p.x; lastY = p.y; lastT = performance.now();
+      startX = p.x; startY = p.y;
+      dragging = true; moved = true;   // venía de un gesto: no es click
+      vx = vy = 0;
+      return;
+    }
+    if (punteros.size > 0) return;
+    pinchDist = 0;
     if (!dragging) return;
     dragging = false;
     stage.classList.remove('is-dragging');
@@ -266,12 +323,27 @@
     if (h) h.classList.add('is-gone');
   }
 
-  // Rueda / trackpad también panean (no hay scroll de página).
+  // Rueda / trackpad: panean. Con ctrl/cmd hacen zoom — así es como el
+  // navegador reporta el pellizco de trackpad (llega como wheel+ctrlKey).
   stage.addEventListener('wheel', (e) => {
     e.preventDefault();
-    px -= e.deltaX; py -= e.deltaY;
-    clamp(); apply(); hideHint();
+    if (e.ctrlKey || e.metaKey) {
+      zoomAt(e.clientX, e.clientY, scale * Math.exp(-e.deltaY * 0.01));
+    } else {
+      px -= e.deltaX; py -= e.deltaY;
+      clamp(); apply();
+    }
+    hideHint();
   }, { passive: false });
+
+  // Teclado: +/- para zoom, 0 para reencuadrar.
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input, textarea')) return;
+    const cx = vw() / 2, cy = vh() / 2;
+    if (e.key === '+' || e.key === '=') { zoomAt(cx, cy, scale * 1.2); hideHint(); }
+    else if (e.key === '-' || e.key === '_') { zoomAt(cx, cy, scale / 1.2); hideHint(); }
+    else if (e.key === '0') { scale = 1; centerPlane(); hideHint(); }
+  });
 
   stage.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
@@ -281,6 +353,37 @@
 
   // ---------- Modal -----------------------------------------------------
   const modal = document.querySelector('[data-super-modal]');
+
+  // Ficha nutrimental. Solo llega si Hugo ya la confirmó (el worker no
+  // publica lo que está en borrador).
+  const NUTRI_FILAS = [
+    ['kcal', 'Energía', 'kcal'],
+    ['protein', 'Proteína', 'g'],
+    ['carbs', 'Carbohidratos', 'g'],
+    ['fiber', 'Fibra', 'g'],
+    ['sugar', 'Azúcares', 'g'],
+    ['fat', 'Grasas', 'g'],
+    ['sat', 'Grasa saturada', 'g'],
+    ['sodium', 'Sodio', 'mg'],
+  ];
+  function renderNutri(n) {
+    const tabla = modal.querySelector('[data-modal-nutri]');
+    const body = modal.querySelector('[data-modal-nutri-body]');
+    const basis = modal.querySelector('[data-modal-nutri-basis]');
+    if (!tabla || !body) return;
+    if (!n) { tabla.hidden = true; return; }
+    const filas = NUTRI_FILAS
+      .filter(([k]) => typeof n[k] === 'number')
+      .map(([k, label, unidad]) =>
+        `<tr><th>${label}</th><td>${n[k]}${unidad === 'kcal' ? ' kcal' : ' ' + unidad}</td></tr>`);
+    if (!filas.length) { tabla.hidden = true; return; }
+    body.innerHTML = filas.join('');
+    // Nunca decir "por 100 g" si la fuente daba por porción.
+    basis.textContent = n.per_serving
+      ? `[ Por porción de ${n.basis || '?'} ]`
+      : '[ Por 100 g ]';
+    tabla.hidden = false;
+  }
   function openModal(p) {
     if (!modal) return;
     modal.querySelector('[data-modal-img]').src = p.image;
@@ -294,6 +397,7 @@
     const note = modal.querySelector('[data-modal-note]');
     note.textContent = p.note || '';
     note.hidden = !p.note;
+    renderNutri(p.nutrition);
     const buy = modal.querySelector('[data-modal-buy]');
     const disc = modal.querySelector('[data-modal-disclosure]');
     buy.hidden = !p.amazon_url;
@@ -344,8 +448,8 @@
   // Arranca con el centro del plano (el bloque de título) en el centro
   // de la pantalla.
   function centerPlane() {
-    px = (vw() - PLANE_W) / 2;
-    py = (vh() - PLANE_H) / 2;
+    px = (vw() - PLANE_W * scale) / 2;
+    py = (vh() - PLANE_H * scale) / 2;
     apply();
   }
 

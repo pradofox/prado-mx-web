@@ -833,11 +833,18 @@ async function appJoinWaitlist(request, env) {
 
 // Catálogo de /super: productos activos, ordenados. Público.
 async function appListSuper(request, env) {
+  // Solo se publica la ficha que Hugo ya confirmó (nutri_status='ok').
+  // Lo que está en 'draft' vive en la DB pero no sale al público.
   const { results } = await env.DB.prepare(
-    `SELECT id, name, brand, category, image, note, amazon_url
+    `SELECT id, name, brand, category, image, note, amazon_url,
+            CASE WHEN nutri_status = 'ok' THEN nutrition END AS nutrition
      FROM super_products WHERE status = 'active' ORDER BY sort ASC`
   ).all();
-  return jsonResponse({ products: results || [] }, 200, request);
+  const products = (results || []).map(p => ({
+    ...p,
+    nutrition: p.nutrition ? safeParse(p.nutrition) : null,
+  }));
+  return jsonResponse({ products }, 200, request);
 }
 
 // Redirect medible: /api/out/<id> suma un click y manda al link del producto.

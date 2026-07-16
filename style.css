@@ -2828,6 +2828,9 @@ a.line-card:hover { text-decoration: none; }
 .super-plane {
   position: absolute;
   top: 0; left: 0;
+  /* origen en la esquina: el zoom anclado a un punto (zoomAt) asume que
+     un punto X del plano cae en pantalla exactamente en px + X*scale. */
+  transform-origin: 0 0;
   will-change: transform;
 }
 
@@ -3032,6 +3035,35 @@ a.line-card:hover { text-decoration: none; }
   padding-top: 12px;
   border-top: 1px solid var(--divider);
 }
+/* Ficha nutrimental en el modal */
+.super-nutri {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 13px;
+}
+.super-nutri caption {
+  text-align: left;
+  padding-bottom: 8px;
+  color: var(--gray);
+}
+.super-nutri th,
+.super-nutri td {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--divider);
+  text-align: left;
+  font-weight: 400;
+}
+.super-nutri th { color: var(--gray); font-family: var(--font-sans); }
+.super-nutri td {
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--fg);
+  white-space: nowrap;
+}
+.super-nutri tr:last-child th,
+.super-nutri tr:last-child td { border-bottom: 0; }
+
 .super-modal-actions { margin-top: 16px; }
 .super-modal-disclosure { margin-top: 12px; font-size: 11px; }
 

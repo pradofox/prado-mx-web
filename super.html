@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=35" />
+  <link rel="stylesheet" href="/style.css?v=36" />
 
   <script>
     (function () {
@@ -131,6 +131,10 @@
         <h2 data-modal-name></h2>
         <p class="label" data-modal-brand></p>
         <p class="super-modal-note" data-modal-note hidden></p>
+        <table class="super-nutri" data-modal-nutri hidden>
+          <caption class="label label--muted" data-modal-nutri-basis>[ Por 100 g ]</caption>
+          <tbody data-modal-nutri-body></tbody>
+        </table>
         <div class="super-modal-actions">
           <a class="closing-cta-btn" data-modal-buy target="_blank" rel="sponsored noopener" hidden>Ver en Amazon →</a>
         </div>
@@ -148,6 +152,6 @@
   <!-- scroll.js aporta el menú mobile y el theme toggle. No cargamos Lenis:
        /super no tiene scroll (es un plano fijo) y su rueda la maneja super.js. -->
   <script src="/scroll.js?v=5"></script>
-  <script src="/super.js?v=8" defer></script>
+  <script src="/super.js?v=9" defer></script>
 </body>
 </html>

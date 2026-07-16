@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS super_products (
 CREATE INDEX IF NOT EXISTS idx_super_cat ON super_products(category, status, sort);
 
 INSERT OR IGNORE INTO super_products (id, name, brand, category, image, note, amazon_url, status, sort) VALUES
-('tortireglas-delgaditas','Tortillas Delgaditas 3=1','TortiReglas','cereales','/assets/super/tortireglas-delgaditas.png',NULL,NULL,'active',0),
+('tortireglas-delgaditas','Tortillas Delgaditas 3=1','Tortiregias','cereales','/assets/super/tortireglas-delgaditas.png',NULL,NULL,'active',0),
 ('saralee-delightful-multigrano','Pan Delightful Multigrano 45','Sara Lee','cereales','/assets/super/saralee-delightful-multigrano.png',NULL,NULL,'active',1),
 ('saralee-delightful-integral','Pan Delightful 100% Integral 45','Sara Lee','cereales','/assets/super/saralee-delightful-integral.png',NULL,NULL,'active',2),
 ('sanissimo-salmas-caja','Salmas horneadas (caja)','Sanissimo','cereales','/assets/super/sanissimo-salmas-caja.png',NULL,NULL,'active',3),
@@ -35,7 +35,7 @@ INSERT OR IGNORE INTO super_products (id, name, brand, category, image, note, am
 ('ezekiel-tortillas','Tortillas de granos germinados Ezekiel 4:9','Food for Life','cereales','/assets/super/ezekiel-tortillas.png',NULL,NULL,'active',9),
 ('ezekiel-pan','Pan de granos germinados Ezekiel 4:9','Food for Life','cereales','/assets/super/ezekiel-pan.png',NULL,NULL,'active',10),
 ('susalia-tostadas','Tostadas horneadas maíz-nopal','Susalia','cereales','/assets/super/susalia-tostadas.png',NULL,NULL,'active',11),
-('tortireglas-tostadas','Tostadas Delgaditas 3=1','TortiReglas','cereales','/assets/super/tortireglas-tostadas.png',NULL,NULL,'active',12),
+('tortireglas-tostadas','Tostadas Delgaditas 3=1','Tortiregias','cereales','/assets/super/tortireglas-tostadas.png',NULL,NULL,'active',12),
 ('sanissimo-salmas-bolsa','Salmas horneadas (bolsa)','Sanissimo','cereales','/assets/super/sanissimo-salmas-bolsa.png',NULL,NULL,'active',13),
 ('gerber-arroz','Cereal de arroz','Gerber','cereales','/assets/super/gerber-arroz.png',NULL,NULL,'active',14),
 ('granola-artesanal','Granola artesanal 100% natural',NULL,'cereales','/assets/super/granola-artesanal.png',NULL,NULL,'active',15),
